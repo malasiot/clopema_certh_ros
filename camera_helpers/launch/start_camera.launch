@@ -1,0 +1,12 @@
+<launch>
+	
+	<arg name="camera" value="xtion2" />
+	
+	<include file="$(find clopema_perception_launch)/launch/$(arg camera).launch"/>
+	
+	<node name="openni_capture" pkg="certh_libs" type="openni_capture" output="screen">
+		<remap from="rgb" to="/$(arg camera)/rgb/image_color"/>
+		<remap from="depth" to="/$(arg camera)/depth/image_raw"/>
+		<remap from="cloud" to="/$(arg camera)/depth/points"/>
+	</node>
+</launch>

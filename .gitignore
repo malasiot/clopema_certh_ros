@@ -1,0 +1,11 @@
+# Build folders #
+#################
+bin/
+build/
+*/build/
+*/bin/
+*/msg_gen/
+*/srv_gen/
+*/srv/
+CMakeLists.txt.user
+CMakeLists.txt~
