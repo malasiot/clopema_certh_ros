@@ -1,0 +1,5 @@
+---
+bool success
+sensor_msgs/Image rgb
+sensor_msgs/Image depth
+sensor_msgs/PointCloud2 cloud   

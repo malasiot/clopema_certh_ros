@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 
-#include "certh_libs/OpenniCapture.h"
+#include "camera_helpers/OpenniCapture.h"
 
 // OpenCV includes
 #include <opencv2/highgui/highgui.hpp>
@@ -17,18 +17,20 @@ using namespace std ;
 
 namespace enc = sensor_msgs::image_encodings;
 
+using namespace camera_helpers;
+
 class OpenniGrabber {
 
 public:
     OpenniGrabber()
     {
 
-         client = nh.serviceClient<certh_libs::OpenniCapture>("capture");
+         client = nh.serviceClient<OpenniCapture>("capture");
     }
 
     bool grab(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc)
     {
-        certh_libs::OpenniCapture srv;
+        OpenniCapture srv;
 
         if (client.call(srv))
         {

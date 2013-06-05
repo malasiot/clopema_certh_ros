@@ -4,7 +4,7 @@
 
 // ROS Includes
 #include "ros/ros.h"
-#include "certh_libs/OpenniCapture.h"
+#include "camera_helpers/OpenniCapture.h"
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <message_filters/subscriber.h>
@@ -26,7 +26,7 @@
 #define WINDOW "capture_view"
 
 // Namaspaces to be used
-using namespace certh_libs;
+using namespace camera_helpers;
 using namespace sensor_msgs;
 using namespace message_filters;
 
