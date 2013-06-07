@@ -4,12 +4,21 @@
   <rosdep name="eigen"/>
   <rosdep name="boost"/>
   <rosdep name="opencv2"/>
+  
   <depend package="roscpp"/>
-  <depend package="pcl"/>
+
+
+  <depend package="pcl_ros"/>
   
   <depend package="std_msgs"/>
   <depend package="nodelet"/>
   <depend package="openni_camera"/>
   <depend package="cv_bridge"/>
  
+	 <build_depend>nodelet</build_depend>
+	<run_depend>nodelet</run_depend>
+	
+	<export>
+		  <nodelet plugin="${prefix}/nodelet.xml" />
+	</export>
 </package>

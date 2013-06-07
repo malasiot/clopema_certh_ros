@@ -11,30 +11,36 @@ set(ROS_BUILD_TYPE Debug)
 
 rosbuild_init()
 
+include(FindPkgConfig)
+pkg_check_modules(OPENNI libopenni)
+
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-find_package(Eigen REQUIRED)
-find_package(OpenCV REQUIRED)
-include_directories(${Eigen_INCLUDE_DIRS})
-
 rosbuild_add_boost_directories()
 
+
+include_directories(${OPENNI_INCLUDE_DIRS})
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
 rosbuild_gensrv()
 
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+rosbuild_add_library(camera src/OpenNICapture.cpp)
+rosbuild_link_boost(camera signals)
+
+rosbuild_add_executable(test_openni_capture src/test_openni_capture.cpp)
+target_link_libraries(test_openni_capture camera)
+
+rosbuild_add_library(openni_driver2 src/openni_driver.cpp )
+rosbuild_link_boost(openni_driver2 regex)
+target_link_libraries(openni_driver2 ${OPENNI_LIBRARIES})
+
+rosbuild_add_executable(test_driver src/test_driver.cpp)
+target_link_libraries(test_driver openni_driver2)
 
 rosbuild_add_executable(openni_capture src/openni_capture.cpp)
 rosbuild_link_boost(openni_capture signals)
