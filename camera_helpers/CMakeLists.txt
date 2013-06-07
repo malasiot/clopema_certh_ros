@@ -18,8 +18,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_boost_directories()
 
-rosbuild_add_library(camera src/OpenNICapture.cpp)
-rosbuild_link_boost(camera signals)
+rosbuild_add_library(camera_helpers src/OpenNICapture.cpp)
+rosbuild_link_boost(camera_helpers signals)
 
 rosbuild_add_executable(test_openni_capture src/test_openni_capture.cpp)
-target_link_libraries(test_openni_capture camera)
+target_link_libraries(test_openni_capture camera_helpers)

@@ -1,24 +1,18 @@
 <package>
   <license>LGPL</license>
   <review status="unreviewed" notes=""/>
-  <rosdep name="eigen"/>
+
   <rosdep name="boost"/>
   <rosdep name="opencv2"/>
   
   <depend package="roscpp"/>
-
-
   <depend package="pcl_ros"/>
-  
   <depend package="std_msgs"/>
-  <depend package="nodelet"/>
-  <depend package="openni_camera"/>
   <depend package="cv_bridge"/>
+  <depend package="image_transport"/>
+  
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lcamera_helpers"/>
+  </export>
  
-	 <build_depend>nodelet</build_depend>
-	<run_depend>nodelet</run_depend>
-	
-	<export>
-		  <nodelet plugin="${prefix}/nodelet.xml" />
-	</export>
 </package>
