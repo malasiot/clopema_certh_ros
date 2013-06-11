@@ -1,0 +1,25 @@
+<package>
+  <description brief="clopema_planning_tutorials">
+    Set of tutorials for planning trajectory and sending trajectory to the controller.
+  </description>
+  <author>Vladimír Petrík</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/clopema_planning_tutorials</url>
+  <depend package="clopema_motoros"/>  
+  <depend package="visualization_msgs"/>
+  <depend package="interactive_markers"/>
+  <depend package="clopema_planning_actions"/>
+  <depend package="clopema_smach"/>
+  <depend package="bullet"/>
+  <depend package="certh_libs"/>
+  
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="nodelet"/>
+  <depend package="openni_camera"/>
+  <depend package="cv_bridge"/>
+
+</package>
+
+

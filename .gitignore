@@ -8,3 +8,4 @@ build/
 */srv_gen/
 CMakeLists.txt.user
 CMakeLists.txt~
+*~
