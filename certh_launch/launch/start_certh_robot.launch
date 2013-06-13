@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<!--
+This launch file will start necessary components to run the robot. Optionally it
+will start other robot peripheries.
+
+PARAMETER
+
+Libor Wagner and Vladimir Petrík on February  8, 2013
+-->
+<launch>
+    <!-- Override the standard configuration -->
+    <arg name="override" value="0" />
+
+    <!-- Include CloPeMa configuration. -->
+    <include file="$(find clopema_config)/launch/clopema.launch" />
+
+    <!-- Configuration Arguments -->
+    <arg name="robot_ip" default="192.168.0.101" /> <!-- Robot ip address -->
+    <arg name="output" default="log"/>
+
+    <!-- Bring-up arguments -->
+    <arg name="run_rviz" default="true"/> <!-- Controlls whether to start RViz or not. -->
+    <arg name="run_matlab" default="true"/><!-- Controlls whether to start matlab interface or not. -->
+    <arg name="run_grippers" default="true"/>
+    <arg name="run_move_to_pose" default="true"/>
+    <arg name="use_collision_map" default="false"/>
+
+    <arg name="r1_gripper_inverted" default="true"/>
+    <arg name="r2_gripper_inverted" default="false"/>
+
+    <arg name="run_planning_actions" default="true"/>
+
+    <include file="$(find clopema_arm_navigation)/launch/clopema_planning_environment.launch" />
+    <include file="$(find clopema_calibration)/launch/mechanical_calibration.launch" />
+
+    <include file="$(find planning_environment)/launch/environment_server.launch">
+        <arg name="use_monitor" value="true" />
+        <arg name="use_collision_map" value="$(arg use_collision_map)" />
+    </include>
+
+    <include file="$(find clopema_arm_navigation)/launch/ompl_planning.launch" />
+    <include file="$(find clopema_arm_navigation)/launch/trajectory_filter_server.launch" />
+    <node pkg="clopema_arm_navigation" type="clopema_planner" name="clopema_planner"/>
+
+    <!-- MotoRos -->
+    <param name="/motoros/use_ros_time" value="false"/>
+    <node name="robot_state" pkg="clopema_motoros" type="robot_state" output="$(arg output)">
+        <param if="$(arg override)" name="robot_ip" value="$(arg robot_ip)"/>
+    </node>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" respawn="true"/>
+
+    <node name="joint_trajectory_action" pkg="clopema_motoros" type="joint_trajectory_action" output="$(arg output)"/>
+
+    <node name="motion_interface_dual" pkg="clopema_motoros" type="motion_interface_dual">
+        <param if="$(arg override)" name="robot_ip" value="$(arg robot_ip)"/>
+    </node>
+
+    <!-- Matlab interface and IKT-->
+    <group if="$(arg run_matlab)">
+        <include file="$(find clopema_launch)/launch/start_matlab.launch" />
+        <include file="$(find clopema_arm_navigation)/launch/constraint_aware_kinematics_fast.launch" />
+    </group>
+    <group unless="$(arg run_matlab)">
+        <include file="$(find clopema_arm_navigation)/launch/constraint_aware_kinematics.launch" />
+    </group>
+
+    <!-- IO Interface -->
+    <node name="io_interface" pkg="clopema_motoros" type="io_interface" output="screen">
+        <param if="$(arg override)" name="robot_ip" value="$(arg robot_ip)"/>
+    </node>
+
+
+    <!-- Gripper interface -->
+    <include if="$(arg run_grippers)" file="$(find clopema_launch)/launch/grippers_interface.launch">
+        <arg name="r1_inverted" value="$(arg r1_gripper_inverted)" if="$(arg override)"/>
+        <arg name="r2_inverted" value="$(arg r2_gripper_inverted)" if="$(arg override)"/>
+    </include>
+
+    <include if="$(arg run_planning_actions)" file="$(find clopema_planning_actions)/launch/start_all.launch"/>
+
+    <!-- Start move to pose -->
+    <node name="move_to_pose" pkg="clopema_motoros" type="move_to_pose"/>
+
+    <!-- Visualisation -->
+    <node if="$(arg run_rviz)" name="rviz" pkg="rviz" type="rviz" args="-d $(find clopema_description)/config/ctu_set.vcg" />
+    <!--<include file="$(find clopema_perception_launch)/launch/xtion2.launch" />-->
+   <node name="openni_capture" pkg="certh_libs" type="openni_capture" output="screen">
+		<remap from="rgb" to="/xtion3/rgb/image_color"/>
+		<remap from="depth" to="/xtion3/depth/image_raw"/>
+		<remap from="cloud" to="/xtion3/depth/points"/>
+	</node>
+</launch>

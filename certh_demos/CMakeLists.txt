@@ -7,7 +7,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  Release        : w/o debug symbols, w/ optimization
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+set(ROS_BUILD_TYPE Debug)
 
 rosbuild_init()
 
@@ -32,15 +32,22 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #Beginer - JOINT
 rosbuild_add_executable(move_joint_r1 src/move_joint_r1.cpp)
+
 rosbuild_add_executable(move_above_table_r1 src/move_above_table_r1.cpp)
+rosbuild_link_boost(move_above_table_r1 signals)
+
 rosbuild_add_executable(send_traj src/send_traj.cpp)
 rosbuild_add_executable(circleTraj src/circleTraj.cpp)
 target_link_libraries(circleTraj clopema_move)
 rosbuild_add_boost_directories()
 rosbuild_add_executable(rsp src/main.cpp)
 rosbuild_link_boost(rsp signals)
+
 rosbuild_add_executable(xtion3Calibration src/xtion3Calibration.cpp)
 target_link_libraries(xtion3Calibration clopema_move)
+rosbuild_link_boost(xtion3Calibration signals)
+
+
 
 rosbuild_add_executable(grippers_testing src/grippers_testing.cpp)
 

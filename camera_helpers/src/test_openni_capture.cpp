@@ -15,8 +15,8 @@ void grab(camera_helpers::OpenNICaptureRGBD *grabber)
     {
         grabber->grab(clr, depth, ts) ;
 
-        cv::imwrite(str(boost::format("/home/malasiot/tmp/rgb_%03d.png") % i), clr) ;
-        cv::imwrite(str(boost::format("/home/malasiot/tmp/depth_%03d.png") % i), depth) ;
+        cv::imwrite(str(boost::format("/tmp/rgb_%03d.png") % i), clr) ;
+        cv::imwrite(str(boost::format("/tmp/depth_%03d.png") % i), depth) ;
 
         ros::Duration(1).sleep() ;
     }
@@ -37,7 +37,7 @@ void grabpc(camera_helpers::OpenNICapturePointCloud *grabber)
     {
         grabber->grab(cloud, ts) ;
 
-        pcl::io::savePCDFileASCII(str(boost::format("/home/malasiot/tmp/cloud_%03d.pcd") % i), cloud) ;
+        pcl::io::savePCDFileASCII(str(boost::format("/tmp/cloud_%03d.pcd") % i), cloud) ;
 
       //  ros::Duration(0.3).sleep() ;
     }
@@ -52,11 +52,11 @@ int main(int argc, char *argv[])
 {
     ros::init(argc, argv, "openni_capture_example");
 
-    camera_helpers::OpenNICaptureRGBD grabber("xtion2") ;
+    camera_helpers::OpenNICaptureRGBD grabber("xtion3") ;
 
     grabber.connect(grab) ;
 
-    camera_helpers::OpenNICapturePointCloud grabber2("xtion2") ;
+    camera_helpers::OpenNICapturePointCloud grabber2("xtion3") ;
 
     grabber2.connect(grabpc) ;
 

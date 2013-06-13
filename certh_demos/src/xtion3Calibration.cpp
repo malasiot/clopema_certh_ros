@@ -16,7 +16,7 @@
 // OpenCV includes
 #include <opencv2/highgui/highgui.hpp>
 using namespace std ;
-
+#include <camera_helpers/OpenNICapture.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
@@ -124,8 +124,8 @@ int setPose(float x,float y ,float z ){
 	cmove.poseToClopemaMotionPlan(mp, desired_pose);
 
 	ROS_INFO("Planning");
-	if (!cmove.plan(mp))
-		return -1;
+	cmove.plan(mp);
+	
 	ROS_INFO("Executing");
 	control_msgs::FollowJointTrajectoryGoal goal;
 	goal.trajectory = mp.response.joint_trajectory;
@@ -147,20 +147,14 @@ void mouse_callback( int event, int x, int y, int flags, void* param){
 }
 
 
-int main(int argc, char **argv) {
-	ros::init(argc, argv, "move_pose_dual");
-	ros::NodeHandle nh;
-
-	//grabbing the image
-	OpenniGrabber grabber ;
+void grabpc(camera_helpers::OpenNICaptureAll *grabber)
+{
 
     cv::Mat rgb, depth ;
     pcl::PointCloud<pcl::PointXYZ> pc ;
-
-
-
+    ros::Time ts ;
     
-
+    
 	//~ Input the points from the file
 	float points[9][3];
 	cv::Mat meanRobot = cv::Mat(3, 1, CV_32FC1, cv::Scalar::all(0));	
@@ -175,23 +169,23 @@ int main(int argc, char **argv) {
 		}					
 	}
 	stream.close();
-
-	//~ Seting the Points and move the robot
+    
+    //~ Seting the Points and move the robot
 	cvNamedWindow("calibration");
 	cvSetMouseCallback( "calibration", mouse_callback, NULL);			
 	float xtionPoints[9][3];
 	cv::Mat meanXtion = cv::Mat(3, 1, CV_32FC1, cv::Scalar::all(0));	
 	for (unsigned int i=0;i<9;i++){
-			setPose(points[i][0],points[i][1],points[i][2]);
+            setPose(points[i][0],points[i][1],points[i][2]);
 			
-			if ( grabber.grab(rgb, depth, pc) )
+            if ( grabber->grab(rgb, depth, pc, ts) )
 			{
-				cont = false;
+                cont = false;
 				while(!cont){		
 					cv::imshow("calibration", rgb);					
 					int k = cv::waitKey(1);	
 					if(stop)
-					return 0;			
+                    return ;
 				}	
 				pcl::PointXYZ p = pc.at(cx, cy);
 				
@@ -208,7 +202,7 @@ int main(int argc, char **argv) {
 			else
 			{
 				ROS_ERROR("Failed to call service");
-				return 1;
+                return ;
 			}			
 	}
 	
@@ -237,7 +231,40 @@ int main(int argc, char **argv) {
 	fout << 0 << " " << 0 << " " << 0 << " " << 1 << std::endl;
 	
 	fout.close();
+	
+	/*
 
-	ros::shutdown();
+    std::cout << "start grabbing PC" << std::endl ;
+    for(int i=0 ; i<10 ; i++ )
+    {
+        grabber->grab(cloud, ts) ;
+
+        pcl::io::savePCDFileASCII(str(boost::format("/tmp/cloud_%03d.pcd") % i), cloud) ;
+
+      //  ros::Duration(0.3).sleep() ;
+    }
+    std::cout << "finished PC" << std::endl ;
+*/
+    grabber->disconnect() ;
+
+}
+
+int main(int argc, char **argv) {
+	ros::init(argc, argv, "move_pose_dual");
+	ros::NodeHandle nh;
+
+	//grabbing the image
+	OpenniGrabber grabber ;
+
+    cv::Mat rgb, depth ;
+    pcl::PointCloud<pcl::PointXYZ> pc ;
+
+   camera_helpers::OpenNICaptureAll grabber2("xtion3") ;
+   grabber2.connect(grabpc) ;
+    
+	
+   ros::spin() ;
+
+
 	return 1;
 }

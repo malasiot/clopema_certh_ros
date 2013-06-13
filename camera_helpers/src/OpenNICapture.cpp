@@ -147,4 +147,77 @@ bool OpenNICapturePointCloud::grab(pcl::PointCloud<pcl::PointXYZRGB> &pc, ros::T
     return true ;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+OpenNICaptureAll::OpenNICaptureAll(const string &prefix_): prefix(prefix_),
+    sync(sync_policies::ApproximateTime<Image, Image, PointCloud2>(10), rgb_sub, depth_sub, cloud_sub)
+{
+
+}
+
+void OpenNICaptureAll::input_callback(const ImageConstPtr& rgb, const ImageConstPtr& depth, const PointCloud2ConstPtr &cloud)
+{
+    boost::unique_lock<boost::mutex> lock_ (cloud_lock) ;
+    // Store current images
+    tmp_rgb = rgb ;
+    tmp_depth = depth ;
+    tmp_cloud = cloud ;
+}
+
+void OpenNICaptureAll::connectCb(ConnectCallback cb)
+{
+    assert(cb) ;
+
+    while  (!tmp_cloud && !tmp_rgb && !tmp_depth) ;
+
+    cb(this) ;
+
+}
+
+void OpenNICaptureAll::connect(ConnectCallback cb)
+{
+    // Subscribe to rgb and depth streams
+
+    cloud_sub.subscribe(nh, "/" + prefix + "/depth_registered/points", 1);
+    rgb_sub.subscribe(nh, "/" + prefix + "/rgb/image_color", 1);
+    depth_sub.subscribe(nh, "/" + prefix + "/depth_registered/image_rect", 1);
+
+    sync.registerCallback(boost::bind(&OpenNICaptureAll::input_callback, this, _1, _2, _3)) ;
+
+    boost::thread t(boost::bind(&OpenNICaptureAll::connectCb, this, cb)) ;
+}
+
+void OpenNICaptureAll::disconnect()
+{
+    cloud_sub.unsubscribe();
+    rgb_sub.unsubscribe();
+    depth_sub.unsubscribe();
+
+}
+
+
+
+
+bool OpenNICaptureAll::grab(cv::Mat &clr, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, ros::Time &ts)
+{
+    boost::unique_lock<boost::mutex> lock_ (cloud_lock) ;
+
+    if ( !tmp_cloud ) return false ;
+
+    pcl::fromROSMsg(*tmp_cloud, pc) ;
+
+    if ( !tmp_rgb || !tmp_depth ) return false ;
+
+    cv_bridge::CvImagePtr rgb_ = cv_bridge::toCvCopy(tmp_rgb, enc::BGR8);
+    cv_bridge::CvImagePtr depth_ = cv_bridge::toCvCopy(tmp_depth, "");
+
+    clr = rgb_->image ;
+    depth = depth_->image ;
+
+    ts = tmp_cloud->header.stamp ;
+
+    return true ;
+}
+
 }

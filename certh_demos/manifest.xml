@@ -13,13 +13,13 @@
   <depend package="clopema_smach"/>
   <depend package="bullet"/>
   <depend package="certh_libs"/>
-  
+  <depend package="camera_helpers"/>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="nodelet"/>
   <depend package="openni_camera"/>
   <depend package="cv_bridge"/>
-
+	<depend package="camera_helpers"/>
 </package>
 
 

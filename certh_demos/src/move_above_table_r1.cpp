@@ -8,74 +8,52 @@
 #include <clopema_motoros/WriteIO.h>
 #include <tf/transform_listener.h>
 
-//-----openni----
-#include <ros/ros.h>
+/////////////
+#include <camera_helpers/OpenNICapture.h>
 
-#include <certh_libs/OpenniCapture.h>
-
-// OpenCV includes-----
-#include <opencv2/highgui/highgui.hpp>
-using namespace std ;
-
-#include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/image_encodings.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <pcl/point_cloud.h>
+#include <string>
+#include <highgui.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/ros/conversions.h>
-namespace enc = sensor_msgs::image_encodings;
+///////////////
 
 using namespace std;
 
+int countRGBD=0;
+int countPC=0;
 
-class OpenniGrabber {
+void grab(camera_helpers::OpenNICaptureRGBD *grabber)
+{
 
-public:
-    OpenniGrabber()
-    {
+    cv::Mat clr, depth ;
+    ros::Time ts ;
 
-         client = nh.serviceClient<certh_libs::OpenniCapture>("capture");
-    }
+	grabber->grab(clr, depth, ts) ;
 
-    bool grab(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ>
-&pc)
-    {
-        certh_libs::OpenniCapture srv;
+	cv::imwrite(str(boost::format("/tmp/rgb_%03d.png") % countRGBD ), clr) ;
+	cv::imwrite(str(boost::format("/tmp/depth_%03d.png") % countRGBD ), depth) ;
+	countRGBD++;
+	cout << "RGBD grabbed " << endl ;
 
-        if (client.call(srv))
-        {
-            if ( srv.response.success )
-            {
+	grabber->disconnect() ;
 
-                // Save stamps for info
-                ros::Time stamp_rgb = srv.response.rgb.header.stamp;
-                ros::Time stamp_depth = srv.response.depth.header.stamp;
-                ros::Time stamp_cloud = srv.response.cloud.header.stamp;
+}
 
-                cv_bridge::CvImagePtr rgb_ = cv_bridge::toCvCopy(srv.response.rgb, enc::BGR8);
-                cv_bridge::CvImagePtr depth_ =cv_bridge::toCvCopy(srv.response.depth, "");
+void grabpc(camera_helpers::OpenNICapturePointCloud *grabber)
+{
 
-                pcl::fromROSMsg(srv.response.cloud, pc) ;
+    pcl::PointCloud<pcl::PointXYZRGB> cloud ;
+    ros::Time ts ;
 
-                rgb = rgb_->image ;
-                depth = depth_->image ;
+	grabber->grab(cloud, ts) ;
 
-                return true ;
-            }
-            else return false ;
-         }
-        else return false ;
+	pcl::io::savePCDFileASCII(str(boost::format("/tmp/cloud_%03d.pcd") % countPC ), cloud) ;
+	countPC++;
+    cout << "PC grabbed " << endl ;
 
-    }
+    grabber->disconnect() ;
 
-private:
+}
 
-    ros::NodeHandle nh ;
-    ros::ServiceClient client ;
-
-};
 bool getRobotState(arm_navigation_msgs::RobotState & rs) {
 	ros::service::waitForService("/environment_server/get_robot_state");
 	arm_navigation_msgs::GetRobotState r;
@@ -115,14 +93,6 @@ arm_navigation_msgs::MotionPlanRequest createPlan() {
 	req.goal_constraints.joint_constraints[4].position = (0.1/4720)*(-30711);
 	req.goal_constraints.joint_constraints[5].position = (3.14/-63046)*(-70065);
 	
-//~ old ones
-	//~ req.goal_constraints.joint_constraints[0].position = (0.1/8223)*36677;
-	//~ req.goal_constraints.joint_constraints[1].position = (0.1/7450)*54346;
-	//~ req.goal_constraints.joint_constraints[2].position = (0.1/7887)*82754;
-	//~ req.goal_constraints.joint_constraints[3].position = (0.1/5704)*12122;
-	//~ req.goal_constraints.joint_constraints[4].position = (0.1/4720)*(-21262);
-	//~ req.goal_constraints.joint_constraints[5].position = (3.14/-63046)*(-70065);
-
 
 return req;
 }
@@ -157,6 +127,30 @@ arm_navigation_msgs::MotionPlanRequest createRotation(double tAxis) {
 return req;
 }
 
+geometry_msgs::Pose getPose(){
+
+    geometry_msgs::Pose pose;
+    tf::TransformListener listener;
+    tf::StampedTransform transform;
+    try {
+        listener.waitForTransform("base_link", "r1_ee", ros::Time(0), ros::Duration(10.0) );
+        listener.lookupTransform("base_link", "r1_ee", ros::Time(0), transform);
+    } catch (tf::TransformException ex) {
+        ROS_ERROR("%s",ex.what());
+    }
+    pose.position.x=transform.getOrigin().x();
+    pose.position.y=transform.getOrigin().y();
+    pose.position.z=transform.getOrigin().z();
+
+    pose.orientation.x=transform.getRotation().x();
+    pose.orientation.y=transform.getRotation().y();
+    pose.orientation.z=transform.getRotation().z();
+    pose.orientation.w=transform.getRotation().w();
+    cout<< "\n POSE \n";
+    cout<<"point = ("<< transform.getOrigin().x()<< " , "<<transform.getOrigin().y()<< " , " <<transform.getOrigin().z() << " )\n";
+    cout<<"orientation = ("<< transform.getRotation().x()<< " , "<<transform.getRotation().y()<< " , " <<transform.getRotation().z() << " , " <<transform.getRotation().w() << " )\n";
+    return pose;
+}
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "move_joint_r1");
@@ -181,7 +175,7 @@ int main(int argc, char **argv) {
 		move.waitForServer();
 		control_msgs::FollowJointTrajectoryGoal goal;
 		goal.trajectory = mp.response.joint_trajectory;
-		move.sendGoal(goal);
+        move.sendGoal(goal);
 		bool finished_within_time = move.waitForResult(ros::Duration(45.0));
 		if (!finished_within_time) {
 			move.cancelGoal();
@@ -202,7 +196,7 @@ int main(int argc, char **argv) {
 		ROS_WARN("Can't plan trajectory: %s", arm_navigation_msgs::armNavigationErrorCodeToString(mp.response.error_code).data());
 	}
 	
-	
+
 // Making the rotation 	
 
 	mp.request.motion_plan_req = createRotation(3.15);
@@ -224,41 +218,30 @@ int main(int argc, char **argv) {
 		control_msgs::FollowJointTrajectoryGoal goal;
 		goal.trajectory = mp.response.joint_trajectory;
 		move.sendGoal(goal);
-		bool finished_within_time = move.waitForResult(ros::Duration(45.0));
-		if (!finished_within_time) {
-			move.cancelGoal();
-			ROS_INFO("Timed out achieving goal");
-		} else {
-			actionlib::SimpleClientGoalState state = move.getState();
-			bool success = (state == actionlib::SimpleClientGoalState::SUCCEEDED);
-			if (success)
-				ROS_INFO("Action finished: %s", state.toString().c_str());
-			else {
-				ROS_INFO("Action failed: %s", state.toString().c_str());
-				ROS_WARN("Addition information: %s", state.text_.c_str());
-				control_msgs::FollowJointTrajectoryResult r;
-				ROS_WARN("Error code: %d", move.getResult()->error_code);
-			}
-		}
+
+        geometry_msgs::Pose r1GripperPose;
+        arm_navigation_msgs::RobotState currState;
+        while (ros::ok() )
+        {
+			getRobotState(currState);
+			//~ camera_helpers::OpenNICaptureRGBD grabber("xtion3") ;
+			//~ grabber.connect(grab) ;
+//~ 
+			//~ camera_helpers::OpenNICapturePointCloud grabber2("xtion3") ;
+			//~ grabber2.connect(grabpc) ;
+			
+            r1GripperPose = getPose();
+            
+            actionlib::SimpleClientGoalState state = move.getState() ;
+            bool success = (state == actionlib::SimpleClientGoalState::SUCCEEDED);
+            if (success)
+                 break;
+        }
 	} else {
 		ROS_WARN("Can't plan trajectory: %s", arm_navigation_msgs::armNavigationErrorCodeToString(mp.response.error_code).data());
 	}
 	//~ 
 	
-	tf::TransformListener listener;
-    tf::StampedTransform transform;
-    
-	try {
-		listener.waitForTransform("base_link", "r1_ee", ros::Time(0), ros::Duration(10.0) );
-		listener.lookupTransform("base_link", "r1_ee", ros::Time(0), transform);
-	} catch (tf::TransformException ex) {
-		ROS_ERROR("%s",ex.what());
-	}
-
-    
-	cout<<"------->"<< transform.getOrigin().x()<< "\n " << "------->"<<transform.getOrigin().y()<< "\n"<<"------->" <<transform.getOrigin().z() << "\n";
-
-
 //Set servo power off
 	clopema_motoros::SetPowerOff soff;
 	soff.request.force = false;
