@@ -4,27 +4,6 @@
 #include <highgui.h>
 #include <pcl/io/pcd_io.h>
 
-void grab(camera_helpers::OpenNICaptureRGBD *grabber)
-{
-
-    cv::Mat clr, depth ;
-    ros::Time ts ;
-
-    std::cout << "start grabbing" << std::endl ;
-    for(int i=0 ; i<10 ; i++ )
-    {
-        grabber->grab(clr, depth, ts) ;
-
-        cv::imwrite(str(boost::format("/tmp/rgb_%03d.png") % i), clr) ;
-        cv::imwrite(str(boost::format("/tmp/depth_%03d.png") % i), depth) ;
-
-        ros::Duration(1).sleep() ;
-    }
-    std::cout << "finished" << std::endl ;
-
-    grabber->disconnect() ;
-
-}
 
 void grabpc(camera_helpers::OpenNICapturePointCloud *grabber)
 {
@@ -52,13 +31,34 @@ int main(int argc, char *argv[])
 {
     ros::init(argc, argv, "openni_capture_example");
 
-    camera_helpers::OpenNICaptureRGBD grabber("xtion3") ;
-
-    grabber.connect(grab) ;
-
     camera_helpers::OpenNICapturePointCloud grabber2("xtion3") ;
 
-    grabber2.connect(grabpc) ;
+    grabber2.connect(boost::bind( &grabpc, &grabber2 )) ;
+
+    camera_helpers::OpenNICaptureRGBD grabber("xtion3") ;
+
+    if ( grabber.connect() )
+    {
+        std::cout << "start grabbing RGBD" << std::endl ;
+
+        cv::Mat clr, depth ;
+        ros::Time ts ;
+
+        for(int i=0 ; i<10 ; i++ )
+        {
+            grabber.grab(clr, depth, ts) ;
+
+            cv::imwrite(str(boost::format("/tmp/rgb_%03d.png") % i), clr) ;
+            cv::imwrite(str(boost::format("/tmp/depth_%03d.png") % i), depth) ;
+
+            ros::Duration(1).sleep() ;
+        }
+
+        std::cout << "finished RGBD" << std::endl ;
+
+        grabber.disconnect();
+
+    }
 
     ros::spin() ;
 
