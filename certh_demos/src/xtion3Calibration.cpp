@@ -11,7 +11,7 @@
 //-----openni----
 #include <ros/ros.h>
 
-#include "/home/clopema/ROS/clopema_stack/certh_libs/srv_gen/cpp/include/certh_libs/OpenniCapture.h"
+//#include "/home/clopema/ROS/clopema_stack/certh_libs/srv_gen/cpp/include/certh_libs/OpenniCapture.h"
 
 // OpenCV includes
 #include <opencv2/highgui/highgui.hpp>

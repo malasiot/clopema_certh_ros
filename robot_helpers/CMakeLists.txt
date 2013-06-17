@@ -20,6 +20,3 @@ rosbuild_add_boost_directories()
 
 rosbuild_add_library(robot_helpers src/RobotHelpers.cpp src/RobotUtils.cpp)
 
-rosbuild_add_executable(test_robot src/test_robot.cpp)
-target_link_libraries(test_robot robot_helpers)
-rosbuild_link_boost(test_robot signals)
