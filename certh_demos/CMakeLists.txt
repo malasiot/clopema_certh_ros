@@ -40,6 +40,7 @@ rosbuild_add_executable(send_traj src/send_traj.cpp)
 rosbuild_add_executable(circleTraj src/circleTraj.cpp)
 target_link_libraries(circleTraj clopema_move)
 rosbuild_add_boost_directories()
+
 rosbuild_add_executable(rsp src/main.cpp)
 rosbuild_link_boost(rsp signals)
 
@@ -47,7 +48,9 @@ rosbuild_add_executable(xtion3Calibration src/xtion3Calibration.cpp)
 target_link_libraries(xtion3Calibration clopema_move)
 rosbuild_link_boost(xtion3Calibration signals)
 
-
+rosbuild_add_executable(rotate_and_grab src/rotate_and_grab.cpp)
+target_link_libraries(rotate_and_grab clopema_move)
+rosbuild_link_boost(rotate_and_grab signals)
 
 rosbuild_add_executable(grippers_testing src/grippers_testing.cpp)
 
