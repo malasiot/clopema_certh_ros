@@ -14,7 +14,7 @@
 //-----openni----
 #include <ros/ros.h>
 
-#include "/home/clopema/ROS/clopema_stack/certh_libs/srv_gen/cpp/include/certh_libs/OpenniCapture.h"
+#include <camera_helpers/OpenNICapture.h>
 
 // OpenCV includes-----
 #include <opencv2/highgui/highgui.hpp>
@@ -42,7 +42,7 @@ btMatrix3x3 rotMat(
 (btScalar) 0, (btScalar) 1, (btScalar) 0);
 
 geometry_msgs::Quaternion G_Orientation;
-
+/*
 class OpenniGrabber {
 
 public:
@@ -88,7 +88,7 @@ private:
     ros::ServiceClient client ;
 
 };
-
+*/
 
 void mouse_callback( int event, int x, int y, int flags, void* param){
     if(event == CV_EVENT_LBUTTONDOWN){
@@ -352,7 +352,9 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "move_pose_dual");
     ros::NodeHandle nh;
 
-    OpenniGrabber grabber ;
+    camera_helpers::OpenNICaptureAll grabber("xtion3") ;
+    grabber.connect() ;
+
     cv::Mat rgb, depth ;
     pcl::PointCloud<pcl::PointXYZ> pc ;
     cv::Mat R = cv::Mat(4, 4, CV_32FC1, cv::Scalar::all(0));
@@ -375,7 +377,9 @@ int main(int argc, char **argv) {
 
     while(!stop){
         ZFar = false;
-        if ( grabber.grab(rgb, depth, pc) ){
+
+        ros::Time ts ;
+        if ( grabber.grab(rgb, depth, pc, ts) ){
             cont = false;
             while(!cont){
                 cv::imshow("calibration", rgb);

@@ -25,12 +25,13 @@ using namespace std ;
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/ros/conversions.h>
+#include <Eigen/Geometry>
 
 bool cont;
 int cx, cy;
 bool stop=false;
 namespace enc = sensor_msgs::image_encodings;
-
+/*
 class OpenniGrabber {
 
 public:
@@ -77,7 +78,7 @@ private:
     ros::ServiceClient client ;
 
 };
-
+*/
 int setPose(float x,float y ,float z ){
 	ClopemaMove cmove;
 
@@ -146,6 +147,17 @@ void mouse_callback( int event, int x, int y, int flags, void* param){
 	
 }
 
+float points[9][3] = {
+-0.5, 	-0.9,   1.5,
+-0.15,   -0.9,   1.5,
+0.2,  	-0.9,   1.5,
+-0.5, 	-1.1,	1.2,
+-0.15,   -1.1, 	1.2,
+0.2,  	-1.1, 	1.2,
+-0.5, 	-1.3, 	0.9,
+-0.15,   -1.3, 	0.9,
+0.2,  	-1.3, 	0.9
+} ;
 
 void grabpc(camera_helpers::OpenNICaptureAll *grabber)
 {
@@ -154,29 +166,26 @@ void grabpc(camera_helpers::OpenNICaptureAll *grabber)
     pcl::PointCloud<pcl::PointXYZ> pc ;
     ros::Time ts ;
     
-    
+
 	//~ Input the points from the file
-	float points[9][3];
+
 	cv::Mat meanRobot = cv::Mat(3, 1, CV_32FC1, cv::Scalar::all(0));	
-	ifstream stream;
-	stream.open("/home/clopema/ROS/clopema_stack/clopema_planning_tutorials/files/calibrationPoints.txt");
-	if (stream.is_open()){		
+
+
 		for (unsigned int i=0;i<9;i++){			
-			for (unsigned int j=0;j<3;j++){
-				stream >> points[i][j];
+            for (unsigned int j=0;j<3;j++){
+
 				meanRobot.at<float>(j, 0) += (points[i][j]/9.0f);				
 			}
 		}					
-	}
-	stream.close();
-    
+
     //~ Seting the Points and move the robot
 	cvNamedWindow("calibration");
 	cvSetMouseCallback( "calibration", mouse_callback, NULL);			
 	float xtionPoints[9][3];
 	cv::Mat meanXtion = cv::Mat(3, 1, CV_32FC1, cv::Scalar::all(0));	
 	for (unsigned int i=0;i<9;i++){
-            setPose(points[i][0],points[i][1],points[i][2]);
+           setPose(points[i][0],points[i][1],points[i][2]);
 			
             if ( grabber->grab(rgb, depth, pc, ts) )
 			{
@@ -217,20 +226,36 @@ void grabpc(camera_helpers::OpenNICaptureAll *grabber)
 		H += Pa * Pb;				
 	}
 	cv::SVD svd(H, cv::SVD::FULL_UV);
+
+    cv::Mat tr(4, 4, CV_32FC1, cv::Scalar::all(0)) ;
 	cv::Mat R = svd.vt.t() * svd.u.t();	
 	cv::Mat t = (-1)*R*meanXtion + meanRobot;
 	
-	ofstream fout;
-	fout.open("/home/clopema/ROS/clopema_stack/clopema_planning_tutorials/files/CalibMat.txt");
-	
-	for(int i=0; i<3; ++i){
-		for(int j=0; j<3; ++j)
-			fout << R.at<float>(i, j) << " ";
-		fout << t.at<float>(i, 0) << std::endl;
+
+    for(int i=0; i<3; ++i)
+        for(int j=0; j<3; ++j)
+            tr.at<float>(i, j) = R.at<float>(i, j) ;
+
+    for(int i=0 ; i<3 ; i++)
+        tr.at<float>(i, 3) = t.at<float>(i, 0) ;
+
+    tr.at<float>(3, 3) = 1.0 ;
+
+    cv::Mat trInv = tr.inv() ;
+
+     string outFolder = getenv("HOME") ;
+     outFolder += "/.ros/clopema_calibration/handeye/xtion3/calib.txt" ;
+
+     ofstream fout(outFolder.c_str());
+
+    for(int i=0; i<4; ++i){
+        for(int j=0; j<4; ++j)
+            fout << trInv.at<float>(i, j) << " " ;
+        fout << endl;
+        //fout << t.at<float>(i, 0) << std::endl;
 	}
-	fout << 0 << " " << 0 << " " << 0 << " " << 1 << std::endl;
-	
-	fout.close();
+
+
 	
 	/*
 
@@ -253,17 +278,12 @@ int main(int argc, char **argv) {
 	ros::init(argc, argv, "move_pose_dual");
 	ros::NodeHandle nh;
 
-	//grabbing the image
-	OpenniGrabber grabber ;
 
-    cv::Mat rgb, depth ;
-    pcl::PointCloud<pcl::PointXYZ> pc ;
 
    camera_helpers::OpenNICaptureAll grabber2("xtion3") ;
-   grabber2.connect(grabpc) ;
-    
-	
-   ros::spin() ;
+   grabber2.connect() ;
+
+   grabpc(&grabber2) ;
 
 
 	return 1;
