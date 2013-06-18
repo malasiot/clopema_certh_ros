@@ -19,8 +19,8 @@
   <depend package="nodelet"/>
   <depend package="openni_camera"/>
   <depend package="cv_bridge"/>
-	<depend package="camera_helpers"/>
-	<depend package="robot_helpers"/>
+  <depend package="camera_helpers"/>
+  <depend package="robot_helpers"/>
 </package>
 
 

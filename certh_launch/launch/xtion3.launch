@@ -20,6 +20,8 @@ Modified:   November 20, 2012 15:44
     <!-- Include common CloPeMa configuration. -->
     <include file="$(find clopema_config)/launch/clopema.launch"/>
 
+	<param name="/clopema_calibration/handeye/folder" value="certh_launch/handeye"/>
+
     <!-- Include CloPeMa openni launch file for kinect on the first arm. -->
     <group>
         <include file="$(find clopema_perception_launch)/launch/openni.launch">
