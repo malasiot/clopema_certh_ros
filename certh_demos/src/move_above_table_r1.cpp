@@ -26,8 +26,9 @@ void grab(camera_helpers::OpenNICaptureRGBD *grabber)
 
     cv::Mat clr, depth ;
     ros::Time ts ;
+    image_geometry::PinholeCameraModel cm ;
 
-	grabber->grab(clr, depth, ts) ;
+    grabber->grab(clr, depth, ts, cm) ;
 
 	cv::imwrite(str(boost::format("/tmp/rgb_%03d.png") % countRGBD ), clr) ;
 	cv::imwrite(str(boost::format("/tmp/depth_%03d.png") % countRGBD ), depth) ;

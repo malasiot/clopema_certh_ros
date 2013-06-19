@@ -95,11 +95,6 @@ bool OpenNICaptureImpl::connect(ros::Duration timeout)
 
     setup() ;
 
-    // Subscribe to rgb and depth streams
-
-//    rgb_sub.subscribe(nh, "/" + prefix + "/rgb/image_color", 1);
-//    depth_sub.subscribe(nh, "/" + prefix + "/depth_registered/image_rect", 1);
-
     // start spinner to get frames
 
     spinner.start() ;
@@ -177,13 +172,13 @@ class OpenNICaptureImplRGBD: public OpenNICaptureImpl
 public:
 
     OpenNICaptureImplRGBD(const string &prefix_): OpenNICaptureImpl(prefix_),
-        sync(sync_policies::ApproximateTime<Image, Image>(10), rgb_sub, depth_sub)
+        sync(sync_policies::ApproximateTime<Image, Image, CameraInfo>(10), rgb_sub, depth_sub, camera_sub)
     {
-        sync.registerCallback(boost::bind(&OpenNICaptureImplRGBD::input_callback, this, _1, _2));
+        sync.registerCallback(boost::bind(&OpenNICaptureImplRGBD::input_callback, this, _1, _2, _3));
     }
 
 
-    bool grab(cv::Mat &clr, cv::Mat &depth, ros::Time &t)
+    bool grab(cv::Mat &clr, cv::Mat &depth, ros::Time &t, image_geometry::PinholeCameraModel &cm)
     {
         boost::unique_lock<boost::mutex> lock_ (image_lock) ;
 
@@ -196,6 +191,8 @@ public:
 
         clr = rgb_->image ;
         depth = depth_->image ;
+        cm.fromCameraInfo(tmp_camera) ;
+
         t = tmp_depth->header.stamp ;
 
         return true ;
@@ -208,27 +205,32 @@ private:
     {
         // Subscribe to rgb and depth streams
 
-        rgb_sub.subscribe(nh, "/" + prefix + "/rgb/image_color", 1);
+        rgb_sub.subscribe(nh, "/" + prefix + "/rgb/image_rect_color", 1);
         depth_sub.subscribe(nh, "/" + prefix + "/depth_registered/image_rect", 1);
+        camera_sub.subscribe(nh, "/" + prefix + "/depth_registered/camera_info", 1);
     }
 
     void shutdown()
     {
         rgb_sub.unsubscribe();
         depth_sub.unsubscribe();
+        camera_sub.unsubscribe() ;
     }
 
 
     sensor_msgs::ImageConstPtr tmp_rgb, tmp_depth ;
+    sensor_msgs::CameraInfoConstPtr tmp_camera ;
     message_filters::Subscriber<sensor_msgs::Image> rgb_sub, depth_sub ;
-    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> > sync ;
+    message_filters::Subscriber<sensor_msgs::CameraInfo> camera_sub ;
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::CameraInfo> > sync ;
 
-    void input_callback(const ImageConstPtr& rgb, const ImageConstPtr& depth)
+    void input_callback(const ImageConstPtr& rgb, const ImageConstPtr& depth, const CameraInfoConstPtr &camera)
     {
         boost::unique_lock<boost::mutex> lock_ (image_lock) ;
         // Store current images
         tmp_rgb = rgb ;
         tmp_depth = depth ;
+        tmp_camera = camera ;
         dataReady = true ;
     }
 
@@ -308,13 +310,13 @@ class OpenNICaptureImplAll: public OpenNICaptureImpl
 public:
 
     OpenNICaptureImplAll(const string &prefix_): OpenNICaptureImpl(prefix_),
-        sync(sync_policies::ApproximateTime<Image, Image, PointCloud2>(10), rgb_sub, depth_sub, cloud_sub)
+        sync(sync_policies::ApproximateTime<Image, Image, PointCloud2, CameraInfo>(10), rgb_sub, depth_sub, cloud_sub, camera_sub)
     {
-        sync.registerCallback(boost::bind(&OpenNICaptureImplAll::input_callback, this, _1, _2, _3));
+        sync.registerCallback(boost::bind(&OpenNICaptureImplAll::input_callback, this, _1, _2, _3, _4));
     }
 
 
-    bool grab(cv::Mat &clr, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, ros::Time &ts)
+    bool grab(cv::Mat &clr, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, ros::Time &ts, image_geometry::PinholeCameraModel &cm)
     {
         boost::unique_lock<boost::mutex> lock_ (image_lock) ;
 
@@ -327,6 +329,7 @@ public:
 
         clr = rgb_->image ;
         depth = depth_->image ;
+        cm.fromCameraInfo(tmp_camera) ;
         ts = tmp_cloud->header.stamp ;
 
         return true ;
@@ -339,6 +342,7 @@ private:
         cloud_sub.subscribe(nh, "/" + prefix + "/depth_registered/points", 1);
         rgb_sub.subscribe(nh, "/" + prefix + "/rgb/image_color", 1);
         depth_sub.subscribe(nh, "/" + prefix + "/depth_registered/image_rect", 1);
+        camera_sub.subscribe(nh, "/" + prefix + "/depth_registered/camera_info", 1);
 
     }
 
@@ -347,22 +351,26 @@ private:
         cloud_sub.unsubscribe();
         rgb_sub.unsubscribe();
         depth_sub.unsubscribe();
+        camera_sub.unsubscribe() ;
     }
 
 
     sensor_msgs::ImageConstPtr tmp_rgb, tmp_depth;
+    sensor_msgs::CameraInfoConstPtr tmp_camera;
     sensor_msgs::PointCloud2ConstPtr tmp_cloud ;
     message_filters::Subscriber<sensor_msgs::Image> rgb_sub, depth_sub ;
     message_filters::Subscriber<sensor_msgs::PointCloud2> cloud_sub ;
-    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::PointCloud2> > sync ;
+    message_filters::Subscriber<sensor_msgs::CameraInfo> camera_sub ;
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::PointCloud2, sensor_msgs::CameraInfo> > sync ;
 
-    void input_callback(const ImageConstPtr &rgb, const ImageConstPtr &depth, const PointCloud2ConstPtr& cloud)
+    void input_callback(const ImageConstPtr &rgb, const ImageConstPtr &depth, const PointCloud2ConstPtr& cloud, const CameraInfoConstPtr &camera)
     {
         boost::unique_lock<boost::mutex> lock_ (image_lock) ;
         // Store current images
         tmp_rgb = rgb ;
         tmp_depth = depth ;
         tmp_cloud = cloud ;
+        tmp_camera = camera ;
         dataReady = true ;
     }
 
@@ -400,9 +408,9 @@ OpenNICaptureRGBD::OpenNICaptureRGBD(const string &prefix_) {
     impl_ = new OpenNICaptureImplRGBD(prefix_) ;
 }
 
-bool OpenNICaptureRGBD::grab(cv::Mat &clr, cv::Mat &depth, ros::Time &t)
+bool OpenNICaptureRGBD::grab(cv::Mat &clr, cv::Mat &depth, ros::Time &t, image_geometry::PinholeCameraModel &cm)
 {
-    return ((OpenNICaptureImplRGBD *)impl_)->grab(clr, depth, t) ;
+    return ((OpenNICaptureImplRGBD *)impl_)->grab(clr, depth, t, cm) ;
 }
 
 
@@ -430,9 +438,9 @@ OpenNICaptureAll::OpenNICaptureAll(const string &prefix_)  {
     impl_ = new OpenNICaptureImplAll(prefix_) ;
 }
 
-bool OpenNICaptureAll::grab(cv::Mat &clr, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &cloud, ros::Time &ts)
+bool OpenNICaptureAll::grab(cv::Mat &clr, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &cloud, ros::Time &ts, image_geometry::PinholeCameraModel &cm)
 {
-    return ((OpenNICaptureImplAll *)impl_)->grab(clr, depth, cloud, ts) ;
+    return ((OpenNICaptureImplAll *)impl_)->grab(clr, depth, cloud, ts, cm) ;
 }
 
 
