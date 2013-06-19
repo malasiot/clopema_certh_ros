@@ -34,7 +34,7 @@ void doCapture(camera_helpers::OpenNICaptureAll *grabber)
 {
     bool _stoped = false ;
 
-    ofstream cap_data("/tmp/cap.txt") ;
+    ofstream cap_data("/tmp/rot/cap.txt") ;
 
     tf::TransformListener listener(ros::Duration(1.0));
 
@@ -52,24 +52,26 @@ void doCapture(camera_helpers::OpenNICaptureAll *grabber)
             pcl::PointCloud<pcl::PointXYZ> pc ;
             ros::Time ts ;
 
-            string rgbFileName = "/tmp/" + str(boost::format("cap_rgb_%06d.png") % counter) ;
-            string depthFileName = "/tmp/" + str(boost::format("cap_depth_%06d.png") % counter) ;
-            string cloudFileName = "/tmp/" + str(boost::format("cap_cloud_%06d.pcd") % counter) ;
-
+            string rgbFileName = "/tmp/rot/" + str(boost::format("cap_rgb_%06d.png") % counter) ;
+            string depthFileName = "/tmp/rot/" + str(boost::format("cap_depth_%06d.png") % counter) ;
+            string cloudFileName = "/tmp/rot/" + str(boost::format("cap_cloud_%06d.pcd") % counter) ;
             if ( grabber->grab(clr, depth, pc, ts) )
             {
 
                 cout << counter << endl ;
 
                 tf::StampedTransform transform;
+                tf::Quaternion Q;
+
                 Eigen::Affine3d pose ;
 
                 try {
-                    //listener.waitForTransform("r1_ee", "xtion3_rgb_optical_frame", ts, ros::Duration(1) );
-                    //listener.lookupTransform("r1_ee", "xtion3_rgb_optical_frame", ts, transform);
+                    listener.waitForTransform("r1_ee", "xtion3_rgb_optical_frame", ts, ros::Duration(1) );
+                    listener.lookupTransform("r1_ee", "xtion3_rgb_optical_frame", ts, transform);
 
-                    listener.waitForTransform("r1_ee", "r1_tip_link", ts, ros::Duration(1) );
-                    listener.lookupTransform("r1_ee", "r1_tip_link", ts, transform);
+//                    listener.waitForTransform("r1_ee", "base_link", ts, ros::Duration(1) );
+//                    listener.lookupTransform("r1_ee", "base_link", ts, transform);
+
                     cv::imwrite(rgbFileName, clr) ;
                     cv::imwrite(depthFileName, depth) ;
                     pcl::io::savePCDFileBinary(cloudFileName, pc) ;
@@ -100,7 +102,7 @@ void getRotationAxis(){
     listenOnce.lookupTransform("r1_ee", "xtion3_rgb_optical_frame", time, rotationAxis);
 
     ofstream rotAxis ;
-    rotAxis.open("/tmp/rotAxis.txt") ;
+    rotAxis.open("/tmp/rot/rotAxis.txt") ;
     rotAxis <<"x="<< rotationAxis.getOrigin().x() << " y=" << rotationAxis.getOrigin().y() <<" z=" << rotationAxis.getOrigin().z()<< endl ;
     rotAxis.close();
 }

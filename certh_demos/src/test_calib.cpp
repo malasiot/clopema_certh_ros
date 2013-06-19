@@ -4,6 +4,7 @@
 #include <clopema_arm_navigation/ClopemaLinearInterpolation.h>
 #include <clopema_motoros/SetGripperState.h>
 #include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 //-----grabber-----
 
 #include <nodelet/nodelet.h>
@@ -28,6 +29,7 @@ using namespace std ;
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/ros/conversions.h>
+
 
 bool cont;
 int cx, cy;
@@ -185,7 +187,7 @@ std::vector<geometry_msgs::Point> calculateCirclePoints(geometry_msgs::Point cen
     std::vector<geometry_msgs::Point> points;
     float currTheta;
     float step;
-    float theta;
+
     float tmp_x, tmp_z;
     geometry_msgs::Point point;
 
@@ -193,7 +195,7 @@ std::vector<geometry_msgs::Point> calculateCirclePoints(geometry_msgs::Point cen
         currTheta =M_PI- atan((currentPos.x-center.x)/ (center.z-currentPos.z));
         step=3.14/2/steps;//(abs(M_PI-currTheta))/(float)steps;
         cout<< "step  ----> " << step <<"\n ";
-        for (unsigned int i = 0; i <steps; i ++){
+        for ( int i = 0; i <steps; i ++){
 
             tmp_x=r*sin(currTheta);
             tmp_z=r*cos(currTheta);
@@ -208,6 +210,7 @@ std::vector<geometry_msgs::Point> calculateCirclePoints(geometry_msgs::Point cen
         }
         return points;
     }
+    return points;
 }
 
 void moveTo(geometry_msgs::Pose pose){
@@ -307,7 +310,7 @@ void moveThrough(	std::vector<geometry_msgs::Point> traj){
         wholeTraj.points.insert(wholeTraj.points.end(), mp.response.joint_trajectory.points.begin(), mp.response.joint_trajectory.points.end());
     }
 
-    ROS_INFO("Executing trajectory size: %d", wholeTraj.points.size());
+    //ROS_INFO("Executing trajectory size: %d", wholeTraj.points.size());
     control_msgs::FollowJointTrajectoryGoal goal;
     goal.trajectory = wholeTraj;
     cmove.doGoal(goal);
@@ -349,6 +352,7 @@ void makeCircle(){
     moveThrough(traj);
 }
 int main(int argc, char **argv) {
+
     ros::init(argc, argv, "move_pose_dual");
     ros::NodeHandle nh;
 
@@ -358,17 +362,28 @@ int main(int argc, char **argv) {
     cv::Mat rgb, depth ;
     pcl::PointCloud<pcl::PointXYZ> pc ;
     cv::Mat R = cv::Mat(4, 4, CV_32FC1, cv::Scalar::all(0));
-    ifstream f;
-    f.open("/home/clopema/ROS/clopema_stack/clopema_planning_tutorials/files/CalibMat.txt");
-    if(f.is_open()){
-        for(int i=0; i<4; ++i)
-            for(int j=0; j<4; ++j)
-                f >> R.at<float>(i, j);
 
-    }else{
-        cout << "Cannot open CalibMat.txt";
-        return(-1);
+
+
+
+
+    tf::TransformListener listener(ros::Duration(1.0));
+    ros::Time ts ;
+    tf::StampedTransform transform;
+    Eigen::Affine3d pose;
+    Eigen::Matrix4d t = pose.matrix() ;
+
+
+    try {
+        listener.waitForTransform("xtion3_rgb_optical_frame", "base_link", ts, ros::Duration(1) );
+        listener.lookupTransform("xtion3_rgb_optical_frame", "base_link", ts, transform);
+        tf::TransformTFToEigen(transform, pose);
     }
+    catch (tf::TransformException ex){
+      ROS_ERROR("%s",ex.what());
+    }
+
+
 
     cvNamedWindow("calibration");
     cvSetMouseCallback( "calibration", mouse_callback, NULL);
@@ -383,7 +398,7 @@ int main(int argc, char **argv) {
             cont = false;
             while(!cont){
                 cv::imshow("calibration", rgb);
-                int k = cv::waitKey(1);
+                //int k = cv::waitKey(1);
                 if (stop)
                     return 0;
             }
@@ -394,7 +409,7 @@ int main(int argc, char **argv) {
             pM.at<float>(2,0) = p.z;
             pM.at<float>(3,0) = 1;
 
-            targetP = R*pM;
+            targetP =R*pM;
 
             //~ cout << cx << " " << cy << std::endl << p.x << " " << p.x << " " << p.z << std::endl;
 

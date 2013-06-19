@@ -28,7 +28,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
-
+find_package(Eigen)
 
 #Beginer - JOINT
 rosbuild_add_executable(move_joint_r1 src/move_joint_r1.cpp)
@@ -54,6 +54,7 @@ rosbuild_link_boost(rotate_and_grab signals)
 
 rosbuild_add_executable(grippers_testing src/grippers_testing.cpp)
 
+include_directories(${Eigen_INCLUDE_DIRS})
 rosbuild_add_executable(test_calib src/test_calib.cpp)
 target_link_libraries(test_calib clopema_move)
 
