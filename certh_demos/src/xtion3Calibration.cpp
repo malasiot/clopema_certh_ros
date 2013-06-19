@@ -165,6 +165,7 @@ void grabpc(camera_helpers::OpenNICaptureAll *grabber)
     cv::Mat rgb, depth ;
     pcl::PointCloud<pcl::PointXYZ> pc ;
     ros::Time ts ;
+     image_geometry::PinholeCameraModel cm ;
     
 
 	//~ Input the points from the file
@@ -187,7 +188,7 @@ void grabpc(camera_helpers::OpenNICaptureAll *grabber)
 	for (unsigned int i=0;i<9;i++){
            setPose(points[i][0],points[i][1],points[i][2]);
 			
-            if ( grabber->grab(rgb, depth, pc, ts) )
+            if ( grabber->grab(rgb, depth, pc, ts, cm) )
 			{
                 cont = false;
 				while(!cont){		

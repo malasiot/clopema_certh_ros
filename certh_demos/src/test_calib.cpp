@@ -379,7 +379,9 @@ int main(int argc, char **argv) {
         ZFar = false;
 
         ros::Time ts ;
-        if ( grabber.grab(rgb, depth, pc, ts) ){
+         image_geometry::PinholeCameraModel cm ;
+
+        if ( grabber.grab(rgb, depth, pc, ts, cm) ){
             cont = false;
             while(!cont){
                 cv::imshow("calibration", rgb);

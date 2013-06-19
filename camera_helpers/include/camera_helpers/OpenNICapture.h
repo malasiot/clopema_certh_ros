@@ -7,6 +7,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <boost/function.hpp>
+#include <image_geometry/pinhole_camera_model.h>
 
 namespace camera_helpers {
 
@@ -36,7 +37,7 @@ protected:
 
 };
 
-// capture an RGB abd Depth image pair
+// capture an RGB abd Depth image pair (uses registered frame)
 
 class OpenNICaptureRGBD: public OpenNICaptureBase {
 
@@ -45,8 +46,9 @@ public:
 	// Create a grabber for the specified camera prefix e.g. xtion2
     OpenNICaptureRGBD(const std::string &prefix) ;
 
-	// Grab images
-    bool grab(cv::Mat &clr, cv::Mat &depth, ros::Time &ts) ;
+    // Grab images. Also get the timestamp the depth image and the pinhole camera model of the (registered) depth frame
+
+    bool grab(cv::Mat &clr, cv::Mat &depth, ros::Time &ts, image_geometry::PinholeCameraModel &cm) ;
 
 } ;
 
@@ -75,7 +77,7 @@ public:
     OpenNICaptureAll(const std::string &prefix) ;
 
     // Grab images
-    bool grab(cv::Mat &clr, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &cloud, ros::Time &ts) ;
+    bool grab(cv::Mat &clr, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &cloud, ros::Time &ts, image_geometry::PinholeCameraModel &cm) ;
 
 } ;
 
