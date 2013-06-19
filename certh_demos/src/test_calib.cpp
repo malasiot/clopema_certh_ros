@@ -363,15 +363,11 @@ int main(int argc, char **argv) {
     pcl::PointCloud<pcl::PointXYZ> pc ;
     cv::Mat R = cv::Mat(4, 4, CV_32FC1, cv::Scalar::all(0));
 
-
-
-
-
     tf::TransformListener listener(ros::Duration(1.0));
     ros::Time ts ;
     tf::StampedTransform transform;
     Eigen::Affine3d pose;
-    Eigen::Matrix4d t = pose.matrix() ;
+    Eigen::Matrix4d calib;
 
 
     try {
@@ -387,9 +383,10 @@ int main(int argc, char **argv) {
 
     cvNamedWindow("calibration");
     cvSetMouseCallback( "calibration", mouse_callback, NULL);
-    cv::Mat targetP = cv::Mat(4, 1, CV_32FC1, cv::Scalar::all(0));
+    //cv::Mat targetP = cv::Mat(4, 1, CV_32FC1, cv::Scalar::all(0));
 
-
+    calib=pose.matrix();
+    Eigen::Vector4d targetP;
     while(!stop){
         ZFar = false;
 
@@ -400,18 +397,16 @@ int main(int argc, char **argv) {
             cont = false;
             while(!cont){
                 cv::imshow("calibration", rgb);
-                //int k = cv::waitKey(1);
+                int k = cv::waitKey(1);
                 if (stop)
                     return 0;
             }
             pcl::PointXYZ p = pc.at(cx, cy);
-            cv::Mat pM = cv::Mat(4, 1, CV_32FC1, cv::Scalar::all(0));
-            pM.at<float>(0,0) = p.x;
-            pM.at<float>(1,0) = p.y;
-            pM.at<float>(2,0) = p.z;
-            pM.at<float>(3,0) = 1;
 
-            targetP =R*pM;
+            Eigen::Vector4d pM(p.x, p.y, p.z, 1);
+
+
+            targetP = calib.inverse()*pM;
 
             //~ cout << cx << " " << cy << std::endl << p.x << " " << p.x << " " << p.z << std::endl;
 
@@ -435,9 +430,9 @@ int main(int argc, char **argv) {
         desPos.orientation = G_Orientation;
 
         if(!ZFar){
-            desPos.position.x = targetP.at<float>(0,0);
-            desPos.position.y = targetP.at<float>(1,0)- 0.02;
-            desPos.position.z = targetP.at<float>(2,0);
+            desPos.position.x = targetP.x();
+            desPos.position.y = targetP.y()-0.03;
+            desPos.position.z = targetP.z();
             moveTo(desPos);
             setGrippersClose();
             makeCircle();
@@ -448,6 +443,8 @@ int main(int argc, char **argv) {
             desPos.position.z = 1.3;
             moveTo(desPos);
         }
+
+        cout<<"HIT ENTER TO OPEN GRIPPERS "<<endl;
         cin.ignore();
 
         setGrippersOpen();

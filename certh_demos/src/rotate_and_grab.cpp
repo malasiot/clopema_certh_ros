@@ -51,11 +51,12 @@ void doCapture(camera_helpers::OpenNICaptureAll *grabber)
             cv::Mat clr, depth ;
             pcl::PointCloud<pcl::PointXYZ> pc ;
             ros::Time ts ;
+            image_geometry::PinholeCameraModel cm;
 
             string rgbFileName = "/tmp/rot/" + str(boost::format("cap_rgb_%06d.png") % counter) ;
             string depthFileName = "/tmp/rot/" + str(boost::format("cap_depth_%06d.png") % counter) ;
             string cloudFileName = "/tmp/rot/" + str(boost::format("cap_cloud_%06d.pcd") % counter) ;
-            if ( grabber->grab(clr, depth, pc, ts) )
+            if ( grabber->grab(clr, depth, pc, ts, cm) )
             {
 
                 cout << counter << endl ;
