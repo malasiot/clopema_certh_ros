@@ -28,7 +28,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
-
+find_package(Eigen)
 
 #Beginer - JOINT
 rosbuild_add_executable(move_joint_r1 src/move_joint_r1.cpp)
@@ -40,6 +40,7 @@ rosbuild_add_executable(send_traj src/send_traj.cpp)
 rosbuild_add_executable(circleTraj src/circleTraj.cpp)
 target_link_libraries(circleTraj clopema_move)
 rosbuild_add_boost_directories()
+
 rosbuild_add_executable(rsp src/main.cpp)
 rosbuild_link_boost(rsp signals)
 
@@ -47,11 +48,14 @@ rosbuild_add_executable(xtion3Calibration src/xtion3Calibration.cpp)
 target_link_libraries(xtion3Calibration clopema_move)
 rosbuild_link_boost(xtion3Calibration signals)
 
-
+rosbuild_add_executable(rotate_and_grab src/rotate_and_grab.cpp)
+target_link_libraries(rotate_and_grab clopema_move)
+rosbuild_link_boost(rotate_and_grab signals)
 
 rosbuild_add_executable(grippers_testing src/grippers_testing.cpp)
 
-rosbuild_add_executable(test_calib src/test_calib.cpp)
+include_directories(${Eigen_INCLUDE_DIRS})
+rosbuild_add_executable(test_calib src/test_calib.cpp src/lowestPoint)
 target_link_libraries(test_calib clopema_move)
 
 #Intermediate - JOINT

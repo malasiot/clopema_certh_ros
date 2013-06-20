@@ -4,6 +4,7 @@
 #include <clopema_arm_navigation/ClopemaLinearInterpolation.h>
 #include <clopema_motoros/SetGripperState.h>
 #include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 //-----grabber-----
 
 #include <nodelet/nodelet.h>
@@ -28,6 +29,8 @@ using namespace std ;
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/ros/conversions.h>
+
+extern bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture,  Eigen::Vector3f &p, Eigen::Vector3f &n) ;
 
 bool cont;
 int cx, cy;
@@ -89,6 +92,10 @@ private:
 
 };
 */
+
+
+extern bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture,  Eigen::Vector3f &p, Eigen::Vector3f &n) ;
+
 
 void mouse_callback( int event, int x, int y, int flags, void* param){
     if(event == CV_EVENT_LBUTTONDOWN){
@@ -185,29 +192,30 @@ std::vector<geometry_msgs::Point> calculateCirclePoints(geometry_msgs::Point cen
     std::vector<geometry_msgs::Point> points;
     float currTheta;
     float step;
-    float theta;
+
     float tmp_x, tmp_z;
     geometry_msgs::Point point;
 
     if(up){
         currTheta =M_PI- atan((currentPos.x-center.x)/ (center.z-currentPos.z));
         step=3.14/2/steps;//(abs(M_PI-currTheta))/(float)steps;
-        cout<< "step  ----> " << step <<"\n ";
-        for (unsigned int i = 0; i <steps; i ++){
+      //  cout<< "step  ----> " << step <<"\n ";
+        for ( int i = 0; i <steps; i ++){
 
             tmp_x=r*sin(currTheta);
             tmp_z=r*cos(currTheta);
-            cout<< "temp_x= "<< tmp_x << " "<<"temp_z= "<< tmp_z<<"\n";
-            cout<<"theta = "<< currTheta <<"\n";
+          //  cout<< "temp_x= "<< tmp_x << " "<<"temp_z= "<< tmp_z<<"\n";
+          //  cout<<"theta = "<< currTheta <<"\n";
             currTheta-=step;
             point.x = center.x+tmp_x;
             point.z = center.z+tmp_z;
             point.y = currentPos.y;
             points.push_back(point);
-            cout<< "x= "<<point.x<<" "<< "y= "<<point.y<<" "<< "z= "<<point.z<<"\n";
+         //   cout<< "x= "<<point.x<<" "<< "y= "<<point.y<<" "<< "z= "<<point.z<<"\n";
         }
         return points;
     }
+    return points;
 }
 
 void moveTo(geometry_msgs::Pose pose){
@@ -230,7 +238,7 @@ void moveTo(geometry_msgs::Pose pose){
         desired_pose.pose = pose;
 
 
-        cout<< "\n going to --- >  "<< desired_pose.pose.position.x<< " "  << desired_pose.pose.position.y<<"  " << desired_pose.pose.position.z <<"\n";
+       // cout<< "\n going to --- >  "<< desired_pose.pose.position.x<< " "  << desired_pose.pose.position.y<<"  " << desired_pose.pose.position.z <<"\n";
 
         desired_pose.absolute_position_tolerance.x = 0.002;
         desired_pose.absolute_position_tolerance.y = 0.002;
@@ -307,7 +315,7 @@ void moveThrough(	std::vector<geometry_msgs::Point> traj){
         wholeTraj.points.insert(wholeTraj.points.end(), mp.response.joint_trajectory.points.begin(), mp.response.joint_trajectory.points.end());
     }
 
-    ROS_INFO("Executing trajectory size: %d", wholeTraj.points.size());
+    //ROS_INFO("Executing trajectory size: %d", wholeTraj.points.size());
     control_msgs::FollowJointTrajectoryGoal goal;
     goal.trajectory = wholeTraj;
     cmove.doGoal(goal);
@@ -349,6 +357,7 @@ void makeCircle(){
     moveThrough(traj);
 }
 int main(int argc, char **argv) {
+
     ros::init(argc, argv, "move_pose_dual");
     ros::NodeHandle nh;
 
@@ -358,23 +367,31 @@ int main(int argc, char **argv) {
     cv::Mat rgb, depth ;
     pcl::PointCloud<pcl::PointXYZ> pc ;
     cv::Mat R = cv::Mat(4, 4, CV_32FC1, cv::Scalar::all(0));
-    ifstream f;
-    f.open("/home/clopema/ROS/clopema_stack/clopema_planning_tutorials/files/CalibMat.txt");
-    if(f.is_open()){
-        for(int i=0; i<4; ++i)
-            for(int j=0; j<4; ++j)
-                f >> R.at<float>(i, j);
 
-    }else{
-        cout << "Cannot open CalibMat.txt";
-        return(-1);
+    tf::TransformListener listener;
+    ros::Time ts(0) ;
+    tf::StampedTransform transform;
+    Eigen::Affine3d pose;
+    Eigen::Matrix4d calib;
+
+
+    try {
+        listener.waitForTransform("xtion3_rgb_optical_frame", "base_link", ts, ros::Duration(1) );
+        listener.lookupTransform("xtion3_rgb_optical_frame", "base_link", ts, transform);
+        tf::TransformTFToEigen(transform, pose);
     }
+    catch (tf::TransformException ex){
+      ROS_ERROR("%s",ex.what());
+    }
+
+
 
     cvNamedWindow("calibration");
     cvSetMouseCallback( "calibration", mouse_callback, NULL);
-    cv::Mat targetP = cv::Mat(4, 1, CV_32FC1, cv::Scalar::all(0));
+    //cv::Mat targetP = cv::Mat(4, 1, CV_32FC1, cv::Scalar::all(0));
 
-
+    calib=pose.matrix();
+    Eigen::Vector4d targetP;
     while(!stop){
         ZFar = false;
 
@@ -389,25 +406,53 @@ int main(int argc, char **argv) {
                 if (stop)
                     return 0;
             }
+
             pcl::PointXYZ p = pc.at(cx, cy);
-            cv::Mat pM = cv::Mat(4, 1, CV_32FC1, cv::Scalar::all(0));
-            pM.at<float>(0,0) = p.x;
-            pM.at<float>(1,0) = p.y;
-            pM.at<float>(2,0) = p.z;
-            pM.at<float>(3,0) = 1;
+            Eigen::Vector4d pM(p.x, p.y, p.z, 1);
 
-            targetP = R*pM;
-
-            //~ cout << cx << " " << cy << std::endl << p.x << " " << p.x << " " << p.z << std::endl;
-
-
-
+            targetP = calib.inverse()*pM;
         }
         else{
             ROS_ERROR("Failed to call service");
             return 1;
         }
         setGrippersOpen();
+
+        ///////LOWEST POINT/////////
+        tf::TransformListener listenR1;
+        tf::StampedTransform tanformR1;
+        ros::Time time;
+        Eigen::Vector3f top;
+
+        try {
+            listenR1.waitForTransform( "xtion3_rgb_optical_frame", "r1_ee",   time, ros::Duration(1) );
+            listenR1.lookupTransform( "xtion3_rgb_optical_frame", "r1_ee" , time, tanformR1);
+        }
+        catch (tf::TransformException ex){
+          ROS_ERROR("%s",ex.what());
+        }
+
+        top.x()=tanformR1.getOrigin().x();
+        top.y()=tanformR1.getOrigin().y();
+        top.z()=tanformR1.getOrigin().z();
+
+        cout<<"top is x="<<top.x()<< " y="<<top.y()<<" z="<<top.z()<<endl;
+        Eigen::Vector3f bottom;
+        bottom=top;
+        bottom.x()-=1;
+        cout<<"bot is x="<<bottom.x()<< " y="<<bottom.y()<<" z="<<bottom.z()<<endl;
+        Eigen::Vector3f targetPo;
+        Eigen::Vector3f targetN;
+        float angle=M_PI_2;
+
+        if (!findLowestPoint(pc,top,bottom,angle,targetPo,targetN))
+            cout<<"cant find lowest point"<<endl;
+        else
+            cout<<"lowest point is x="<<targetPo.x()<< " y="<<targetPo.y()<<" z="<<targetPo.z()<<endl;
+
+
+
+    //////LOWEST POINT END /////
 
         geometry_msgs::Pose desPos;
         btQuaternion q;
@@ -419,23 +464,25 @@ int main(int argc, char **argv) {
         G_Orientation=tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
         desPos.orientation = G_Orientation;
 
-        if(!ZFar){
-            desPos.position.x = targetP.at<float>(0,0);
-            desPos.position.y = targetP.at<float>(1,0)- 0.02;
-            desPos.position.z = targetP.at<float>(2,0);
-            moveTo(desPos);
-            setGrippersClose();
-            makeCircle();
-        }
-        else{
-            desPos.position.x = 0.3;
-            desPos.position.y = -1;
-            desPos.position.z = 1.3;
-            moveTo(desPos);
-        }
-        cin.ignore();
+//        if(!ZFar){
+//            desPos.position.x = targetP.x();
+//            desPos.position.y = targetP.y()-0.03;
+//            desPos.position.z = targetP.z();
+//            moveTo(desPos);
+//            setGrippersClose();
+//            makeCircle();
+//        }
+//        else{
+//            desPos.position.x = 0.3;
+//            desPos.position.y = -1;
+//            desPos.position.z = 1.3;
+//            moveTo(desPos);
+//        }
+//
+//        cout<<"----HIT ENTER TO OPEN GRIPPERS ---"<<endl;
+//        cin.ignore();
 
-        setGrippersOpen();
+//        setGrippersOpen();
 
 
 

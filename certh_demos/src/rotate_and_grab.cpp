@@ -3,7 +3,6 @@
 #include <robot_helpers/Robot.h>
 #include <robot_helpers/Utils.h>
 
-
 #include <camera_helpers/OpenNICapture.h>
 #include <pcl/io/pcd_io.h>
 #include <highgui.h>
@@ -20,6 +19,7 @@ boost::condition_variable finished ;
 
 int counter = 0 ;
 
+
 void stopCapture()
 {
     cout << "done" << endl ;
@@ -34,7 +34,7 @@ void doCapture(camera_helpers::OpenNICaptureAll *grabber)
 {
     bool _stoped = false ;
 
-    ofstream cap_data("/tmp/cap.txt") ;
+    ofstream cap_data("/tmp/rot/cap.txt") ;
 
     tf::TransformListener listener(ros::Duration(1.0));
 
@@ -51,27 +51,30 @@ void doCapture(camera_helpers::OpenNICaptureAll *grabber)
             cv::Mat clr, depth ;
             pcl::PointCloud<pcl::PointXYZ> pc ;
             ros::Time ts ;
+            image_geometry::PinholeCameraModel cm;
 
-            string rgbFileName = "/tmp/" + str(boost::format("cap_rgb_%06d.png") % counter) ;
-            string depthFileName = "/tmp/" + str(boost::format("cap_depth_%06d.png") % counter) ;
-            string cloudFileName = "/tmp/" + str(boost::format("cap_cloud_%06d.pcd") % counter) ;
-
-            if ( grabber->grab(clr, depth, pc, ts) )
+            string rgbFileName = "/tmp/rot/" + str(boost::format("cap_rgb_%06d.png") % counter) ;
+            string depthFileName = "/tmp/rot/" + str(boost::format("cap_depth_%06d.png") % counter) ;
+            string cloudFileName = "/tmp/rot/" + str(boost::format("cap_cloud_%06d.pcd") % counter) ;
+            if ( grabber->grab(clr, depth, pc, ts, cm) )
             {
 
                 cout << counter << endl ;
 
                 tf::StampedTransform transform;
+
                 Eigen::Affine3d pose ;
 
                 try {
                     listener.waitForTransform("r1_ee", "xtion3_rgb_optical_frame", ts, ros::Duration(1) );
                     listener.lookupTransform("r1_ee", "xtion3_rgb_optical_frame", ts, transform);
 
+//                    listener.waitForTransform("r1_ee", "base_link", ts, ros::Duration(1) );
+//                    listener.lookupTransform("r1_ee", "base_link", ts, transform);
+
                     cv::imwrite(rgbFileName, clr) ;
                     cv::imwrite(depthFileName, depth) ;
                     pcl::io::savePCDFileBinary(cloudFileName, pc) ;
-
                     tf::TransformTFToEigen(transform, pose);
 
                     cap_data << counter << endl << pose.matrix() << endl ;
@@ -90,6 +93,19 @@ void doCapture(camera_helpers::OpenNICaptureAll *grabber)
     } while ( !_stoped ) ;
 
 }
+void getRotationAxis(){
+    ros::Time time ;
+    tf::TransformListener listenOnce(ros::Duration(1.0));
+    tf::StampedTransform rotationAxis;
+
+    listenOnce.waitForTransform("r1_ee", "xtion3_rgb_optical_frame", time, ros::Duration(1) );
+    listenOnce.lookupTransform("r1_ee", "xtion3_rgb_optical_frame", time, rotationAxis);
+
+    ofstream rotAxis ;
+    rotAxis.open("/tmp/rot/rotAxis.txt") ;
+    rotAxis <<"x="<< rotationAxis.getOrigin().x() << " y=" << rotationAxis.getOrigin().y() <<" z=" << rotationAxis.getOrigin().z()<< endl ;
+    rotAxis.close();
+}
 
 void startCapture(camera_helpers::OpenNICaptureAll *grabber)
 {
@@ -107,9 +123,10 @@ int main(int argc, char **argv) {
   // moveHome() ;
     moveGripperPointingDown(cmove, "r1", 0, -0.7, 1.5) ;
 
+    getRotationAxis();
+
     camera_helpers::OpenNICaptureAll cap("xtion3") ;
     cap.connect() ;
-
     cmove.actionStarted.connect(boost::bind(&startCapture, &cap)) ;
     cmove.actionCompleted.connect(&stopCapture) ;
 
