@@ -356,6 +356,39 @@ void makeCircle(){
     traj = calculateCirclePoints(tmp_point2, tmp_point1, getArmsDistance()-0.03, 10, true );
     moveThrough(traj);
 }
+
+
+void convertCloud(const cv::Mat &dep, const pcl::PointCloud<pcl::PointXYZ>& cloud, const image_geometry::PinholeCameraModel &model_ )
+{
+
+    for(int i=0 ; i<dep.rows ; i++ )
+        for(int j=0 ; j<dep.cols ; j++ )
+        {
+            float center_x = model_.cx();
+            float center_y = model_.cy();
+
+            // Combine unit conversion (if necessary) with scaling by focal length for computing (X,Y)
+            double unit_scaling = 0.001 ;
+            float constant_x = unit_scaling / model_.fx();
+            float constant_y = unit_scaling / model_.fy();
+
+            ushort val = dep.at<ushort>(i, j) ;
+
+            if ( val == 0 ) continue ;
+
+            // Fill in XYZ
+            cout << (j - center_x) * val * constant_x << ' ';
+            cout << (i - center_y) * val * constant_y << ' ' ;
+            cout <<  val * 0.001 << endl ;
+
+            cout << cloud.at(j, i) << endl ;
+
+
+        }
+
+}
+
+
 int main(int argc, char **argv) {
 
     ros::init(argc, argv, "move_pose_dual");
@@ -399,6 +432,8 @@ int main(int argc, char **argv) {
          image_geometry::PinholeCameraModel cm ;
 
         if ( grabber.grab(rgb, depth, pc, ts, cm) ){
+
+      //      convertCloud(depth, pc, cm) ;
             cont = false;
             while(!cont){
                 cv::imshow("calibration", rgb);
