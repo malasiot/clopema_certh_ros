@@ -419,20 +419,22 @@ int main(int argc, char **argv) {
         setGrippersOpen();
 
         ///////LOWEST POINT/////////
-
+        tf::TransformListener listenR1;
+        tf::StampedTransform tanformR1;
+        ros::Time time;
         Eigen::Vector3f top;
 
         try {
-            listener.waitForTransform("r1_ee", "xtion3_rgb_optical_frame",   ros::Time::now(), ros::Duration(1) );
-            listener.lookupTransform("r1_ee", "xtion3_rgb_optical_frame"  , ros::Time::now(), transform);
+            listenR1.waitForTransform( "xtion3_rgb_optical_frame", "r1_ee",   time, ros::Duration(1) );
+            listenR1.lookupTransform( "xtion3_rgb_optical_frame", "r1_ee" , time, tanformR1);
         }
         catch (tf::TransformException ex){
           ROS_ERROR("%s",ex.what());
         }
 
-        top.x()=transform.getOrigin().x();
-        top.y()=transform.getOrigin().y();
-        top.z()=transform.getOrigin().z();
+        top.x()=tanformR1.getOrigin().x();
+        top.y()=tanformR1.getOrigin().y();
+        top.z()=tanformR1.getOrigin().z();
 
         cout<<"top is x="<<top.x()<< " y="<<top.y()<<" z="<<top.z()<<endl;
         Eigen::Vector3f bottom;
