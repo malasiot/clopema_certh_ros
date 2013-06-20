@@ -30,6 +30,7 @@ using namespace std ;
 #include <pcl/point_types.h>
 #include <pcl/ros/conversions.h>
 
+extern bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture,  Eigen::Vector3f &p, Eigen::Vector3f &n) ;
 
 bool cont;
 int cx, cy;
@@ -91,6 +92,10 @@ private:
 
 };
 */
+
+
+extern bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture,  Eigen::Vector3f &p, Eigen::Vector3f &n) ;
+
 
 void mouse_callback( int event, int x, int y, int flags, void* param){
     if(event == CV_EVENT_LBUTTONDOWN){
@@ -194,19 +199,19 @@ std::vector<geometry_msgs::Point> calculateCirclePoints(geometry_msgs::Point cen
     if(up){
         currTheta =M_PI- atan((currentPos.x-center.x)/ (center.z-currentPos.z));
         step=3.14/2/steps;//(abs(M_PI-currTheta))/(float)steps;
-        cout<< "step  ----> " << step <<"\n ";
+      //  cout<< "step  ----> " << step <<"\n ";
         for ( int i = 0; i <steps; i ++){
 
             tmp_x=r*sin(currTheta);
             tmp_z=r*cos(currTheta);
-            cout<< "temp_x= "<< tmp_x << " "<<"temp_z= "<< tmp_z<<"\n";
-            cout<<"theta = "<< currTheta <<"\n";
+          //  cout<< "temp_x= "<< tmp_x << " "<<"temp_z= "<< tmp_z<<"\n";
+          //  cout<<"theta = "<< currTheta <<"\n";
             currTheta-=step;
             point.x = center.x+tmp_x;
             point.z = center.z+tmp_z;
             point.y = currentPos.y;
             points.push_back(point);
-            cout<< "x= "<<point.x<<" "<< "y= "<<point.y<<" "<< "z= "<<point.z<<"\n";
+         //   cout<< "x= "<<point.x<<" "<< "y= "<<point.y<<" "<< "z= "<<point.z<<"\n";
         }
         return points;
     }
@@ -233,7 +238,7 @@ void moveTo(geometry_msgs::Pose pose){
         desired_pose.pose = pose;
 
 
-        cout<< "\n going to --- >  "<< desired_pose.pose.position.x<< " "  << desired_pose.pose.position.y<<"  " << desired_pose.pose.position.z <<"\n";
+       // cout<< "\n going to --- >  "<< desired_pose.pose.position.x<< " "  << desired_pose.pose.position.y<<"  " << desired_pose.pose.position.z <<"\n";
 
         desired_pose.absolute_position_tolerance.x = 0.002;
         desired_pose.absolute_position_tolerance.y = 0.002;
@@ -363,8 +368,8 @@ int main(int argc, char **argv) {
     pcl::PointCloud<pcl::PointXYZ> pc ;
     cv::Mat R = cv::Mat(4, 4, CV_32FC1, cv::Scalar::all(0));
 
-    tf::TransformListener listener(ros::Duration(1.0));
-    ros::Time ts ;
+    tf::TransformListener listener;
+    ros::Time ts(0) ;
     tf::StampedTransform transform;
     Eigen::Affine3d pose;
     Eigen::Matrix4d calib;
@@ -401,23 +406,51 @@ int main(int argc, char **argv) {
                 if (stop)
                     return 0;
             }
-            pcl::PointXYZ p = pc.at(cx, cy);
 
+            pcl::PointXYZ p = pc.at(cx, cy);
             Eigen::Vector4d pM(p.x, p.y, p.z, 1);
 
-
             targetP = calib.inverse()*pM;
-
-            //~ cout << cx << " " << cy << std::endl << p.x << " " << p.x << " " << p.z << std::endl;
-
-
-
         }
         else{
             ROS_ERROR("Failed to call service");
             return 1;
         }
         setGrippersOpen();
+
+        ///////LOWEST POINT/////////
+
+        Eigen::Vector3f top;
+
+        try {
+            listener.waitForTransform("r1_ee", "xtion3_rgb_optical_frame",   ros::Time::now(), ros::Duration(1) );
+            listener.lookupTransform("r1_ee", "xtion3_rgb_optical_frame"  , ros::Time::now(), transform);
+        }
+        catch (tf::TransformException ex){
+          ROS_ERROR("%s",ex.what());
+        }
+
+        top.x()=transform.getOrigin().x();
+        top.y()=transform.getOrigin().y();
+        top.z()=transform.getOrigin().z();
+
+        cout<<"top is x="<<top.x()<< " y="<<top.y()<<" z="<<top.z()<<endl;
+        Eigen::Vector3f bottom;
+        bottom=top;
+        bottom.x()-=1;
+        cout<<"bot is x="<<bottom.x()<< " y="<<bottom.y()<<" z="<<bottom.z()<<endl;
+        Eigen::Vector3f targetPo;
+        Eigen::Vector3f targetN;
+        float angle=M_PI_2;
+
+        if (!findLowestPoint(pc,top,bottom,angle,targetPo,targetN))
+            cout<<"cant find lowest point"<<endl;
+        else
+            cout<<"lowest point is x="<<targetPo.x()<< " y="<<targetPo.y()<<" z="<<targetPo.z()<<endl;
+
+
+
+    //////LOWEST POINT END /////
 
         geometry_msgs::Pose desPos;
         btQuaternion q;
@@ -429,25 +462,25 @@ int main(int argc, char **argv) {
         G_Orientation=tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
         desPos.orientation = G_Orientation;
 
-        if(!ZFar){
-            desPos.position.x = targetP.x();
-            desPos.position.y = targetP.y()-0.03;
-            desPos.position.z = targetP.z();
-            moveTo(desPos);
-            setGrippersClose();
-            makeCircle();
-        }
-        else{
-            desPos.position.x = 0.3;
-            desPos.position.y = -1;
-            desPos.position.z = 1.3;
-            moveTo(desPos);
-        }
+//        if(!ZFar){
+//            desPos.position.x = targetP.x();
+//            desPos.position.y = targetP.y()-0.03;
+//            desPos.position.z = targetP.z();
+//            moveTo(desPos);
+//            setGrippersClose();
+//            makeCircle();
+//        }
+//        else{
+//            desPos.position.x = 0.3;
+//            desPos.position.y = -1;
+//            desPos.position.z = 1.3;
+//            moveTo(desPos);
+//        }
+//
+//        cout<<"----HIT ENTER TO OPEN GRIPPERS ---"<<endl;
+//        cin.ignore();
 
-        cout<<"HIT ENTER TO OPEN GRIPPERS "<<endl;
-        cin.ignore();
-
-        setGrippersOpen();
+//        setGrippersOpen();
 
 
 

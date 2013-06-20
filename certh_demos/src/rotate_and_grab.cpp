@@ -3,7 +3,6 @@
 #include <robot_helpers/Robot.h>
 #include <robot_helpers/Utils.h>
 
-
 #include <camera_helpers/OpenNICapture.h>
 #include <pcl/io/pcd_io.h>
 #include <highgui.h>
@@ -19,6 +18,7 @@ boost::mutex captureMutex ;
 boost::condition_variable finished ;
 
 int counter = 0 ;
+
 
 void stopCapture()
 {
@@ -62,7 +62,6 @@ void doCapture(camera_helpers::OpenNICaptureAll *grabber)
                 cout << counter << endl ;
 
                 tf::StampedTransform transform;
-                tf::Quaternion Q;
 
                 Eigen::Affine3d pose ;
 
