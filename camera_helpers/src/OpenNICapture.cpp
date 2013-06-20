@@ -206,7 +206,7 @@ private:
         // Subscribe to rgb and depth streams
 
         rgb_sub.subscribe(nh, "/" + prefix + "/rgb/image_rect_color", 1);
-        depth_sub.subscribe(nh, "/" + prefix + "/depth_registered/image_rect", 1);
+        depth_sub.subscribe(nh, "/" + prefix + "/depth_registered/image_rect_raw", 1);
         camera_sub.subscribe(nh, "/" + prefix + "/depth_registered/camera_info", 1);
     }
 
@@ -340,8 +340,8 @@ private:
     void setup()
     {
         cloud_sub.subscribe(nh, "/" + prefix + "/depth_registered/points", 1);
-        rgb_sub.subscribe(nh, "/" + prefix + "/rgb/image_color", 1);
-        depth_sub.subscribe(nh, "/" + prefix + "/depth_registered/image_rect", 1);
+        rgb_sub.subscribe(nh, "/" + prefix + "/rgb/image_rect_color", 1);
+        depth_sub.subscribe(nh, "/" + prefix + "/depth_registered/image_rect_raw", 1);
         camera_sub.subscribe(nh, "/" + prefix + "/depth_registered/camera_info", 1);
 
     }
