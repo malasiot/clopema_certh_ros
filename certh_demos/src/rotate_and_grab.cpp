@@ -66,8 +66,8 @@ void doCapture(camera_helpers::OpenNICaptureAll *grabber)
                 Eigen::Affine3d pose ;
 
                 try {
-                    listener.waitForTransform("r1_ee", "xtion3_rgb_optical_frame", ts, ros::Duration(1) );
-                    listener.lookupTransform("r1_ee", "xtion3_rgb_optical_frame", ts, transform);
+                    listener.waitForTransform("xtion3_rgb_optical_frame","r1_ee", ts, ros::Duration(1) );
+                    listener.lookupTransform("xtion3_rgb_optical_frame","r1_ee", ts, transform);
 
 //                    listener.waitForTransform("r1_ee", "base_link", ts, ros::Duration(1) );
 //                    listener.lookupTransform("r1_ee", "base_link", ts, transform);
@@ -98,8 +98,8 @@ void getRotationAxis(){
     tf::TransformListener listenOnce(ros::Duration(1.0));
     tf::StampedTransform rotationAxis;
 
-    listenOnce.waitForTransform("r1_ee", "xtion3_rgb_optical_frame", time, ros::Duration(1) );
-    listenOnce.lookupTransform("r1_ee", "xtion3_rgb_optical_frame", time, rotationAxis);
+    listenOnce.waitForTransform("xtion3_rgb_optical_frame","r1_ee", time, ros::Duration(1) );
+    listenOnce.lookupTransform("xtion3_rgb_optical_frame","r1_ee", time, rotationAxis);
 
     ofstream rotAxis ;
     rotAxis.open("/tmp/rot/rotAxis.txt") ;
