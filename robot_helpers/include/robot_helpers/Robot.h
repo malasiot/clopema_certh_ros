@@ -82,6 +82,9 @@ bool getRobotState(arm_navigation_msgs::RobotState & rs);
 
 Eigen::Affine3d getPose(const std::string &armName, const std::string &base_link = std::string(), const ros::Time &ts = ros::Time(0)) ;
 
+// get current pose
+Eigen::Affine3d getCurrentPose(const std::string &armName) ;
+
 }
 
 #endif

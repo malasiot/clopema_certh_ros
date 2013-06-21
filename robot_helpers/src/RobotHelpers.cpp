@@ -3,6 +3,8 @@
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
 
+#include <clopema_planning_actions/GetRobotState.h>
+
 using namespace std ;
 
 namespace robot_helpers {
@@ -101,20 +103,48 @@ Eigen::Affine3d getPose(const std::string &armName, const std::string &base_link
 
     tf::TransformListener listener(ros::Duration(1.0));
     tf::StampedTransform transform;
+    Eigen::Affine3d pose ;
 
     try {
         listener.waitForTransform(armName + "_ee", base_link_, ts, ros::Duration(1) );
         listener.lookupTransform(armName + "_ee", base_link_, ts, transform);
 
-        Eigen::Affine3d pose ;
+
         tf::TransformTFToEigen(transform, pose);
 
         return pose ;
     } catch (tf::TransformException ex) {
         ROS_ERROR("%s",ex.what());
+        return pose ;
     }
 
 }
+
+Eigen::Affine3d getCurrentPose(const std::string &armName) {
+
+    Eigen::Affine3d pose ;
+
+    ros::service::waitForService("/clopema_planning_actions/get_robot_state");
+
+    clopema_planning_actions::GetRobotState rs;
+
+    if (!ros::service::call("/clopema_planning_actions/get_robot_state", rs)) {
+        ROS_ERROR("Can't get current robot state.");
+        return pose ;
+    }
+
+    tf::Stamped<tf::Pose> pose_ ;
+    if ( armName == "r1" )
+        tf::poseStampedMsgToTF(rs.response.robot_1_pose, pose_) ;
+    else
+        tf::poseStampedMsgToTF(rs.response.robot_2_pose, pose_) ;
+
+    tf::TransformTFToEigen(pose_, pose) ;
+
+    return pose ;
+
+}
+
 
 } // namespace robot_helpers
 

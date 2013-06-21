@@ -5,6 +5,7 @@
 #include <clopema_planning_actions/GetRobotState.h>
 #include <trajectory_msgs/JointTrajectory.h>
 #include <clopema_motoros/SetPowerOff.h>
+#include <robot_helpers/Utils.h>
 
 using namespace std;
 
@@ -19,6 +20,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
     ROS_INFO("Send_traj node started");
 
+    cout << robot_helpers::getCurrentPose("r1").translation() << endl ;
     //Create client
     actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> move("/clopema_controller/follow_joint_trajectory", true);
     move.waitForServer();
