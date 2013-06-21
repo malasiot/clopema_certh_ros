@@ -212,56 +212,109 @@ static Vec3 computeNormal(const PointCloud &pc, int x, int y)
 
 
 
+//bool findLowestPoint(const PointCloud &depth, const Vec3 &orig, const Vec3 &base,
+//float apperture,
+//                     Vec3 &p, Vec3 &n)
+//{
+//    float max_length = (base - orig).norm() ;
+//    float max_openning = apperture ;
+
+//    int w = depth.width, h = depth.height ;
+
+//    int max_y = -1 ;
+//    int best_x = -1 ;
+//    ushort best_z ;
+
+//    bool found = false ;
+
+//    for(int j=0 ; j<w ; j++ )
+//    {
+//        ushort minz = 0xffff ;
+
+//        for(int i=0 ; i<h ; i++)
+//        {
+//            PointT val = depth.at(j, i) ;
+
+//            if ( !pcl_isfinite(val.z) ) continue ;
+
+
+//            cout << val.x << ' ' << val.y << ' ' << val.z << endl;
+
+//          if ( !pointInsideCone(Vec3(val.x, val.y, val.z), orig, base, apperture)
+//) continue ;
+
+//            if ( val.z < minz )
+//            {
+//                minz = val.z ;
+//                max_y = j ;
+//                best_x = i ;
+//                best_z = val.z ;
+//                found = true ;
+//            }
+
+//        }
+//    }
+
+//    if ( !found ) return false ;
+
+//    PointT p_ = depth.at(max_y, best_x) ;
+
+//    n = computeNormal(depth, max_y, best_x) ;
+//    p = Vec3(p_.x, p_.y, p_.z) ;
+
+//}
 bool findLowestPoint(const PointCloud &depth, const Vec3 &orig, const Vec3 &base,
 float apperture,
-                     Vec3 &p, Vec3 &n)
+                     Vec3 &p, Vec3 &n )
 {
-    float max_length = (base - orig).norm() ;
-    float max_openning = apperture ;
+
 
     int w = depth.width, h = depth.height ;
+    cout<< "w= "<< w << " h= "<< h<< endl;
+    int best_i=-1, best_j=-1;
+    float best_x=-1, best_y=-1, best_z=-1;
 
-    int max_y = -1 ;
-    int best_x = -1 ;
-    ushort best_z ;
 
     bool found = false ;
-
-    for(int j=0 ; j<w ; j++ )
+    float minx = 10 ;
+    for(int j=66 ; j<626 ; j++ )
     {
-        ushort minz = 0xffff ;
 
-        for(int i=0 ; i<h ; i++)
+
+        for(int i=100 ; i<350 ; i++)
         {
             PointT val = depth.at(j, i) ;
 
-            if ( !pcl_isfinite(val.z) ) continue ;
+            if ( val.z<1 || val.z>1.5 ) continue ;
 
-
-            cout << val.x << ' ' << val.y << ' ' << val.z << endl;
-
-            if ( !pointInsideCone(Vec3(val.x, val.y, val.z), orig, base, apperture)
-) continue ;
-
-            if ( val.z < minz )
+            if ( minx>val.x )
             {
-                minz = val.z ;
-                max_y = j ;
-                best_x = i ;
-                best_z = val.z ;
+                minx = val.x ;
+              //  cout<<"minx= " << minx<< endl;
+                best_j = j ;
+                best_i = i ;
+                best_x=val.x;
+                best_y=val.y;
+                best_z=val.z;
+
                 found = true ;
             }
 
         }
     }
 
+    cout<< "best= (" << best_j <<" , "<< best_i <<")"<<endl;
+
+    cout<< "best point = "<< best_x <<" "<< best_y << " "<< best_z << endl;
+
+
+    PointT p_ = depth.at(best_j, best_i) ;
+
+
+    p = Vec3(p_.x, p_.y, p_.z) ;
     if ( !found ) return false ;
 
-    PointT p_ = depth.at(max_y, best_x) ;
 
-    n = computeNormal(depth, max_y, best_x) ;
-    p = Vec3(p_.x, p_.y, p_.z) ;
 
 }
-
 

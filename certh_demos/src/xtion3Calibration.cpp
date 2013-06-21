@@ -31,6 +31,8 @@ bool cont;
 int cx, cy;
 bool stop=false;
 namespace enc = sensor_msgs::image_encodings;
+
+
 /*
 class OpenniGrabber {
 

@@ -443,8 +443,9 @@ int main(int argc, char **argv) {
             }
 
             pcl::PointXYZ p = pc.at(cx, cy);
+            cout<< "click x= "<< cx << " y= "<< cy<<endl;
             Eigen::Vector4d pM(p.x, p.y, p.z, 1);
-
+            cout<< "pc x= "<<pM[0]<<" pc y= "<< pM[1] << "pc z= "<< pM[2]<<endl;
             targetP = calib.inverse()*pM;
         }
         else{
@@ -452,7 +453,6 @@ int main(int argc, char **argv) {
             return 1;
         }
         setGrippersOpen();
-
         ///////LOWEST POINT/////////
         tf::TransformListener listenR1;
         tf::StampedTransform tanformR1;
@@ -480,13 +480,34 @@ int main(int argc, char **argv) {
         Eigen::Vector3f targetN;
         float angle=M_PI_2;
 
-        if (!findLowestPoint(pc,top,bottom,angle,targetPo,targetN))
-            cout<<"cant find lowest point"<<endl;
-        else
-            cout<<"lowest point is x="<<targetPo.x()<< " y="<<targetPo.y()<<" z="<<targetPo.z()<<endl;
+
+        pcl::PointXYZ val;
+        //cout<< "pc width= "<< pc.width << "pc height= "<< pc.height<< endl;
 
 
+        for(int j=0 ; j< pc.width ; j++ )
+        {
 
+            for(int i=0 ; i< pc.height ; i++)
+            {
+
+
+                val  = pc.at(j, i) ;
+                if ( !pcl_isfinite(val.z) ) continue ;
+
+               // cout <<"for i="<< i <<"j= "<<j<<"coords are = "<<  val.x << ' ' << val.y << ' ' << val.z << endl;
+
+           }
+
+
+        }
+        bool yeah = findLowestPoint(pc,top,bottom,angle,targetPo,targetN);
+        cout<<"lowest point is x="<<targetPo.x()<< " y="<<targetPo.y()<<" z="<<targetPo.z()<<endl;
+
+        cout<<"-------------------------------------------"<<endl;
+
+        Eigen::Vector4d tar(targetPo.x(), targetPo.y(), targetPo.z(), 1);
+        targetP = calib.inverse()*tar;
     //////LOWEST POINT END /////
 
         geometry_msgs::Pose desPos;
@@ -499,25 +520,26 @@ int main(int argc, char **argv) {
         G_Orientation=tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
         desPos.orientation = G_Orientation;
 
-//        if(!ZFar){
-//            desPos.position.x = targetP.x();
-//            desPos.position.y = targetP.y()-0.03;
-//            desPos.position.z = targetP.z();
-//            moveTo(desPos);
-//            setGrippersClose();
-//            makeCircle();
-//        }
-//        else{
-//            desPos.position.x = 0.3;
-//            desPos.position.y = -1;
-//            desPos.position.z = 1.3;
-//            moveTo(desPos);
-//        }
-//
-//        cout<<"----HIT ENTER TO OPEN GRIPPERS ---"<<endl;
-//        cin.ignore();
+        if(!ZFar){
+            desPos.position.x = targetP.x()-0.02;
+            desPos.position.y = targetP.y();
+            desPos.position.z = targetP.z()+0.02;
+            moveTo(desPos);
+            ros::Duration(2).sleep();
+            setGrippersClose();
+            makeCircle();
+        }
+        else{
+            desPos.position.x = 0.3;
+            desPos.position.y = -1;
+            desPos.position.z = 1.3;
+            moveTo(desPos);
+        }
 
-//        setGrippersOpen();
+        cout<<"----HIT ENTER TO OPEN GRIPPERS ---"<<endl;
+        cin.ignore();
+
+        setGrippersOpen();
 
 
 
