@@ -14,11 +14,18 @@ public:
     QCameraWidget(QWidget *parent, const QString &label) ;
     ~QCameraWidget() ;
 
+    bool mapPoint(const QPoint &parent, QPoint &child) ;
+
+    void zoomUp() ;
+    void zoomDown() ;
+
 private:
 
     QLabel *pLabel, *vLabel ;
     int camView ;
      QMutex mutex ;
+     int w_, h_ ;
+     int zoom_factor_ ;
 
 public Q_SLOTS:
 

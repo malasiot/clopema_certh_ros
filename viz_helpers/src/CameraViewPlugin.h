@@ -1,6 +1,7 @@
 #ifndef __INTERACTIVE_IMAGE_VIEW_PLUGIN_H__
 #define __INTERACTIVE_IMAGE_VIEW_PLUGIN_H__
 
+#define slots Q_SLOTS
 #include <rqt_gui_cpp/plugin.h>
 
 #include <QWidget>
@@ -29,6 +30,9 @@ public:
 
    QCameraView *widget_ ;
    ros::NodeHandle handle ;
+
+private:
+      std::vector<std::string> getTopicList() ;
 };
 } // namespace
 #endif 

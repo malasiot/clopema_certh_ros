@@ -23,7 +23,7 @@ class QCameraView: public QScrollArea
 
 public:
 
-    QCameraView(QWidget *parent, ros::NodeHandle handle, const std::string &topic_ns = std::string()) ;
+    QCameraView(QWidget *parent, ros::NodeHandle handle, const std::vector<std::string> &imageTopics, const std::string &topic_ns = std::string()) ;
     ~QCameraView() ;
 
      void cleanup() ;
@@ -40,9 +40,7 @@ protected:
 
 	bool eventFilter(QObject *o, QEvent *e) ;
 
-    void updateTopicList() ;
-    QList<QString> getTopicList(const QSet<QString>& message_types, const QList<QString>& transports) ;
-    void selectTopic(const QString& topic) ;
+    void setTopic(const std::string &topic) ;
 
 private:
     QCameraWidget *imageWidget ;
@@ -56,9 +54,12 @@ private:
 
     QMutex image_ ;
     ros::NodeHandle handle ;
+    std::vector<std::string> topics ;
 
     boost::mutex connect_mutex_ ;
     bool needMouseFeedback ;
+
+
 
     virtual void callbackImage(const sensor_msgs::Image::ConstPtr& msg);
 

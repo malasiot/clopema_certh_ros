@@ -15,8 +15,8 @@
 using namespace std ;
 namespace viz_helpers {
 
-QCameraView::QCameraView(QWidget *parent, ros::NodeHandle handle_, const std::string &topic_ns):
-    QScrollArea(parent), handle(handle_)
+QCameraView::QCameraView(QWidget *parent, ros::NodeHandle handle_, const vector<string> &imageTopics, const std::string &topic_ns):
+    QScrollArea(parent), handle(handle_), topics(imageTopics)
 {
 
     setAlignment(Qt::AlignHCenter | Qt::AlignCenter ) ;
@@ -26,21 +26,35 @@ QCameraView::QCameraView(QWidget *parent, ros::NodeHandle handle_, const std::st
     setLayout(vbl) ;
 
     imageWidget = new QCameraWidget(this, "camera") ;
-    sourceCombo = new QComboBox(this) ;
 
-    connect(sourceCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(onTopicChanged(int))) ;
+    sourceCombo = NULL ;
+
+    if ( imageTopics.size() > 1 )
+    {
+        sourceCombo = new QComboBox(this) ;
+        connect(sourceCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(onTopicChanged(int))) ;
+        vbl->addWidget(sourceCombo, 0, 0 ) ;
+
+        for (vector<string>::const_iterator it = topics.begin(); it != topics.end(); it++)
+        {
+            QString label((*it).c_str());
+            label.replace(" ", "/");
+            sourceCombo->addItem(label, QVariant((*it).c_str()));
+        }
+    }
+
     connect(this, SIGNAL(frameChanged(QImage)), imageWidget, SLOT(updateFrame(QImage)));
 
-    vbl->addWidget(sourceCombo, 0, 0 ) ;
     vbl->addWidget(imageWidget, 1, 0, Qt::AlignHCenter | Qt::AlignCenter ) ;
 
     installEventFilter(this);
 
+    if ( !sourceCombo )
+        setTopic(imageTopics[0]) ;
+
     setFocus() ;
 
-    updateTopicList();
-
-    string feedback_topic = topic_ns + "/camera_view/feedback" ;
+    string feedback_topic = topic_ns + "/camera_viewer/feedback" ;
 
     ros::SubscriberStatusCallback fcb = boost::bind(&QCameraView::feedbackCb, this, _1) ;
     feedback_pub_ = handle.advertise<viz_helpers::CameraViewFeedback>(feedback_topic, 10, fcb, fcb) ;
@@ -78,6 +92,11 @@ bool QCameraView::eventFilter(QObject *o, QEvent *e)
     {
         QKeyEvent *kpe = (QKeyEvent *)e ;
 
+        if ( kpe->key() == Qt::Key_Plus )
+            imageWidget->zoomUp() ;
+        else if ( kpe->key() == Qt::Key_Minus )
+            imageWidget->zoomDown() ;
+
     }
     else if (e->type() == QEvent::MouseButtonRelease && needMouseFeedback)
     {
@@ -85,118 +104,106 @@ bool QCameraView::eventFilter(QObject *o, QEvent *e)
 
         CameraViewFeedback feedback ;
 
-        QPoint p = imageWidget->mapFromParent(mouseEvent->pos()) ;
-        feedback.mouse_point.x = p.x() ;
-        feedback.mouse_point.y = p.y() ;
+        QPoint p ;
 
-
-        feedback_pub_.publish(feedback) ;
-    }
-    return false;
-
-
-}
-
-
-void QCameraView::updateTopicList()
-{
-    QSet<QString> message_types;
-    message_types.insert("sensor_msgs/Image");
-
-    // get declared transports
-    QList<QString> transports;
-
-    transports.push_back("raw") ;
-
-    QString selected = sourceCombo->currentText();
-
-    // fill combo box
-    QList<QString> topics = getTopicList(message_types, transports);
-    topics.append("");
-
-    qSort(topics);
-
-    sourceCombo->clear();
-
-    for (QList<QString>::const_iterator it = topics.begin(); it != topics.end(); it++)
-    {
-        QString label(*it);
-        label.replace(" ", "/");
-        sourceCombo->addItem(label, QVariant(*it));
-    }
-
-  // restore previous selection
-    selectTopic(selected);
-}
-
-QList<QString> QCameraView::getTopicList(const QSet<QString>& message_types, const QList<QString>& transports)
-{
-    ros::master::V_TopicInfo topic_info;
-    ros::master::getTopics(topic_info);
-
-    QSet<QString> all_topics;
-    for (ros::master::V_TopicInfo::const_iterator it = topic_info.begin(); it != topic_info.end(); it++)
-    {
-        all_topics.insert(it->name.c_str());
-    }
-
-    QList<QString> topics;
-    for (ros::master::V_TopicInfo::const_iterator it = topic_info.begin(); it != topic_info.end(); it++)
-    {
-        if (message_types.contains(it->datatype.c_str()))
+        if ( imageWidget->mapPoint(mouseEvent->pos(), p) )
         {
-            QString topic = it->name.c_str();
+            feedback.mouse_point.x = p.x() ;
+            feedback.mouse_point.y = p.y() ;
 
-            // add raw topic
-            topics.append(topic);
-            //qDebug("ImageView::getTopicList() raw topic '%s'", topic.toStdString().c_str());
+            feedback_pub_.publish(feedback) ;
+        }
 
-            // add transport specific sub-topics
-            for (QList<QString>::const_iterator jt = transports.begin(); jt != transports.end(); jt++)
-            {
-                if (all_topics.contains(topic + "/" + *jt))
-                {
-                    QString sub = topic + " " + *jt;
-                    topics.append(sub);
-                    //qDebug("ImageView::getTopicList() transport specific sub-topic '%s'", sub.toStdString().c_str());
-                }
-            }
+        return false;
+    }
+
+
+}
+
+void QCameraView::setTopic(const std::string &topic)
+{
+
+    subscriber_.shutdown();
+
+    if ( !topic.empty() )
+    {
+        image_transport::ImageTransport it(handle);
+        image_transport::TransportHints hints("raw");
+
+        try {
+            subscriber_ = it.subscribe(topic, 1, &QCameraView::callbackImage, this, hints);
+
+        } catch (image_transport::TransportLoadException& e) {
+        QMessageBox::warning(this, tr("Loading image transport plugin failed"), e.what());
         }
     }
-    return topics;
 }
 
-void QCameraView::selectTopic(const QString& topic)
-{
-    int index = sourceCombo->findText(topic);
-    if (index == -1)
-    {
-        index = sourceCombo->findText("");
-    }
-    sourceCombo->setCurrentIndex(index);
-}
 
 void QCameraView::onTopicChanged(int index)
 {
-    subscriber_.shutdown();
 
-     QStringList parts = sourceCombo->itemData(index).toString().split(" ");
+    QStringList parts = sourceCombo->itemData(index).toString().split(" ");
     QString topic = parts.first();
     QString transport = parts.length() == 2 ? parts.last() : "raw";
 
-    if (!topic.isEmpty())
-    {
-        image_transport::ImageTransport it(handle);
-        image_transport::TransportHints hints(transport.toStdString());
-
-        try {
-            subscriber_ = it.subscribe(topic.toStdString(), 1, &QCameraView::callbackImage, this, hints);
-            qDebug("ImageView::onTopicChanged() to topic '%s' with transport '%s'", topic.toStdString().c_str(), subscriber_.getTransport().c_str());
-        } catch (image_transport::TransportLoadException& e) {
-        QMessageBox::warning(this, tr("Loading image transport plugin failed"), e.what());
-    }
-  }
+    setTopic(topic.toStdString()) ;
 }
+
+
+
+static void hsv2rgb(float h, QRgb &rgb)
+{
+    int i ;
+    float f, p, q, t, r, g, b ;
+
+    if ( h == 0.0 ) return ;
+
+            // h = 360.0-h ;
+
+    h /= 60.0 ;
+
+    i = (int)h ; f = h - i ; p = 0  ; q = 1-f ;	t = f ;
+
+    switch (i)
+    {
+        case 0:
+            r = 1 ;
+            g = t ;
+            b = p ;
+            break ;
+        case 1:
+            r = q ;
+            g = 1 ;
+            b = p ;
+            break ;
+        case 2:
+            r = p ;
+            g = 1 ;
+            b = t ;
+            break ;
+        case 3:
+            r = p ;
+            g = q ;
+            b = 1 ;
+            break ;
+        case 4:
+            r = t ;
+            g = p ;
+            b = 1 ;
+            break ;
+        case 5:
+            r = 1 ;
+            g = p ;
+            b = q ;
+            break ;
+    }
+
+    rgb = qRgb((int)(255.0*r), (int)(255.0*g), (int)(255.0*b)) ;
+}
+
+const int nColors = 2 << 12 ;
+static QRgb *hsvlut = NULL ;
 
 void QCameraView::callbackImage(const sensor_msgs::Image::ConstPtr& msg)
 {
@@ -206,7 +213,6 @@ void QCameraView::callbackImage(const sensor_msgs::Image::ConstPtr& msg)
     try
     {
 
-        // First check if we have a color format. If so, use the current tools for color conversion
         if (sensor_msgs::image_encodings::isColor(msg->encoding) || sensor_msgs::image_encodings::isMono(msg->encoding))
         {
             cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::RGB8);
@@ -215,56 +221,121 @@ void QCameraView::callbackImage(const sensor_msgs::Image::ConstPtr& msg)
         else
         {
             cv_bridge::CvImageConstPtr cv_ptr = cv_bridge::toCvShare(msg);
-            if (msg->encoding == "CV_8UC3")
-            {
-                // assuming it is rgb
-                conversion_mat_ = cv_ptr->image;
-            } else if (msg->encoding == "8UC1") {
-                // convert gray to rgb
-                cv::cvtColor(cv_ptr->image, conversion_mat_, CV_GRAY2RGB);
-            } else if (msg->encoding == "16UC1" || msg->encoding == "32FC1") {
-                // scale / quantify
-                double min = 0;
-                double max = 1 ; //ui_.max_range_double_spin_box->value();
-                if (msg->encoding == "16UC1") max *= 1000;
-                if (1)
-                {
-                    // dynamically adjust range based on min/max in image
-                    cv::minMaxLoc(cv_ptr->image, &min, &max);
-                    if (min == max) {
-                        // completely homogeneous images are displayed in gray
-                        min = 0;
-                        max = 2;
-                    }
-                }
-                cv::Mat img_scaled_8u;
-                cv::Mat(cv_ptr->image-min).convertTo(img_scaled_8u, CV_8UC1, 255. / (max - min));
-                cv::cvtColor(img_scaled_8u, conversion_mat_, CV_GRAY2RGB);
-            } else {
-                qWarning("ImageView.callback_image() unhandled image encoding '%s'", msg->encoding.c_str());
-                return ;
-
-            }
+            conversion_mat_ = cv_ptr->image ;
         }
     }
     catch (cv_bridge::Exception& e)
     {
         qWarning("ImageView.callback_image() could not convert image from '%s' to 'rgb8' (%s)", msg->encoding.c_str(), e.what());
         return ;
-
     }
 
-  // copy temporary image as it uses the conversion_mat_ for storage which is asynchronously overwritten in the next callback invocation
 
-  QImage image(conversion_mat_.data, conversion_mat_.cols, conversion_mat_.rows, QImage::Format_RGB888);
-  QImage res ;
-
-  QMutexLocker lock(&image_) ;
+    int w = conversion_mat_.cols, h = conversion_mat_.rows, lw = conversion_mat_.step[0] ;
 
 
-  Q_EMIT frameChanged(image.copy()) ;
+    if ( conversion_mat_.type() == CV_8UC1 )
+    {
+        QImage image((uchar *)conversion_mat_.data, w, h, lw, QImage::Format_Indexed8) ;
 
+        QVector<QRgb> colors ;
+        for( int i=0 ; i<256 ; i++ ) colors.append(QColor(i, i, i).rgba()) ;
+
+        image.setColorTable(colors) ;
+
+        QMutexLocker lock(&image_) ;
+        Q_EMIT frameChanged(image.copy()) ;
+
+    }
+    else if ( conversion_mat_.type() == CV_8UC3 )
+    {
+
+        QImage image(w, h,QImage::Format_RGB32) ;
+
+        for( int i=0 ; i<h ; i++ )
+        {
+            uchar *dst = image.scanLine(i), *src = (uchar *)conversion_mat_.ptr<uchar>(i) ;
+
+            for( int j=0 ; j<w ; j++ )
+            {
+                uchar R = *src++ ;
+                uchar G = *src++ ;
+                uchar B = *src++ ;
+
+                *(QRgb *)dst = qRgb(R, G, B) ;
+                dst += 4 ;
+            }
+        }
+
+        Q_EMIT frameChanged(image) ;
+
+    }
+    else if ( conversion_mat_.type() == CV_16UC1 )
+    {
+        int nc = nColors ;
+
+        if ( !hsvlut )
+        {
+            int c ;
+            float h, hmax, hstep ;
+
+            hsvlut = new QRgb [nColors] ;
+
+            hmax = 180 ;
+            hstep = hmax/nc ;
+
+            for ( c=0, h=hstep ; c<nc ; c++, h += hstep) hsv2rgb(h, hsvlut[c]) ;
+        }
+
+        unsigned short minv, maxv ;
+        int i, j ;
+
+        minv = 0xffff ;
+        maxv = 0 ;
+
+        uchar *ppl = conversion_mat_.data ;
+        unsigned short *pp = (unsigned short *)ppl ;
+
+        for ( i=0 ; i<h ; i++, ppl += lw )
+            for ( j=0, pp = (unsigned short *)ppl ; j<w ; j++, pp++ )
+            {
+                if ( *pp == 0 ) continue ;
+                maxv = qMax(*pp, maxv) ;
+                minv = qMin(*pp, minv) ;
+            }
+
+        QImage image(w, h, QImage::Format_RGB32) ;
+
+        for( i=0 ; i<h ; i++ )
+        {
+            uchar *dst = image.scanLine(i) ;
+            unsigned short *src = (unsigned short *)conversion_mat_.ptr<ushort>(i) ;
+
+            for( j=0 ; j<w ; j++ )
+            {
+                unsigned short val = *src++ ;
+
+                if ( val == 0 )
+                {
+                    *(QRgb *)dst = Qt::black ;
+                    dst += 3 ;
+                    *dst++ = 255 ;
+
+                    continue ;
+                }
+                else val = (nc-1)*float((val - minv)/float(maxv - minv)) ;
+
+                const QRgb &clr = hsvlut[val] ;
+
+                *(QRgb *)dst = clr ;
+                dst += 3 ;
+                *dst++ = 255 ;
+            }
+        }
+
+        Q_EMIT frameChanged(image) ;
+
+    }
 }
-
 
 }

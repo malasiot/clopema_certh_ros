@@ -21,6 +21,7 @@
   <depend package="cv_bridge"/>
   <depend package="camera_helpers"/>
   <depend package="robot_helpers"/>
+  <depend package="viz_helpers"/>
 </package>
 
 
