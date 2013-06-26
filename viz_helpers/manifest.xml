@@ -1,0 +1,29 @@
+<package>
+  <license>LGPL</license>
+  <review status="unreviewed" notes=""/>
+
+  <rosdep name="boost"/>
+  <rosdep name="opencv2"/>
+  <rsodep name="qt4"/>
+  
+  <depend package="roscpp"/>
+  <depend package="image_transport"/>
+  <depend package="image_geometry"/>
+	<depend package="collision_space"/>
+	<depend package="geometric_shapes"/>
+	<depend package="arm_navigation_msgs"/>
+	<depend package="planning_environment"/>
+	<depend package="robot_helpers"/>
+
+	<depend package="rqt_gui"/>
+	<depend package="rqt_gui_cpp"/>
+  
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lcamera_view"/>
+  </export>
+ 
+<export>
+    <rqt_gui plugin="${prefix}/plugin.xml"/>
+  </export>
+
+</package>

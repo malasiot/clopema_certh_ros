@@ -1,0 +1,13 @@
+
+<library path="lib/libcamera_view_plugin">
+  <class name="viz_helpers/CameraViewPlugin" type="viz_helpers::CameraViewPlugin" base_class_type="rqt_gui_cpp::Plugin">
+    <description>
+      A GUI plugin to view a sensor_msgs/Image topic.
+    </description>
+    <qtgui>
+      <label>Interactive Camera Viewer</label>
+      <icon type="theme">image-x-generic</icon>
+      <statustip>Modified version of Image View plugin that allows for user interaction.</statustip>
+    </qtgui>
+  </class>
+</library>

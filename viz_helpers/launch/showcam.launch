@@ -1,0 +1,8 @@
+
+<launch>
+	<arg name="camera" default="xtion3"/>
+
+  	<node name="camera_viewer" pkg="viz_helpers" type="camera_viewer" output="screen" >
+    	<param name="image" value="/$(arg camera)/rgb/image_color;/$(arg camera)/depth_registered/image_rect_raw" />
+	</node>
+</launch>

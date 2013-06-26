@@ -54,7 +54,10 @@ rosbuild_link_boost(rotate_and_grab signals)
 
 rosbuild_add_executable(plan_avoiding_cloth src/plan_avoiding_cloth.cpp)
 
+rosbuild_add_executable(calibrate_fixed_xtion src/calibrate_fixed_xtion.cpp)
+rosbuild_link_boost(calibrate_fixed_xtion signals)
 
+rosbuild_add_executable(find_lowest src/find_lowest.cpp src/lowestPoint2.cpp)
 
 rosbuild_add_executable(grippers_testing src/grippers_testing.cpp)
 
