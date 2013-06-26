@@ -86,7 +86,7 @@ int main(int argc, char **argv) {
     Eigen::Vector3d orig_ = t * orig ;
 
     // compute the base of the search cone in xtion frame
-    Eigen::Vector3d base = t.inverse() * ( orig_ + Eigen::Vector3d(0, 0, 0.7) ) ;
+    Eigen::Vector3d base = t.inverse() * ( orig_ + Eigen::Vector3d(0, 0, -0.7) ) ;
 
     ros::Publisher pub = nh.advertise<sensor_msgs::PointCloud2>( "rotating", 0 );
 
