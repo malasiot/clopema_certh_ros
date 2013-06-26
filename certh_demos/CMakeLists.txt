@@ -31,6 +31,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 find_package(Eigen)
 
 #Beginer - JOINT
+rosbuild_add_executable(basic_shapes src/shapes.cpp)
 rosbuild_add_executable(move_joint_r1 src/move_joint_r1.cpp)
 
 rosbuild_add_executable(move_above_table_r1 src/move_above_table_r1.cpp)
@@ -51,7 +52,7 @@ rosbuild_link_boost(xtion3Calibration signals)
 rosbuild_add_executable(rotate_and_grab src/rotate_and_grab.cpp)
 rosbuild_link_boost(rotate_and_grab signals)
 
-#rosbuild_add_executable(plan_avoiding_cloth src/plan_avoiding_cloth.cpp)
+rosbuild_add_executable(plan_avoiding_cloth src/plan_avoiding_cloth.cpp)
 
 
 

@@ -29,8 +29,9 @@ using namespace std ;
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/ros/conversions.h>
+#include <visualization_msgs/Marker.h>
 
-extern bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture,  Eigen::Vector3f &p, Eigen::Vector3f &n) ;
+extern bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture,  Eigen::Vector3f &p, Eigen::Vector3f &n, int cx , int cy) ;
 
 bool cont;
 int cx, cy;
@@ -94,7 +95,7 @@ private:
 */
 
 
-extern bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture,  Eigen::Vector3f &p, Eigen::Vector3f &n) ;
+extern bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture,  Eigen::Vector3f &p, Eigen::Vector3f &n,int cx, int cy, cv::Mat depthMap) ;
 
 
 void mouse_callback( int event, int x, int y, int flags, void* param){
@@ -471,11 +472,11 @@ int main(int argc, char **argv) {
         top.y()=tanformR1.getOrigin().y();
         top.z()=tanformR1.getOrigin().z();
 
-        cout<<"top is x="<<top.x()<< " y="<<top.y()<<" z="<<top.z()<<endl;
+      //  cout<<"top is x="<<top.x()<< " y="<<top.y()<<" z="<<top.z()<<endl;
         Eigen::Vector3f bottom;
         bottom=top;
         bottom.x()-=1;
-        cout<<"bot is x="<<bottom.x()<< " y="<<bottom.y()<<" z="<<bottom.z()<<endl;
+       // cout<<"bot is x="<<bottom.x()<< " y="<<bottom.y()<<" z="<<bottom.z()<<endl;
         Eigen::Vector3f targetPo;
         Eigen::Vector3f targetN;
         float angle=M_PI_2;
@@ -501,45 +502,113 @@ int main(int argc, char **argv) {
 
 
         }
-        bool yeah = findLowestPoint(pc,top,bottom,angle,targetPo,targetN);
+        bool yeah = findLowestPoint(pc,top,bottom,angle,targetPo,targetN, cx, cy ,depth );
         cout<<"lowest point is x="<<targetPo.x()<< " y="<<targetPo.y()<<" z="<<targetPo.z()<<endl;
+        cout<<"target vector x= "<<targetN.x()<< " y="<<targetN.y()<<" z="<<targetN.z()<<endl;
 
         cout<<"-------------------------------------------"<<endl;
 
         Eigen::Vector4d tar(targetPo.x(), targetPo.y(), targetPo.z(), 1);
         targetP = calib.inverse()*tar;
+
+
+        ///////////////////////////////////
+
+
+         ros::Rate r(0.1);
+         ros::Publisher marker_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+
+         // Set our initial shape type to be a cube
+         uint32_t shape = visualization_msgs::Marker::ARROW;
+       //  tf::Quaternion  Q ( tf::Vector3 ( targetN.x(), targetN.y()  , targetN.z() ),  (tfScalar) 0.0 );
+         int count=0;
+         while (count<3)
+         {
+           visualization_msgs::Marker marker;
+
+           marker.header.frame_id = "/xtion3_rgb_optical_frame";
+           marker.header.stamp = ros::Time::now();
+
+           marker.ns = "basic_shapes";
+           marker.id = 0;
+           marker.type = shape;
+           marker.action = visualization_msgs::Marker::ADD;
+
+//           marker.pose.position.x = targetPo.x();
+//           marker.pose.position.y = targetPo.y();
+//           marker.pose.position.z = targetPo.z();
+
+
+
+//           marker.pose.orientation.x = Q.x();
+//           marker.pose.orientation.y = Q.y();
+//           marker.pose.orientation.z = Q.z();
+//           marker.pose.orientation.w = Q.w();
+
+
+           marker.points.resize(2);
+           marker.points[0].x = targetPo.x();
+           marker.points[0].y = targetPo.y();
+           marker.points[0].z = targetPo.z();
+
+           marker.points[1].x = targetPo.x()+targetN.x();
+           marker.points[1].y = targetPo.y()+targetN.y();
+           marker.points[1].z = targetPo.z()+targetN.z();
+
+           marker.scale.x = 0.01;
+           marker.scale.y = 0.02;
+           marker.scale.z = 0.1;
+
+
+           marker.color.r = 0.0f;
+           marker.color.g = 1.0f;
+           marker.color.b = 0.0f;
+           marker.color.a = 1.0;
+
+           marker.lifetime = ros::Duration();
+
+
+           marker_pub.publish(marker);
+
+           r.sleep();
+
+           count++;
+         }
+
+        //////////////////////////
+
     //////LOWEST POINT END /////
 
-        geometry_msgs::Pose desPos;
-        btQuaternion q;
-        float roll , pitch, yaw;
+//        geometry_msgs::Pose desPos;
+//        btQuaternion q;
+//        float roll , pitch, yaw;
 
-        roll= atan2f(rotMat[2][1],rotMat[2][2] );
-        pitch= atan2f(-rotMat[2][0],sqrt(pow(rotMat[2][2],2)+pow(rotMat[2][1],2)));
-        yaw= atan2f(rotMat[1][0],rotMat[0][0]);
-        G_Orientation=tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
-        desPos.orientation = G_Orientation;
+//        roll= atan2f(rotMat[2][1],rotMat[2][2] );
+//        pitch= atan2f(-rotMat[2][0],sqrt(pow(rotMat[2][2],2)+pow(rotMat[2][1],2)));
+//        yaw= atan2f(rotMat[1][0],rotMat[0][0]);
+//        G_Orientation=tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
+//        desPos.orientation = G_Orientation;
 
-        if(!ZFar){
-            desPos.position.x = targetP.x()-0.02;
-            desPos.position.y = targetP.y();
-            desPos.position.z = targetP.z()+0.02;
-            moveTo(desPos);
-            ros::Duration(2).sleep();
-            setGrippersClose();
-            makeCircle();
-        }
-        else{
-            desPos.position.x = 0.3;
-            desPos.position.y = -1;
-            desPos.position.z = 1.3;
-            moveTo(desPos);
-        }
+//        if(!ZFar){
+//            desPos.position.x = targetP.x()-0.02;
+//            desPos.position.y = targetP.y();
+//            desPos.position.z = targetP.z()+0.02;
+//            moveTo(desPos);
+//            ros::Duration(2).sleep();
+//            setGrippersClose();
+//            makeCircle();
+//        }
+//        else{
+//            desPos.position.x = 0.3;
+//            desPos.position.y = -1;
+//            desPos.position.z = 1.3;
+//            moveTo(desPos);
+//        }
 
-        cout<<"----HIT ENTER TO OPEN GRIPPERS ---"<<endl;
-        cin.ignore();
+//        cout<<"----HIT ENTER TO OPEN GRIPPERS ---"<<endl;
+//        cin.ignore();
 
-        setGrippersOpen();
+//        setGrippersOpen();
 
 
 

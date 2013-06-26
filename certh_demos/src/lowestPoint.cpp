@@ -265,7 +265,7 @@ static Vec3 computeNormal(const PointCloud &pc, int x, int y)
 //}
 bool findLowestPoint(const PointCloud &depth, const Vec3 &orig, const Vec3 &base,
 float apperture,
-                     Vec3 &p, Vec3 &n )
+                     Vec3 &p, Vec3 &n,int  cx ,int  cy , cv::Mat depthMap)
 {
 
 
@@ -292,10 +292,7 @@ float apperture,
                 minx = val.x ;
               //  cout<<"minx= " << minx<< endl;
                 best_j = j ;
-                best_i = i ;
-                best_x=val.x;
-                best_y=val.y;
-                best_z=val.z;
+                best_i = i ;                
 
                 found = true ;
             }
@@ -303,12 +300,22 @@ float apperture,
         }
     }
 
-    cout<< "best= (" << best_j <<" , "<< best_i <<")"<<endl;
 
-    cout<< "best point = "<< best_x <<" "<< best_y << " "<< best_z << endl;
+    cout<< "best1= (" << best_j <<" , "<< best_i <<")"<<endl;
 
+    for(int i=0; i<depthMap.rows; ++i)
+        for(int j=0; j<depthMap.cols; ++j)
+            if( (depthMap.at<unsigned short>(i, j) < 900) || (depthMap.at<unsigned short>(i, j) > 1400) )
+                depthMap.at<unsigned short>(i, j) = 0;
 
-    PointT p_ = depth.at(best_j, best_i) ;
+    cv::TermCriteria criteria(1, 6, 0.1);
+    cv::Rect rect1(best_j-10, best_i-10, 20, 20);
+    cv::meanShift(depthMap, rect1, criteria);
+    best_j = rect1.x + rect1.width/2;
+    best_i = rect1.y + rect1.height/2;
+    cout<< "best2= (" << best_j <<" , "<< best_i <<")"<<endl;
+    PointT p_ = depth.at(best_j, best_i ) ;
+     n = computeNormal(depth, best_j, best_i ) ;
 
 
     p = Vec3(p_.x, p_.y, p_.z) ;
