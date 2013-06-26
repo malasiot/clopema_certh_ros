@@ -3,6 +3,7 @@
 #include <camera_helpers/OpenNICapture.h>
 #include <viz_helpers/CameraViewServer.h>
 #include <robot_helpers/Utils.h>
+#include <visualization_msgs/Marker.h>
 
 #include <fstream>
 
@@ -93,9 +94,6 @@ void doCalibrate(const vector<pcl::PointXYZ> &pts)
 
         fout << endl;
     }
-
-
-
 }
 
 struct Context {
@@ -103,6 +101,7 @@ struct Context {
     camera_helpers::OpenNICapturePointCloud *grabber ;
     vector<pcl::PointXYZ> pts ;
 };
+
 
 
 void onMouseClicked(int x, int y, Context *ctx)
@@ -120,7 +119,9 @@ void onMouseClicked(int x, int y, Context *ctx)
 
     pcl::PointXYZ p = cloud.at(x, y);
 
-    cout << p << endl ;
+    //cout << p << endl ;
+
+    // add the point to the list
 
     ctx->pts.push_back(p) ;
 
@@ -128,15 +129,19 @@ void onMouseClicked(int x, int y, Context *ctx)
 
     if ( ctx->currentPoint == sizeof(points)/sizeof(float[3]) )
     {
+        // all points have been added, do the calibration
+
         doCalibrate(ctx->pts) ;
         calibration_finished = true ;
         return ;
     }
     else
     {
+        // move the robot to the next position
+
         int c = ctx->currentPoint ;
         Eigen::Quaterniond q ;
-         q = Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitY());
+         q = Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitZ());
 
         robot_helpers::MoveRobot mv ;
         robot_helpers::moveGripper(mv, "r2", Eigen::Vector3d(points[c][0], points[c][1], points[c][2]), q) ;
@@ -145,14 +150,16 @@ void onMouseClicked(int x, int y, Context *ctx)
 }
 
 
-
 int main(int argc, char **argv) {
 
     ros::init(argc, argv, "calibrate_fixed_xtion");
     ros::NodeHandle nh;
 
+    ros::Publisher vis_pub = nh.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
+
     viz_helpers::CameraViewServer srv ;
 
+    // open grabber and wait until connection
     camera_helpers::OpenNICapturePointCloud grabber("xtion3") ;
     grabber.connect() ;
 
@@ -161,12 +168,18 @@ int main(int argc, char **argv) {
     ctx.grabber = &grabber ;
 
     Eigen::Quaterniond q ;
-     q = Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitY());
+     q = Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitZ());
+
+     // move the robot to the first position
 
     robot_helpers::MoveRobot mv ;
     robot_helpers::moveGripper(mv, "r2", Eigen::Vector3d(points[0][0], points[0][1], points[0][2]), q) ;
 
+    // enable manual tip detection
+
     srv.mouseClicked.connect(boost::bind(onMouseClicked, _1, _2, &ctx));
+
+    // wait until calibration has finished
 
     while (!calibration_finished) ;
     return 1;

@@ -1,0 +1,7 @@
+<launch>
+	<node pkg="clopema_calibration" type="hand_eye_calibration" name="xtion3_link" output="screen">
+		<param name="data" value="xtion3/calib.txt"/>
+		<param name="parent" value="base_link"/>
+		<param name="child" value="xtion3_rgb_optical_frame"/>
+	</node>
+</launch>
