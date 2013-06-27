@@ -4,7 +4,8 @@
 
   <rosdep name="boost"/>
   <rosdep name="opencv2"/>
-  <rsodep name="qt4"/>
+  <rosdep name="qt4"/>
+  <rosdep name="bullet"/>
   
   <depend package="roscpp"/>
   <depend package="image_transport"/>

@@ -77,4 +77,9 @@ QT4_ADD_RESOURCES(CAMERA_VIEW_PLUGIN_RC_SOURCES ${CAMERA_VIEW_PLUGIN_RESOURCES} 
 rosbuild_add_library(camera_view_plugin ${CAMERA_VIEW_PLUGIN_SOURCES} ${CAMERA_VIEW_PLUGIN_MOC_SOURCES} ${CAMERA_VIEW_PLUGIN_RC_SOURCES} ${CAMERA_VIEW_PLUGIN_HEADERS})
 target_link_libraries(camera_view_plugin camera_view ${QT_LIBRARIES})
 
+#########################################################################################
 
+FIND_PACKAGE(Bullet)
+#include_directories(${BULLET_INCLUDE_DIRS} )
+rosbuild_add_executable(cloth_simulator src/ClothSimulator.cpp src/Physics.cpp)
+target_link_libraries(cloth_simulator BulletSoftBody)
