@@ -578,7 +578,7 @@ int main(int argc, char **argv) {
             // Publish the marker
             marker_pub.publish(marker);
            r.sleep();
-           if(count>2) break;
+           if(count>4) break;
              count++;
           }
 
@@ -587,7 +587,8 @@ int main(int argc, char **argv) {
         //////////////////////////
 
     //////LOWEST POINT END /////
-
+          cout<<"HIT ENDER TO MOVE THE ARM"<<endl;
+          cin.ignore();
 
 
         Eigen::Vector4d norm (targetN.x(), targetN.y(), targetN.z(), 1);
@@ -612,6 +613,8 @@ int main(int argc, char **argv) {
             desPos.position.y = targetP.y()-0.03;
             desPos.position.z = targetP.z()-0.1;
             moveTo(desPos);
+            cout<<"HIT ENTER TO GRASP"<<endl;
+            cin.ignore();
             desPos.position.x = targetP.x();
             desPos.position.y = targetP.y()-0.03;
             desPos.position.z = targetP.z();
