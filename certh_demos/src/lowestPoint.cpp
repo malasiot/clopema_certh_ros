@@ -182,7 +182,7 @@ static void robustPlane3DFit(vector<Vec3> &x, Vec3  &c, Vec3 &u)
 
 static Vec3 computeNormal(const PointCloud &pc, int x, int y)
 {
-    const int nrmMaskSize = 6 ;
+    const int nrmMaskSize = 8 ;
     int w = pc.width, h = pc.height ;
 
     vector<Vec3> pts ;
@@ -309,7 +309,7 @@ float apperture,
                 depthMap.at<unsigned short>(i, j) = 0;
 
     cv::TermCriteria criteria(1, 6, 0.1);
-    cv::Rect rect1(best_j-10, best_i-10, 20, 20);
+    cv::Rect rect1(best_j-15, best_i-15, 30, 30);
     cv::meanShift(depthMap, rect1, criteria);
     best_j = rect1.x + rect1.width/2;
     best_i = rect1.y + rect1.height/2;

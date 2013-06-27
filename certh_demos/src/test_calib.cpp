@@ -41,9 +41,14 @@ namespace enc = sensor_msgs::image_encodings;
 bool ZFar;
 
 btMatrix3x3 rotMat(
-(btScalar) 0, (btScalar) 0, (btScalar) -1,
+(btScalar) 0, (btScalar) 1, (btScalar) -1,
 (btScalar) -1, (btScalar) 0, (btScalar) 0,
-(btScalar) 0, (btScalar) 1, (btScalar) 0);
+(btScalar) 0, (btScalar) 1, (btScalar) 1);
+
+btMatrix3x3 homeRotMat(
+        (btScalar) 0, (btScalar) 0, (btScalar) -1,
+        (btScalar) -1, (btScalar) 0, (btScalar) 0,
+        (btScalar) 0, (btScalar) 1, (btScalar) 0);
 
 geometry_msgs::Quaternion G_Orientation;
 /*
@@ -306,6 +311,15 @@ void moveThrough(	std::vector<geometry_msgs::Point> traj){
 
     for(unsigned int i=1;i<traj.size();i++){
 
+        if(i>1){
+            float yaw, pitch, roll;
+            roll= atan2f(homeRotMat[2][1],homeRotMat[2][2] );
+            pitch= atan2f(-homeRotMat[2][0],sqrt(pow(homeRotMat[2][2],2)+pow(homeRotMat[2][1],2)));
+            yaw= atan2f(homeRotMat[1][0],homeRotMat[0][0]);
+            G_Orientation=tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
+            desired_pose.pose.orientation = G_Orientation;
+        }
+
         mp.request.motion_plan_req.goal_constraints.orientation_constraints.clear();
         mp.request.motion_plan_req.goal_constraints.position_constraints.clear();
         desired_pose.pose.position = traj[i];
@@ -511,40 +525,34 @@ int main(int argc, char **argv) {
         Eigen::Vector4d tar(targetPo.x(), targetPo.y(), targetPo.z(), 1);
         targetP = calib.inverse()*tar;
 
-
-        ///////////////////////////////////
-
-
-         ros::Rate r(0.1);
-         ros::Publisher marker_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 1);
-
-         // Set our initial shape type to be a cube
-         uint32_t shape = visualization_msgs::Marker::ARROW;
-       //  tf::Quaternion  Q ( tf::Vector3 ( targetN.x(), targetN.y()  , targetN.z() ),  (tfScalar) 0.0 );
-         int count=0;
-         while (count<3)
-         {
-           visualization_msgs::Marker marker;
-
-           marker.header.frame_id = "/xtion3_rgb_optical_frame";
-           marker.header.stamp = ros::Time::now();
-
-           marker.ns = "basic_shapes";
-           marker.id = 0;
-           marker.type = shape;
-           marker.action = visualization_msgs::Marker::ADD;
-
-//           marker.pose.position.x = targetPo.x();
-//           marker.pose.position.y = targetPo.y();
-//           marker.pose.position.z = targetPo.z();
+       ///////////////////////////////////
 
 
+          ros::Rate r(1);
+          ros::Publisher marker_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 1);
 
-//           marker.pose.orientation.x = Q.x();
-//           marker.pose.orientation.y = Q.y();
-//           marker.pose.orientation.z = Q.z();
-//           marker.pose.orientation.w = Q.w();
+          // Set our initial shape type to be a cube
+          uint32_t shape = visualization_msgs::Marker::ARROW;
+          int count=0;
+          while (ros::ok())
+          {
+            visualization_msgs::Marker marker;
+            // Set the frame ID and timestamp.  See the TF tutorials for information on these.
+            marker.header.frame_id = "/xtion3_rgb_optical_frame";
+            marker.header.stamp = ros::Time::now();
 
+            // Set the namespace and id for this marker.  This serves to create a unique ID
+            // Any marker sent with the same namespace and id will overwrite the old one
+            marker.ns = "basic_shapes";
+            marker.id = 0;
+
+            // Set the marker type.  Initially this is CUBE, and cycles between that and SPHERE, ARROW, and CYLINDER
+            marker.type = shape;
+
+            // Set the marker action.  Options are ADD and DELETE
+            marker.action = visualization_msgs::Marker::ADD;
+
+            // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
 
            marker.points.resize(2);
            marker.points[0].x = targetPo.x();
@@ -554,61 +562,75 @@ int main(int argc, char **argv) {
            marker.points[1].x = targetPo.x()+targetN.x();
            marker.points[1].y = targetPo.y()+targetN.y();
            marker.points[1].z = targetPo.z()+targetN.z();
+            // Set the scale of the marker -- 1x1x1 here means 1m on a side
+            marker.scale.x = 0.01;
+            marker.scale.y = 0.02;
+            marker.scale.z = 0.03;
 
-           marker.scale.x = 0.01;
-           marker.scale.y = 0.02;
-           marker.scale.z = 0.1;
+            // Set the color -- be sure to set alpha to something non-zero!
+            marker.color.r = 0.0f;
+            marker.color.g = 1.0f;
+            marker.color.b = 0.0f;
+            marker.color.a = 1.0;
 
+            marker.lifetime = ros::Duration();
 
-           marker.color.r = 0.0f;
-           marker.color.g = 1.0f;
-           marker.color.b = 0.0f;
-           marker.color.a = 1.0;
-
-           marker.lifetime = ros::Duration();
-
-
-           marker_pub.publish(marker);
-
+            // Publish the marker
+            marker_pub.publish(marker);
            r.sleep();
+           if(count>2) break;
+             count++;
+          }
 
-           count++;
-         }
+
 
         //////////////////////////
 
     //////LOWEST POINT END /////
 
-//        geometry_msgs::Pose desPos;
-//        btQuaternion q;
-//        float roll , pitch, yaw;
 
-//        roll= atan2f(rotMat[2][1],rotMat[2][2] );
-//        pitch= atan2f(-rotMat[2][0],sqrt(pow(rotMat[2][2],2)+pow(rotMat[2][1],2)));
-//        yaw= atan2f(rotMat[1][0],rotMat[0][0]);
-//        G_Orientation=tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
-//        desPos.orientation = G_Orientation;
 
-//        if(!ZFar){
-//            desPos.position.x = targetP.x()-0.02;
-//            desPos.position.y = targetP.y();
-//            desPos.position.z = targetP.z()+0.02;
-//            moveTo(desPos);
-//            ros::Duration(2).sleep();
-//            setGrippersClose();
-//            makeCircle();
-//        }
-//        else{
-//            desPos.position.x = 0.3;
-//            desPos.position.y = -1;
-//            desPos.position.z = 1.3;
-//            moveTo(desPos);
-//        }
+        Eigen::Vector4d norm (targetN.x(), targetN.y(), targetN.z(), 1);
+        Eigen::Vector4d targetNo;
+        targetNo = calib.inverse()*norm;
+        rotMat[0][0] = targetNo.x();
+        rotMat[0][1] = targetNo.y();
+        rotMat[0][2] = targetNo.z();
 
-//        cout<<"----HIT ENTER TO OPEN GRIPPERS ---"<<endl;
-//        cin.ignore();
+        geometry_msgs::Pose desPos;
 
-//        setGrippersOpen();
+        float roll , pitch, yaw;
+
+        roll= atan2f(rotMat[2][1],rotMat[2][2] );
+        pitch= atan2f(-rotMat[2][0],sqrt(pow(rotMat[2][2],2)+pow(rotMat[2][1],2)));
+        yaw= atan2f(rotMat[1][0],rotMat[0][0]);
+        G_Orientation=tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
+        desPos.orientation = G_Orientation;
+
+        if(!ZFar){
+            desPos.position.x = targetP.x();
+            desPos.position.y = targetP.y()-0.03;
+            desPos.position.z = targetP.z()-0.1;
+            moveTo(desPos);
+            desPos.position.x = targetP.x();
+            desPos.position.y = targetP.y()-0.03;
+            desPos.position.z = targetP.z();
+            moveTo(desPos);
+            ros::Duration(2).sleep();
+            setGrippersClose();
+            makeCircle();
+        }
+        else{
+            desPos.position.x = 0.3;
+            desPos.position.y = -1;
+            desPos.position.z = 1.3;
+            moveTo(desPos);
+        }
+
+        cout<<"----HIT ENTER TO OPEN GRIPPERS ---"<<endl;
+        cin.ignore();
+
+        setGrippersOpen();
 
 
 
