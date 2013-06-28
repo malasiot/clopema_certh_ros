@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 
     ros::Time prevTime = ros::Time::now(), curTime ;
 
-    Cloth cloth(0.5, 0.7, 20, 20) ;
+    Cloth cloth(0.5, 0.7, 15, 15) ;
     ph.addSoftBody("cloth", cloth) ;
     ph.attachSoftBodyToLink("cloth", "corner0", "r1_ee", state);
 

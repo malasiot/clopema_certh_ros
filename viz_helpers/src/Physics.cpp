@@ -258,8 +258,6 @@ void Physics::updateAnchor(btSoftBody *body, int nodeIdx, const btVector3 &pos )
 void Physics::addSoftBody(const std::string &name, const SoftBody &sb)
 {
 
-    // we only support patch geometry
-
     vector<int> triangles ;
     vector<btVector3> vertices ;
 
@@ -292,11 +290,11 @@ void Physics::addSoftBody(const std::string &name, const SoftBody &sb)
 
     softBody->setUserPointer(pData.get()) ;
 
-    softBody->getCollisionShape()->setMargin( 0.01 );
+    softBody->getCollisionShape()->setMargin( 0.0001 );
 
-    softBody->m_materials[ 0 ]->m_kLST = 0.3;
-    softBody->m_materials[ 0 ]->m_kAST = 1.0 ;
-    softBody->m_materials[ 0 ]->m_kVST = 1.0 ;
+    softBody->m_materials[ 0 ]->m_kLST = 0.1;   // Linear stiffness coefficient [0,1]
+    softBody->m_materials[ 0 ]->m_kAST = 0.1 ;  // Area/Angular stiffness coefficient [0,1]
+    softBody->m_materials[ 0 ]->m_kVST = 0.1 ;  // Volume stiffness coefficient [0,1]
 
     softBody->generateBendingConstraints( 2, softBody->m_materials[ 0 ] );
     softBody->setTotalMass(btScalar(1) );
@@ -396,7 +394,7 @@ void Physics::attachSoftBodyToLink(const std::string &bname, const std::string &
     btVector3 pivot = gt.getOrigin() ;
 
 
-    sb_data->obj->appendAnchor(idx, rb_data->obj, btVector3(0, 0, 0), false, btScalar(1) ) ;
+    sb_data->obj->appendAnchor(idx, rb_data->obj, btVector3(0, 0, -0.05), false, btScalar(1) ) ;
 
     ////   sb_data->obj->setMass(sb_data->idxs[idx], 0) ;
     sb_world_info.m_sparsesdf.Reset();
@@ -460,28 +458,45 @@ void Physics::getMeshMarker(const std::string &bname, visualization_msgs::Marker
 
         marker.points.push_back(p) ;
 
-        std_msgs::ColorRGBA clr ;
-        clr.r = 0.2 ;
-        clr.g = 0.2 ;
-        clr.b = 0.5 + 0.2*rand()/(double)RAND_MAX;
+        btVector3 normal0 = face.m_n[0]->m_n ;
+        btVector3 normal1 = face.m_n[1]->m_n ;
+        btVector3 normal2 = face.m_n[2]->m_n ;
 
+        cout << normal0.z() << endl ;
+        std_msgs::ColorRGBA clr ;
+        clr.r = fabs(normal0.z()) ;
+        clr.g = fabs(normal0.z()) ;
+        clr.b = fabs(normal0.z());
+        clr.a = 1.0 ;
 
         marker.colors.push_back(clr) ;
-    //    marker.colors.push_back(clr) ;
-    //    marker.colors.push_back(clr) ;
+
+        clr.r = fabs(normal1.z()) ;
+        clr.g = fabs(normal1.z()) ;
+        clr.b = fabs(normal1.z());
+        clr.a = 1.0 ;
+
+        marker.colors.push_back(clr) ;
+
+        clr.r = fabs(normal2.z()) ;
+        clr.g = fabs(normal2.z()) ;
+        clr.b = fabs(normal2.z());
+        clr.a = 1 ;
+
+        marker.colors.push_back(clr) ;
 
 
     }
 
-    marker.color.r = 0.0f;
-    marker.color.g = 0.0f;
-    marker.color.b = 0.0f;
-    marker.color.a = 1.0;
+    marker.color.r = 1.0f;
+    marker.color.g = 0.5f;
+    marker.color.b = 0.7f;
+    marker.color.a = 1;
 
- marker.pose.orientation.x = 0 ;
- marker.pose.orientation.y = 0 ;
- marker.pose.orientation.z = 0 ;
- marker.pose.orientation.w = 1 ;
+    marker.pose.orientation.x = 0 ;
+    marker.pose.orientation.y = 0 ;
+    marker.pose.orientation.z = 0 ;
+    marker.pose.orientation.w = 1 ;
 
 
     marker.scale.x = 1.0 ;
