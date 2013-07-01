@@ -255,7 +255,8 @@ void moveTo(geometry_msgs::Pose pose){
         cmove.poseToClopemaMotionPlan(mp, desired_pose);
 
         ROS_INFO("Planning");
-        cmove.plan(mp);
+        if (!cmove.plan(mp))
+            return ;
 
         ROS_INFO("Executing");
         control_msgs::FollowJointTrajectoryGoal goal;
@@ -305,8 +306,9 @@ void moveThrough(	std::vector<geometry_msgs::Point> traj){
     desired_pose.absolute_yaw_tolerance = 0.04;
 
     cmove.poseToClopemaMotionPlan(mp, desired_pose);
-    cmove.plan(mp);
 
+    if (!cmove.plan(mp))
+        return ;
     wholeTraj = mp.response.joint_trajectory;
 
     for(unsigned int i=1;i<traj.size();i++){
@@ -402,6 +404,36 @@ void convertCloud(const cv::Mat &dep, const pcl::PointCloud<pcl::PointXYZ>& clou
         }
 
 }
+
+void findGraspingOrientation(Eigen::Vector4d vector){
+
+    Eigen::Vector3d N(vector.x(), vector.y(), vector.z());
+    N.normalize();
+    Eigen::Vector3d A(1,0,-1);
+    Eigen::Vector3d B=A-(A.dot(N))*N;
+    Eigen::Vector3d C=N.cross(B);
+
+    C.normalize();
+    B.normalize();
+
+    rotMat[0][0]=N.x();
+    rotMat[1][0]=N.y();
+    rotMat[2][0]=N.z();
+
+    rotMat[0][1]=C.x();
+    rotMat[1][1]=C.y();
+    rotMat[2][1]=C.z();
+
+    rotMat[0][2]=-B.x();
+    rotMat[1][2]=-B.y();
+    rotMat[2][2]=-B.z();
+
+    cout<<N<<"\n"<<C<<"\n "<<B<<endl;
+    cout<<C.dot(N)<< " "<<B.dot(N)<< endl;
+
+}
+
+
 
 
 int main(int argc, char **argv) {
@@ -591,13 +623,13 @@ int main(int argc, char **argv) {
           cin.ignore();
 
 
-        Eigen::Vector4d norm (targetN.x(), targetN.y(), targetN.z(), 1);
+        Eigen::Vector4d norm (targetN.x(), targetN.y(), targetN.z(), 0);
         Eigen::Vector4d targetNo;
-        targetNo = calib.inverse()*norm;
+        targetNo = calib.inverse()*norm.normalized();
         rotMat[0][0] = targetNo.x();
         rotMat[0][1] = targetNo.y();
         rotMat[0][2] = targetNo.z();
-
+        findGraspingOrientation(targetNo);
         geometry_msgs::Pose desPos;
 
         float roll , pitch, yaw;
@@ -609,15 +641,15 @@ int main(int argc, char **argv) {
         desPos.orientation = G_Orientation;
 
         if(!ZFar){
-            desPos.position.x = targetP.x();
-            desPos.position.y = targetP.y()-0.03;
-            desPos.position.z = targetP.z()-0.1;
+            desPos.position.x = targetP.x()+rotMat[0][0]*0.03-rotMat[0][2]*0.07;
+            desPos.position.y = targetP.y()+rotMat[1][0]*0.03-rotMat[1][2]*0.07;
+            desPos.position.z = targetP.z()+rotMat[2][0]*0.03-rotMat[2][2]*0.07;
             moveTo(desPos);
             cout<<"HIT ENTER TO GRASP"<<endl;
             cin.ignore();
-            desPos.position.x = targetP.x();
-            desPos.position.y = targetP.y()-0.03;
-            desPos.position.z = targetP.z();
+            desPos.position.x = targetP.x()+rotMat[0][2]*0.045;
+            desPos.position.y = targetP.y()+rotMat[1][2]*0.045;
+            desPos.position.z = targetP.z()+rotMat[2][2]*0.045;
             moveTo(desPos);
             ros::Duration(2).sleep();
             setGrippersClose();
