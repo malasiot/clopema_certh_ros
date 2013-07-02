@@ -45,59 +45,23 @@ btMatrix3x3 rotMat(
 (btScalar) -1, (btScalar) 0, (btScalar) 0,
 (btScalar) 0, (btScalar) 1, (btScalar) 1);
 
+btMatrix3x3 rotMat2(
+(btScalar) 0, (btScalar) 1, (btScalar) -1,
+(btScalar) -1, (btScalar) 0, (btScalar) 0,
+(btScalar) 0, (btScalar) 1, (btScalar) 1);
+
+btMatrix3x3 rotMat3(
+(btScalar) 0, (btScalar) 1, (btScalar) -1,
+(btScalar) -1, (btScalar) 0, (btScalar) 0,
+(btScalar) 0, (btScalar) 1, (btScalar) 1);
+
+
 btMatrix3x3 homeRotMat(
         (btScalar) 0, (btScalar) 0, (btScalar) -1,
         (btScalar) -1, (btScalar) 0, (btScalar) 0,
         (btScalar) 0, (btScalar) 1, (btScalar) 0);
 
 geometry_msgs::Quaternion G_Orientation;
-/*
-class OpenniGrabber {
-
-public:
-    OpenniGrabber()
-    {
-
-         client = nh.serviceClient<certh_libs::OpenniCapture>("capture");
-    }
-
-    bool grab(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ>&pc)
-    {
-        certh_libs::OpenniCapture srv;
-
-        if (client.call(srv))
-        {
-            if ( srv.response.success )
-            {
-
-                // Save stamps for info
-                ros::Time stamp_rgb = srv.response.rgb.header.stamp;
-                ros::Time stamp_depth = srv.response.depth.header.stamp;
-                ros::Time stamp_cloud = srv.response.cloud.header.stamp;
-
-                cv_bridge::CvImagePtr rgb_ = cv_bridge::toCvCopy(srv.response.rgb, enc::BGR8);
-                cv_bridge::CvImagePtr depth_ =cv_bridge::toCvCopy(srv.response.depth, "");
-
-                pcl::fromROSMsg(srv.response.cloud, pc) ;
-
-                rgb = rgb_->image ;
-                depth = depth_->image ;
-
-                return true ;
-            }
-            else return false ;
-         }
-        else return false ;
-
-    }
-
-private:
-
-    ros::NodeHandle nh ;
-    ros::ServiceClient client ;
-
-};
-*/
 
 
 extern bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture,  Eigen::Vector3f &p, Eigen::Vector3f &n,int cx, int cy, cv::Mat depthMap) ;
@@ -224,7 +188,7 @@ std::vector<geometry_msgs::Point> calculateCirclePoints(geometry_msgs::Point cen
     return points;
 }
 
-void moveTo(geometry_msgs::Pose pose){
+int moveTo(geometry_msgs::Pose pose){
         //Create plan
         clopema_arm_navigation::ClopemaMotionPlan mp;
         ClopemaMove cmove;
@@ -256,12 +220,58 @@ void moveTo(geometry_msgs::Pose pose){
 
         ROS_INFO("Planning");
         if (!cmove.plan(mp))
-            return ;
+            return -1;
 
         ROS_INFO("Executing");
         control_msgs::FollowJointTrajectoryGoal goal;
         goal.trajectory = mp.response.joint_trajectory;
         cmove.doGoal(goal);
+        return 0;
+}
+
+void rotateGripper(float angle){
+
+    //Create plan
+    clopema_arm_navigation::ClopemaMotionPlan mp;
+    ClopemaMove cmove;
+
+    mp.request.motion_plan_req.group_name = "r1_arm";
+    mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
+
+    //Set start state
+    cmove.getRobotState(mp.request.motion_plan_req.start_state);
+
+    arm_navigation_msgs::SimplePoseConstraint desired_pose;
+
+    desired_pose.header.frame_id = "r1_ee";
+    desired_pose.header.stamp = ros::Time::now();
+    desired_pose.link_name = "r1_ee";
+
+    desired_pose.pose.position.x = 0;
+    desired_pose.pose.position.y = 0;
+    desired_pose.pose.position.z = 0;
+    desired_pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0, 0, angle );
+
+
+   // cout<< "\n going to --- >  "<< desired_pose.pose.position.x<< " "  << desired_pose.pose.position.y<<"  " << desired_pose.pose.position.z <<"\n";
+
+    desired_pose.absolute_position_tolerance.x = 0.002;
+    desired_pose.absolute_position_tolerance.y = 0.002;
+    desired_pose.absolute_position_tolerance.z = 0.002;
+    desired_pose.absolute_roll_tolerance = 0.004;
+    desired_pose.absolute_pitch_tolerance = 0.004;
+    desired_pose.absolute_yaw_tolerance = 0.004;
+    cmove.poseToClopemaMotionPlan(mp, desired_pose);
+
+    ROS_INFO("Planning");
+    if (!cmove.plan(mp))
+        return ;
+
+    ROS_INFO("Executing");
+    control_msgs::FollowJointTrajectoryGoal goal;
+    goal.trajectory = mp.response.joint_trajectory;
+    cmove.doGoal(goal);
+
 }
 
 
@@ -327,7 +337,8 @@ void moveThrough(	std::vector<geometry_msgs::Point> traj){
         desired_pose.pose.position = traj[i];
         cmove.poseToClopemaMotionPlan(mp, desired_pose);
         pointToRobotState(mp.request.motion_plan_req.start_state, wholeTraj.points.back(), wholeTraj.joint_names);
-        cmove.plan(mp);
+        if (!cmove.plan(mp))
+            return ;
 
         wholeTraj.points.insert(wholeTraj.points.end(), mp.response.joint_trajectory.points.begin(), mp.response.joint_trajectory.points.end());
     }
@@ -433,7 +444,23 @@ void findGraspingOrientation(Eigen::Vector4d vector){
 
 }
 
+float findBias(Eigen::Vector4d vector){
 
+    float theta=atan2f(vector.x(),abs(vector.y()));
+
+    return theta;
+}
+
+geometry_msgs::Quaternion rotationMatrixToQuaternion(btMatrix3x3 matrix){
+
+    float roll , pitch, yaw;
+
+    roll= atan2f(matrix[2][1],matrix[2][2] );
+    pitch= atan2f(-matrix[2][0],sqrt(pow(matrix[2][2],2)+pow(matrix[2][1],2)));
+    yaw= atan2f(matrix[1][0],matrix[0][0]);
+    G_Orientation=tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
+    return G_Orientation;
+}
 
 
 int main(int argc, char **argv) {
@@ -557,34 +584,26 @@ int main(int argc, char **argv) {
         Eigen::Vector4d tar(targetPo.x(), targetPo.y(), targetPo.z(), 1);
         targetP = calib.inverse()*tar;
 
-       ///////////////////////////////////
-
+       ///////////// DRAW ARROW MARKER //////////////////////
 
           ros::Rate r(1);
           ros::Publisher marker_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 1);
 
-          // Set our initial shape type to be a cube
           uint32_t shape = visualization_msgs::Marker::ARROW;
           int count=0;
           while (ros::ok())
           {
             visualization_msgs::Marker marker;
-            // Set the frame ID and timestamp.  See the TF tutorials for information on these.
             marker.header.frame_id = "/xtion3_rgb_optical_frame";
             marker.header.stamp = ros::Time::now();
 
-            // Set the namespace and id for this marker.  This serves to create a unique ID
-            // Any marker sent with the same namespace and id will overwrite the old one
             marker.ns = "basic_shapes";
             marker.id = 0;
 
-            // Set the marker type.  Initially this is CUBE, and cycles between that and SPHERE, ARROW, and CYLINDER
             marker.type = shape;
 
-            // Set the marker action.  Options are ADD and DELETE
             marker.action = visualization_msgs::Marker::ADD;
 
-            // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
 
            marker.points.resize(2);
            marker.points[0].x = targetPo.x();
@@ -594,12 +613,11 @@ int main(int argc, char **argv) {
            marker.points[1].x = targetPo.x()+targetN.x();
            marker.points[1].y = targetPo.y()+targetN.y();
            marker.points[1].z = targetPo.z()+targetN.z();
-            // Set the scale of the marker -- 1x1x1 here means 1m on a side
+
             marker.scale.x = 0.01;
             marker.scale.y = 0.02;
             marker.scale.z = 0.03;
 
-            // Set the color -- be sure to set alpha to something non-zero!
             marker.color.r = 0.0f;
             marker.color.g = 1.0f;
             marker.color.b = 0.0f;
@@ -607,20 +625,16 @@ int main(int argc, char **argv) {
 
             marker.lifetime = ros::Duration();
 
-            // Publish the marker
             marker_pub.publish(marker);
            r.sleep();
            if(count>4) break;
              count++;
           }
 
-
-
         //////////////////////////
 
     //////LOWEST POINT END /////
-          cout<<"HIT ENDER TO MOVE THE ARM"<<endl;
-          cin.ignore();
+
 
 
         Eigen::Vector4d norm (targetN.x(), targetN.y(), targetN.z(), 0);
@@ -630,28 +644,29 @@ int main(int argc, char **argv) {
         rotMat[0][1] = targetNo.y();
         rotMat[0][2] = targetNo.z();
         findGraspingOrientation(targetNo);
+
         geometry_msgs::Pose desPos;
-
-        float roll , pitch, yaw;
-
-        roll= atan2f(rotMat[2][1],rotMat[2][2] );
-        pitch= atan2f(-rotMat[2][0],sqrt(pow(rotMat[2][2],2)+pow(rotMat[2][1],2)));
-        yaw= atan2f(rotMat[1][0],rotMat[0][0]);
-        G_Orientation=tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
-        desPos.orientation = G_Orientation;
+        cout<<"HIT ENDER TO MOVE THE ARM"<<endl;
+        cin.ignore();
+        desPos.orientation = rotationMatrixToQuaternion(rotMat);
 
         if(!ZFar){
             desPos.position.x = targetP.x()+rotMat[0][0]*0.03-rotMat[0][2]*0.07;
             desPos.position.y = targetP.y()+rotMat[1][0]*0.03-rotMat[1][2]*0.07;
             desPos.position.z = targetP.z()+rotMat[2][0]*0.03-rotMat[2][2]*0.07;
-            moveTo(desPos);
+
+            if(moveTo(desPos)==-1){
+                cout<< "BIAS : " <<findBias(targetNo)<<endl;
+                rotateGripper(findBias(targetNo));
+                continue;
+            }
             cout<<"HIT ENTER TO GRASP"<<endl;
             cin.ignore();
-            desPos.position.x = targetP.x()+rotMat[0][2]*0.045;
-            desPos.position.y = targetP.y()+rotMat[1][2]*0.045;
-            desPos.position.z = targetP.z()+rotMat[2][2]*0.045;
+
+            desPos.position.x = targetP.x()+rotMat[0][2]*0.045+rotMat[0][0]*0.03;
+            desPos.position.y = targetP.y()+rotMat[1][2]*0.045+rotMat[1][0]*0.03;
+            desPos.position.z = targetP.z()+rotMat[2][2]*0.045+rotMat[2][0]*0.03;
             moveTo(desPos);
-            ros::Duration(2).sleep();
             setGrippersClose();
             makeCircle();
         }
