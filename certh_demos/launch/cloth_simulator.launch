@@ -1,0 +1,14 @@
+<launch>
+
+    
+	<include file="$(find clopema_launch)/launch/virtual_robot.launch"> 
+	    <arg name="run_rviz" value="false"/>
+	</include>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find certh_demos)/config/cloth_simulator.vcg" />
+
+	<env name="ROSCONSOLE_CONFIG_FILE" value="$(find certh_demos)/config/cloth_simulator_logger.conf"/>
+
+	<node name="cloth_simulation_server" pkg="viz_helpers" type="cloth_simulator" output="screen" />
+	<node name="cloth_simulation_test" pkg="certh_demos" type="cloth_simulator"/>
+</launch>

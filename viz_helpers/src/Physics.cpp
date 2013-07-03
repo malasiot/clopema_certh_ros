@@ -415,6 +415,20 @@ void Physics::clearSoftBodyAttachments(const std::string &bname)
 
  }
 
+void Physics::removeSoftBody(const std::string &bname)
+{
+    map<string, boost::shared_ptr<SoftBodyData> >::iterator sb = sbData.find(bname) ;
+
+    assert( sb != sbData.end() ) ;
+
+    SoftBodyData *sb_data = (*sb).second.get() ;
+
+    world->removeSoftBody(sb_data->obj);
+
+    sbData.erase(sb) ;
+
+}
+
 void Physics::getMeshMarker(const std::string &bname, visualization_msgs::Marker &marker)
 {
     map<string, boost::shared_ptr<SoftBodyData> >::const_iterator sb = sbData.find(bname) ;
@@ -462,8 +476,7 @@ void Physics::getMeshMarker(const std::string &bname, visualization_msgs::Marker
         btVector3 normal1 = face.m_n[1]->m_n ;
         btVector3 normal2 = face.m_n[2]->m_n ;
 
-        cout << normal0.z() << endl ;
-        std_msgs::ColorRGBA clr ;
+       std_msgs::ColorRGBA clr ;
         clr.r = fabs(normal0.z()) ;
         clr.g = fabs(normal0.z()) ;
         clr.b = fabs(normal0.z());
@@ -567,7 +580,7 @@ void buildPlaneData( const btVector3 &corner,
 
  }
 
- Cloth::Cloth(double su, double sv, int steps_u, int steps_v): u(su), v(sv), nu(steps_u), nv(steps_v)
+Cloth::Cloth(const geometry_msgs::Pose &pose_, double su, double sv, int steps_u, int steps_v): u(su), v(sv), nu(steps_u), nv(steps_v), pose(pose_)
  {
 
  }
@@ -575,10 +588,12 @@ void buildPlaneData( const btVector3 &corner,
 
  void Cloth::constructMesh(std::vector<btVector3> &vtx, std::vector<int> &triangles, std::map<string, int> &anchorMap) const {
 
-     const btVector3 llCorner( 0, -1.0, 1.5 );
+     const btVector3 llCorner( pose.position.x, pose.position.y, pose.position.z );
 
-     const btVector3 uVec( u, 0., 0 );
-     const btVector3 vVec( 0., v, 0 );
+     const btQuaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w ) ;
+
+     const btVector3 uVec = quatRotate(q, btVector3( u, 0., 0 )) ;
+     const btVector3 vVec = quatRotate(q, btVector3( 0., v, 0 )) ;
 
      buildPlaneData(llCorner, uVec, nu, vVec,  nv, vtx, triangles, anchorMap) ;
 

@@ -52,7 +52,7 @@ public:
 class Cloth: public SoftBody {
 
 public:
-    Cloth(double u, double v, int nu, int nv) ;
+    Cloth(const geometry_msgs::Pose &pose, double u, double v, int nu, int nv) ;
 
     virtual void constructMesh(std::vector<btVector3> &vtx, std::vector<int> &triangles, std::map<std::string, int> &anchorMap) const  ;
 
@@ -60,6 +60,7 @@ private:
 
     double u, v ;
     unsigned int nu, nv ;
+    geometry_msgs::Pose pose ;
 };
 
 
@@ -67,7 +68,7 @@ class Physics {
 
 public:
 
-    Physics(const planning_environment::CollisionModels &cm, const planning_models::KinematicState &state, double padding = 0.0001) ;
+    Physics(const planning_environment::CollisionModels &cm, const planning_models::KinematicState &state, double padding = 0.001) ;
     ~Physics() ;
 
     void addSoftBody(const std::string &name, const SoftBody &sb) ;
@@ -79,6 +80,7 @@ public:
     void clearSoftBodyAttachments(const std::string &bname) ;
 
     void getMeshMarker(const std::string &bname, visualization_msgs::Marker &marker) ;
+    void removeSoftBody(const std::string &bname) ;
 
 private:
 

@@ -11,6 +11,7 @@ set(ROS_BUILD_TYPE Debug)
 
 rosbuild_init()
 rosbuild_genmsg()
+rosbuild_gensrv()
 
 FIND_PACKAGE(Qt4 REQUIRED)
 
@@ -80,6 +81,6 @@ target_link_libraries(camera_view_plugin camera_view ${QT_LIBRARIES})
 #########################################################################################
 
 FIND_PACKAGE(Bullet)
-#include_directories(${BULLET_INCLUDE_DIRS} )
-rosbuild_add_executable(cloth_simulator src/ClothSimulator.cpp src/Physics.cpp)
+
+rosbuild_add_executable(cloth_simulator src/ClothSimulatorServer.cpp src/Physics.cpp)
 target_link_libraries(cloth_simulator BulletSoftBody)
