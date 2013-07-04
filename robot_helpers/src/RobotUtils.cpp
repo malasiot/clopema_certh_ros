@@ -486,6 +486,8 @@ bool addSphereToCollisionModel(const std::string &armName, double radius)
     att_object.touch_links.push_back(arm2Name + "_xtion");
     att_object.touch_links.push_back(arm2Name + "_cable_1");
 
+
+
     att_object.object.id = "/attached_sphere";
     att_object.object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
 

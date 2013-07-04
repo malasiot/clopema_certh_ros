@@ -106,12 +106,18 @@ void setGrippersClose(){
 
 
 
-void setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, float radious) {
+void setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, float radious , string armName) {
+
+
+    std::string arm2Name="r1";
+
+    if (armName == "r1")
+        arm2Name="r2";
 
     mp.request.motion_plan_req.path_constraints.position_constraints.resize(1);
-    mp.request.motion_plan_req.path_constraints.position_constraints[0].header.frame_id = "r2_ee";
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].header.frame_id = armName + "_ee";
     mp.request.motion_plan_req.path_constraints.position_constraints[0].header.stamp = ros::Time::now();
-    mp.request.motion_plan_req.path_constraints.position_constraints[0].link_name = "r1_ee";
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].link_name = arm2Name + "_ee";
     mp.request.motion_plan_req.path_constraints.position_constraints[0].position.x = 0.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[0].position.y = 0.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[0].position.z = 0.0;
@@ -236,12 +242,12 @@ int moveTo(geometry_msgs::Pose pose){
 }
 
 
-int moveWithConstrains(geometry_msgs::Pose pose){
+int moveWithConstrains(geometry_msgs::Pose pose, std::string armName, float radious){
         //Create plan
         clopema_arm_navigation::ClopemaMotionPlan mp;
         ClopemaMove cmove;
 
-        mp.request.motion_plan_req.group_name = "r2_arm";
+        mp.request.motion_plan_req.group_name = armName + "_arm";
         mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
 
         //Set start state
@@ -251,10 +257,9 @@ int moveWithConstrains(geometry_msgs::Pose pose){
 
         desired_pose.header.frame_id = "base_link";
         desired_pose.header.stamp = ros::Time::now();
-        desired_pose.link_name = "r2_ee";
+        desired_pose.link_name = armName + "_ee";
 
         desired_pose.pose = pose;
-
 
        // cout<< "\n going to --- >  "<< desired_pose.pose.position.x<< " "  << desired_pose.pose.position.y<<"  " << desired_pose.pose.position.z <<"\n";
 
@@ -265,7 +270,7 @@ int moveWithConstrains(geometry_msgs::Pose pose){
         desired_pose.absolute_pitch_tolerance = 0.004;
         desired_pose.absolute_yaw_tolerance = 0.004;
 
-        setPathConstraints(mp,0.8);
+        setPathConstraints(mp, radious, armName);
 
         cmove.poseToClopemaMotionPlan(mp, desired_pose);
 
@@ -401,39 +406,58 @@ void moveThrough(	std::vector<geometry_msgs::Point> traj){
 
 }
 
-void makeCircle(){
-    std::vector<geometry_msgs::Point> traj;
-    //~ float radious = getArmsDistance();
-    //~ cout<<"radious = " << radious<<"\n";
-    //~ setPathConstraints(mp,radious);
+void makeCircle(std::string armName, bool up, geometry_msgs::Pose goalPose){
+
+    std::string arm2Name="r1";
+
+    if (armName == "r1")
+        arm2Name="r2";
+     float radious = getArmsDistance();
 
     tf::TransformListener listener;
     tf::StampedTransform transform;
 
     try {
-        listener.waitForTransform("base_link", "r2_ee", ros::Time(0), ros::Duration(10.0) );
-        listener.lookupTransform("base_link", "r2_ee", ros::Time(0), transform);
+        listener.waitForTransform("base_link", armName + "_ee", ros::Time(0), ros::Duration(1.0) );
+        listener.lookupTransform("base_link", armName + "_ee", ros::Time(0), transform);
     } catch (tf::TransformException ex) {
         ROS_ERROR("%s",ex.what());
     }
 
-    geometry_msgs::Point tmp_point1;
-    tmp_point1.x= transform.getOrigin().x();
-    tmp_point1.y= transform.getOrigin().y();
-    tmp_point1.z= transform.getOrigin().z();
+    geometry_msgs::Point goalPoint;
+    goalPoint.x= transform.getOrigin().x();
+    goalPoint.y= transform.getOrigin().y();
+    goalPoint.z= transform.getOrigin().z();
 
-    try {
-        listener.waitForTransform("base_link", "r1_ee", ros::Time(0), ros::Duration(10.0) );
-        listener.lookupTransform("base_link", "r1_ee", ros::Time(0), transform);
-    } catch (tf::TransformException ex) {
-        ROS_ERROR("%s",ex.what());
+    if(armName == "r2"){
+
+        if (up==true){
+            goalPoint.x += radious;
+            goalPoint.z += radious;
+        }
+        else{
+            goalPoint.x -= radious;
+            goalPoint.z -= radious;
+        }
     }
-    geometry_msgs::Point tmp_point2;
-    tmp_point2.x= transform.getOrigin().x();
-    tmp_point2.y= transform.getOrigin().y();
-    tmp_point2.z= transform.getOrigin().z();
-    traj = calculateCirclePoints(tmp_point2, tmp_point1, getArmsDistance()-0.03, 10, true );
-    moveThrough(traj);
+    else{
+        if (up==true){
+            goalPoint.x -= radious;
+            goalPoint.z += radious;
+        }
+        else{
+            goalPoint.x += radious;
+            goalPoint.z -= radious;
+        }
+    }
+    goalPose.position=goalPoint;
+    addSphereToCollisionModel(arm2Name, radious - 0.1);
+    cout<< "HIT ENTER TO CONTINUE" <<endl;
+    cin.ignore();
+
+    moveWithConstrains(goalPose, armName, radious + 0.05);
+    //moveTo(goalPose);
+
 }
 
 
@@ -701,7 +725,8 @@ int main(int argc, char **argv) {
         desPos.orientation = rotationMatrixToQuaternion(rotMat);
 
         if(!ZFar){
-            addConeToCollisionModel("r1",0.5, 0.2);
+
+            addConeToCollisionModel("r1",0.5, 0.1);
             desPos.position.x = targetP.x()+rotMat[0][0]*0.03-rotMat[0][2]*0.07;
             desPos.position.y = targetP.y()+rotMat[1][0]*0.03-rotMat[1][2]*0.07;
             desPos.position.z = targetP.z()+rotMat[2][0]*0.03-rotMat[2][2]*0.07;
@@ -714,7 +739,7 @@ int main(int argc, char **argv) {
                 continue;
             }
             resetCollisionModel();
-            addSphereToCollisionModel("r1", 0.55);
+
             cout<<"HIT ENTER TO GRASP"<<endl;
             cin.ignore();
 
@@ -723,11 +748,8 @@ int main(int argc, char **argv) {
             desPos.position.z = targetP.z()+rotMat[2][2]*0.045+rotMat[2][0]*0.03;
             moveTo(desPos);
             setGrippersClose();
-            //makeCircle();
-            desPos.position.x += 0.75;
-            desPos.position.z += 0.75;
             desPos.orientation = rotationMatrixToQuaternion(homeRotMat);
-            moveWithConstrains(desPos);
+            makeCircle("r2", true, desPos);
             resetCollisionModel();
         }
         else{
