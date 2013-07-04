@@ -1,5 +1,4 @@
-
-<library path="lib/libcamera_view_plugin">
+<library path="lib/libviz_helpers">
   <class name="viz_helpers/CameraViewPlugin" type="viz_helpers::CameraViewPlugin" base_class_type="rqt_gui_cpp::Plugin">
     <description>
       A GUI plugin to view a sensor_msgs/Image topic.
@@ -10,4 +9,15 @@
       <statustip>Modified version of Image View plugin that allows for user interaction.</statustip>
     </qtgui>
   </class>
+  <class name="viz_helpers/RobotDashboardPlugin" type="viz_helpers::RobotDashboardPlugin" base_class_type="rqt_gui_cpp::Plugin">
+    <description>
+      CloPeMa robot dashboard.
+    </description>
+    <qtgui>
+      <label>CloPeMa Robot Dashboard</label>
+      <icon type="theme">image-x-generic</icon>
+      <statustip>Provides usefull tools for robot control</statustip>
+    </qtgui>
+  </class>
 </library>
+

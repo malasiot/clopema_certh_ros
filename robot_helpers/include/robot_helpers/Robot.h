@@ -85,6 +85,9 @@ Eigen::Affine3d getPose(const std::string &armName, const std::string &base_link
 // get current pose
 Eigen::Affine3d getCurrentPose(const std::string &armName) ;
 
+// set robot speed
+bool setRobotSpeed(float speed) ;
+
 }
 
 #endif

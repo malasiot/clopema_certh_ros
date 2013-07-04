@@ -20,7 +20,7 @@
 	<depend package="rqt_gui_cpp"/>
   
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lcamera_view"/>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lviz_helpers"/>
   </export>
  
 <export>
