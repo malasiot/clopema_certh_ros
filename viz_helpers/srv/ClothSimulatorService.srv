@@ -1,0 +1,21 @@
+# actions
+int8 ADD=1
+int8 REMOVE=2
+int8 MODIFY=3
+# templates
+int8 TOWEL=1
+int8 SHIRT=2
+int8 TROUSERS=3
+##############################
+int8 action
+string name
+int8 type
+float32 width
+float32 height
+uint32 nodes
+geometry_msgs/Pose pose
+string[] anchors
+string[] links
+-------------------------------------
+#request fields
+int8 return_code

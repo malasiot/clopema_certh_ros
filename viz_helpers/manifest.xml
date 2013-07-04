@@ -4,7 +4,8 @@
 
   <rosdep name="boost"/>
   <rosdep name="opencv2"/>
-  <rsodep name="qt4"/>
+  <rosdep name="qt4"/>
+  <rosdep name="bullet"/>
   
   <depend package="roscpp"/>
   <depend package="image_transport"/>
@@ -19,7 +20,7 @@
 	<depend package="rqt_gui_cpp"/>
   
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lcamera_view"/>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lviz_helpers"/>
   </export>
  
 <export>

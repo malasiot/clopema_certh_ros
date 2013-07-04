@@ -11,6 +11,7 @@ set(ROS_BUILD_TYPE Debug)
 
 rosbuild_init()
 rosbuild_genmsg()
+rosbuild_gensrv()
 
 FIND_PACKAGE(Qt4 REQUIRED)
 
@@ -19,12 +20,14 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-INCLUDE(${QT_USE_FILE})
+INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/CMake/qt.cmake)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 SET (CAMERA_VIEW_HEADERS
 	src/CameraView.h
 	src/CameraWidget.h
 	src/QSingleItemSquareLayout.h
+	src/Dashboard.h
 
 )
 
@@ -33,48 +36,29 @@ SET (CAMERA_VIEW_SOURCES
 	src/CameraWidget.cpp
 	src/QSingleItemSquareLayout.cpp
 	src/CameraViewServer.cpp
-)
-
-QT4_WRAP_CPP(CAMERA_VIEW_MOC_SOURCES ${CAMERA_VIEW_HEADERS} )
-QT4_WRAP_UI(CAMERA_VIEW_UI_HEADERS ${CAMERA_VIEW_FORMS} )
-QT4_ADD_RESOURCES(CAMERA_VIEW_RC_SOURCES ${CAMERA_VIEW_RESOURCES} )
-
-ADD_DEFINITIONS(-DQT_NO_KEYWORDS)
-
-rosbuild_add_library(camera_view ${CAMERA_VIEW_SOURCES} ${CAMERA_VIEW_MOC_SOURCES} ${CAMERA_VIEW_RC_SOURCES} ${CAMERA_VIEW_UI_HEADERS})
-target_link_libraries(camera_view ${QT_LIBRARIES})
-
-#######################################################################3
-
-SET (CAMERA_VIEWER_HEADERS
-)
-
-SET (CAMERA_VIEWER_SOURCES
-	src/camera_viewer.cpp
-)
-
-QT4_WRAP_CPP(CAMERA_VIEWER_MOC_SOURCES ${CAMERA_VIEWER_HEADERS} )
-QT4_WRAP_UI(CAMERA_VIEWER_UI_HEADERS ${CAMERA_VIEWER_FORMS} )
-QT4_ADD_RESOURCES(CAMERA_VIEWER_RC_SOURCES ${CAMERA_VIEWER_RESOURCES} )
-
-rosbuild_add_executable(camera_viewer ${CAMERA_VIEWER_SOURCES} ${CAMERA_VIEWER_MOC_SOURCES} ${CAMERA_VIEWER_RC_SOURCES} ${CAMERA_VIEWER_UI_HEADERS})
-target_link_libraries(camera_viewer camera_view ${QT_LIBRARIES})
-
-###############################################################################
-
-SET (CAMERA_VIEW_PLUGIN_HEADERS
-
-)
-
-SET (CAMERA_VIEW_PLUGIN_SOURCES
+	src/Dashboard.cpp
 	src/CameraViewPlugin.cpp
 )
 
-QT4_WRAP_CPP(CAMERA_VIEW_PLUGIN_MOC_SOURCES ${CAMERA_VIEW_PLUGIN_HEADERS} )
-QT4_WRAP_UI(CAMERA_VIEW_PLUGIN_UI_HEADERS ${CAMERA_VIEW_PLUGIN_FORMS} )
-QT4_ADD_RESOURCES(CAMERA_VIEW_PLUGIN_RC_SOURCES ${CAMERA_VIEW_PLUGIN_RESOURCES} )
+ADD_QT_LIBRARY(viz_helpers SOURCES ${CAMERA_VIEW_SOURCES} HEADERS ${CAMERA_VIEW_HEADERS} FORMS src/Dashboard.ui)
 
-rosbuild_add_library(camera_view_plugin ${CAMERA_VIEW_PLUGIN_SOURCES} ${CAMERA_VIEW_PLUGIN_MOC_SOURCES} ${CAMERA_VIEW_PLUGIN_RC_SOURCES} ${CAMERA_VIEW_PLUGIN_HEADERS})
-target_link_libraries(camera_view_plugin camera_view ${QT_LIBRARIES})
+#######################################################################3
 
+ADD_QT_EXECUTABLE(camera_viewer SOURCES src/camera_viewer.cpp)
+target_link_libraries(camera_viewer viz_helpers)
+
+###############################################################################
+
+ADD_QT_EXECUTABLE(dashboard SOURCES src/dashboard.cpp)
+target_link_libraries(dashboard viz_helpers)
+
+
+
+###############################################################################
+
+
+FIND_PACKAGE(Bullet)
+
+rosbuild_add_executable(cloth_simulator src/ClothSimulatorServer.cpp src/Physics.cpp)
+target_link_libraries(cloth_simulator BulletSoftBody)
 

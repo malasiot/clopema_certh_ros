@@ -4,6 +4,7 @@
 #include <tf_conversions/tf_eigen.h>
 
 #include <clopema_planning_actions/GetRobotState.h>
+#include <clopema_motoros/SetSpeed.h>
 
 using namespace std ;
 
@@ -142,6 +143,23 @@ Eigen::Affine3d getCurrentPose(const std::string &armName) {
     tf::TransformTFToEigen(pose_, pose) ;
 
     return pose ;
+
+}
+
+bool setRobotSpeed(float speed)
+{
+    ros::service::waitForService("/set_robot_speed");
+
+    clopema_motoros::SetSpeed::Request req ;
+    clopema_motoros::SetSpeed::Response res ;
+
+    req.speed = speed ;
+
+    if (!ros::service::call("/set_robot_speed", req, res)) {
+        ROS_ERROR("Can't set robot speed.");
+        return false ;
+    }
+    else return true ;
 
 }
 

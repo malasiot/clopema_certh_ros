@@ -59,6 +59,8 @@ rosbuild_link_boost(calibrate_fixed_xtion signals)
 
 rosbuild_add_executable(find_lowest src/find_lowest.cpp src/lowestPoint2.cpp)
 
+rosbuild_add_executable(cloth_simulator src/cloth_simulator.cpp)
+
 rosbuild_add_executable(grippers_testing src/grippers_testing.cpp)
 
 include_directories(${Eigen_INCLUDE_DIRS})
