@@ -27,6 +27,8 @@ bool rotateGripper(MoveRobot &cmove, const std::string &armName, double theta) ;
 // and then setting again the collision object. This is a peculiarity of non-rigid attachement.
 
 bool addConeToCollisionModel(const std::string &armName, double length, double radius) ;
+bool addSphereToCollisionModel(const std::string &armName, double radius);
+
 bool resetCollisionModel() ;
 
 }

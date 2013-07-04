@@ -31,6 +31,12 @@ using namespace std ;
 #include <pcl/ros/conversions.h>
 #include <visualization_msgs/Marker.h>
 
+#include <robot_helpers/Robot.h>
+#include <robot_helpers/Utils.h>
+
+using namespace robot_helpers ;
+
+
 extern bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture,  Eigen::Vector3f &p, Eigen::Vector3f &n, int cx , int cy) ;
 
 bool cont;
@@ -112,9 +118,9 @@ void setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, float ra
     mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation= G_Orientation;
 
     mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.type = arm_navigation_msgs::Shape::SPHERE;
-    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious+2); //radius
-    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious+2);
-    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious+2);
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious); //radius
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious);
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious);
 
     mp.request.motion_plan_req.path_constraints.position_constraints[0].weight = 1.0;
 
@@ -216,6 +222,51 @@ int moveTo(geometry_msgs::Pose pose){
         desired_pose.absolute_roll_tolerance = 0.004;
         desired_pose.absolute_pitch_tolerance = 0.004;
         desired_pose.absolute_yaw_tolerance = 0.004;
+        cmove.poseToClopemaMotionPlan(mp, desired_pose);
+
+        ROS_INFO("Planning");
+        if (!cmove.plan(mp))
+            return -1;
+
+        ROS_INFO("Executing");
+        control_msgs::FollowJointTrajectoryGoal goal;
+        goal.trajectory = mp.response.joint_trajectory;
+        cmove.doGoal(goal);
+        return 0;
+}
+
+
+int moveWithConstrains(geometry_msgs::Pose pose){
+        //Create plan
+        clopema_arm_navigation::ClopemaMotionPlan mp;
+        ClopemaMove cmove;
+
+        mp.request.motion_plan_req.group_name = "r2_arm";
+        mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
+
+        //Set start state
+        cmove.getRobotState(mp.request.motion_plan_req.start_state);
+
+        arm_navigation_msgs::SimplePoseConstraint desired_pose;
+
+        desired_pose.header.frame_id = "base_link";
+        desired_pose.header.stamp = ros::Time::now();
+        desired_pose.link_name = "r2_ee";
+
+        desired_pose.pose = pose;
+
+
+       // cout<< "\n going to --- >  "<< desired_pose.pose.position.x<< " "  << desired_pose.pose.position.y<<"  " << desired_pose.pose.position.z <<"\n";
+
+        desired_pose.absolute_position_tolerance.x = 0.002;
+        desired_pose.absolute_position_tolerance.y = 0.002;
+        desired_pose.absolute_position_tolerance.z = 0.002;
+        desired_pose.absolute_roll_tolerance = 0.004;
+        desired_pose.absolute_pitch_tolerance = 0.004;
+        desired_pose.absolute_yaw_tolerance = 0.004;
+
+        setPathConstraints(mp,0.8);
+
         cmove.poseToClopemaMotionPlan(mp, desired_pose);
 
         ROS_INFO("Planning");
@@ -575,7 +626,7 @@ int main(int argc, char **argv) {
 
 
         }
-        bool yeah = findLowestPoint(pc,top,bottom,angle,targetPo,targetN, cx, cy ,depth );
+        findLowestPoint(pc,top,bottom,angle,targetPo,targetN, cx, cy ,depth );
         cout<<"lowest point is x="<<targetPo.x()<< " y="<<targetPo.y()<<" z="<<targetPo.z()<<endl;
         cout<<"target vector x= "<<targetN.x()<< " y="<<targetN.y()<<" z="<<targetN.z()<<endl;
 
@@ -646,20 +697,24 @@ int main(int argc, char **argv) {
         findGraspingOrientation(targetNo);
 
         geometry_msgs::Pose desPos;
-        cout<<"HIT ENDER TO MOVE THE ARM"<<endl;
-        cin.ignore();
+
         desPos.orientation = rotationMatrixToQuaternion(rotMat);
 
         if(!ZFar){
+            addConeToCollisionModel("r1",0.5, 0.2);
             desPos.position.x = targetP.x()+rotMat[0][0]*0.03-rotMat[0][2]*0.07;
             desPos.position.y = targetP.y()+rotMat[1][0]*0.03-rotMat[1][2]*0.07;
             desPos.position.z = targetP.z()+rotMat[2][0]*0.03-rotMat[2][2]*0.07;
-
+            cout<<"HIT ENDER TO MOVE THE ARM"<<endl;
+            cin.ignore();
             if(moveTo(desPos)==-1){
+                resetCollisionModel() ;
                 cout<< "BIAS : " <<findBias(targetNo)<<endl;
                 rotateGripper(findBias(targetNo));
                 continue;
             }
+            resetCollisionModel();
+            addSphereToCollisionModel("r1", 0.55);
             cout<<"HIT ENTER TO GRASP"<<endl;
             cin.ignore();
 
@@ -668,7 +723,12 @@ int main(int argc, char **argv) {
             desPos.position.z = targetP.z()+rotMat[2][2]*0.045+rotMat[2][0]*0.03;
             moveTo(desPos);
             setGrippersClose();
-            makeCircle();
+            //makeCircle();
+            desPos.position.x += 0.75;
+            desPos.position.z += 0.75;
+            desPos.orientation = rotationMatrixToQuaternion(homeRotMat);
+            moveWithConstrains(desPos);
+            resetCollisionModel();
         }
         else{
             desPos.position.x = 0.3;
