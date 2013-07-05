@@ -4,7 +4,8 @@
 #include <tf_conversions/tf_eigen.h>
 
 #include <clopema_planning_actions/GetRobotState.h>
-#include <clopema_motoros/SetSpeed.h>
+
+//#include <clopema_motoros/SetSpeed.h>
 
 using namespace std ;
 
@@ -145,7 +146,7 @@ Eigen::Affine3d getCurrentPose(const std::string &armName) {
     return pose ;
 
 }
-
+/*
 bool setRobotSpeed(float speed)
 {
     ros::service::waitForService("/set_robot_speed");
@@ -162,7 +163,7 @@ bool setRobotSpeed(float speed)
     else return true ;
 
 }
-
+*/
 
 } // namespace robot_helpers
 

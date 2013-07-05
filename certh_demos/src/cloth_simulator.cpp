@@ -12,8 +12,7 @@ int main(int argc, char *argv[])
     Eigen::Quaterniond q ;
      q = Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitZ());
 
-    if ( !robot_helpers::setRobotSpeed(0.01) )
-        exit(1) ;
+
     robot_helpers::moveGripper(rb, "r2", Eigen::Vector3d(0, -0.9, 1.4), q) ;
 
     // access to cloth simulator service
