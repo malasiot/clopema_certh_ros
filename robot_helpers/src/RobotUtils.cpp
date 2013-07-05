@@ -441,6 +441,92 @@ bool addConeToCollisionModel(const std::string &armName, double length, double r
     return true ;
 }
 
+
+bool addSphereToCollisionModel(const std::string &armName, double radius)
+{
+    std::string arm2Name;
+    ros::NodeHandle nh("~") ;
+
+    ros::service::waitForService("/environment_server/set_planning_scene_diff");
+    ros::ServiceClient get_planning_scene_client =
+      nh.serviceClient<arm_navigation_msgs::GetPlanningScene>("/environment_server/set_planning_scene_diff");
+
+    arm_navigation_msgs::GetPlanningScene::Request planning_scene_req;
+    arm_navigation_msgs::GetPlanningScene::Response planning_scene_res;
+
+    arm_navigation_msgs::AttachedCollisionObject att_object;
+
+    att_object.link_name = armName + "_gripper";
+
+    att_object.touch_links.push_back(armName +"_link_1");
+    att_object.touch_links.push_back(armName +"_link_2");
+    att_object.touch_links.push_back(armName +"_link_3");
+    att_object.touch_links.push_back(armName +"_link_4");
+    att_object.touch_links.push_back(armName +"_link_5"); 
+    att_object.touch_links.push_back(armName +"_link_6");
+    att_object.touch_links.push_back(armName +"_tip_link");
+    att_object.touch_links.push_back(armName +"_ee");
+    att_object.touch_links.push_back(armName +"_xtion");
+    att_object.touch_links.push_back(armName +"_cable_1");
+    att_object.touch_links.push_back("r750_base");
+    att_object.touch_links.push_back("base_link");
+    
+    if (armName=="r1")
+       arm2Name="r2";
+    else
+       arm2Name="r1";
+
+    att_object.touch_links.push_back(arm2Name + "_link_1");
+    att_object.touch_links.push_back(arm2Name + "_link_2");
+    att_object.touch_links.push_back(arm2Name + "_link_3");
+    att_object.touch_links.push_back(arm2Name + "_link_4");
+    att_object.touch_links.push_back(arm2Name + "_link_5"); 
+    att_object.touch_links.push_back(arm2Name + "_link_6");
+    att_object.touch_links.push_back(arm2Name + "_tip_link");
+    att_object.touch_links.push_back(arm2Name + "_xtion");
+    att_object.touch_links.push_back(arm2Name + "_cable_1");
+
+
+
+    att_object.object.id = "/attached_sphere";
+    att_object.object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
+
+    att_object.object.header.frame_id = "base_link";
+    att_object.object.header.stamp = ros::Time::now();
+
+
+	
+    Eigen::Vector3d p = robot_helpers::getPose(armName).inverse().translation() ;
+
+
+    arm_navigation_msgs::Shape object;
+
+    object.type = arm_navigation_msgs::Shape::SPHERE;
+    object.dimensions.resize(1);
+    object.dimensions[0] = radius;
+
+    geometry_msgs::Pose pose;
+    pose.position.x = p.x();
+    pose.position.y = p.y();
+    pose.position.z = p.z();
+
+    pose.orientation.x = 0;
+    pose.orientation.y = 0;
+    pose.orientation.z = 0;
+    pose.orientation.w = 1;
+
+    att_object.object.shapes.push_back(object);
+    att_object.object.poses.push_back(pose);
+
+    planning_scene_req.planning_scene_diff.attached_collision_objects.push_back(att_object);
+
+    if(!get_planning_scene_client.call(planning_scene_req, planning_scene_res)) return false;
+
+
+    return true ;
+}
+
+
 bool resetCollisionModel()
 {
     ros::NodeHandle nh("~") ;
