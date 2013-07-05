@@ -1,0 +1,4 @@
+<launch> 
+	<include file="$(find clopema_launch)/launch/virtual_robot.launch"/>
+	<node name="virtual_robot_head" pkg="camera_helpers" type="robot_head_virtual" />
+</launch> 

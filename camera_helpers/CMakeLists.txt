@@ -24,3 +24,6 @@ rosbuild_link_boost(camera_helpers signals)
 rosbuild_add_executable(test_openni_capture src/test_openni_capture.cpp)
 target_link_libraries(test_openni_capture camera_helpers)
 
+rosbuild_add_executable(robot_head_virtual src/robot_head_virtual.cpp)
+
+
