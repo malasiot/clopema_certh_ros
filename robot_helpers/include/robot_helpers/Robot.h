@@ -88,6 +88,13 @@ Eigen::Affine3d getCurrentPose(const std::string &armName) ;
 // set robot speed
 bool setRobotSpeed(float speed) ;
 
+
+// set/get gripper state. Return false on error
+
+bool setGripperState(const std::string &armName, bool open = true) ;
+bool getGripperState(const std::string &armName, bool &open) ;
+
+
 }
 
 #endif

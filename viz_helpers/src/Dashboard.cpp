@@ -1,5 +1,10 @@
 #include "Dashboard.h"
 #include <pluginlib/class_list_macros.h>
+#include <robot_helpers/Robot.h>
+#include <robot_helpers/Utils.h>
+
+using namespace robot_helpers ;
+using namespace std ;
 
 namespace viz_helpers {
 
@@ -65,6 +70,67 @@ void RobotDashboardPlugin::restoreSettings(const qt_gui_cpp::Settings& plugin_se
 }
 
 
+//////////////////////////////////////////////////////////////////////////////////////////
+
+void RobotDashboard::openLeftGripper()
+{
+    ui.openLeftGripperButton->setEnabled(false);
+    ros::Duration(ui.gripperDelay->value()).sleep() ;
+    if ( !setGripperState("r2", true) )
+        ui.messageBox->setText("Failed to open left hand gripper.") ;
+    updateState() ;
+}
+
+void RobotDashboard::openRightGripper()
+{
+    ui.openRightGripperButton->setEnabled(false);
+    ros::Duration(ui.gripperDelay->value()).sleep() ;
+    if ( !setGripperState("r1", true) )
+        ui.messageBox->setText("Failed to open right hand gripper.") ;
+    updateState() ;
+}
+
+
+void RobotDashboard::closeLeftGripper()
+{
+    ui.closeLeftGripperButton->setEnabled(false);
+    ros::Duration(ui.gripperDelay->value()).sleep() ;
+    if ( !setGripperState("r2", false) )
+        ui.messageBox->setText("Failed to close left hand gripper.") ;
+    updateState() ;
+}
+
+void RobotDashboard::closeRightGripper()
+{
+    ui.closeRightGripperButton->setEnabled(false);
+    ros::Duration(ui.gripperDelay->value()).sleep() ;
+    if ( !setGripperState("r1", false) )
+        ui.messageBox->setText("Failed to close right hand gripper.") ;
+    updateState() ;
+}
+
+void RobotDashboard::updateState()
+{
+    bool gripper_state ;
+
+    if ( getGripperState("r1", gripper_state) )
+    {
+        ui.openRightGripperButton->setEnabled(!gripper_state) ;
+        ui.closeRightGripperButton->setEnabled(gripper_state) ;
+    }
+
+    if ( getGripperState("r2", gripper_state) )
+    {
+        ui.openLeftGripperButton->setEnabled(!gripper_state) ;
+        ui.closeLeftGripperButton->setEnabled(gripper_state) ;
+    }
+}
+
+void RobotDashboard::moveHome()
+{
+    MoveRobot mv ;
+    robot_helpers::moveHome(mv) ;
+}
 
 } // namespace
 

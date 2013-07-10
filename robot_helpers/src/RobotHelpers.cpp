@@ -4,6 +4,8 @@
 #include <tf_conversions/tf_eigen.h>
 
 #include <clopema_planning_actions/GetRobotState.h>
+#include <clopema_motoros/GetGripperState.h>
+#include <clopema_motoros/SetGripperState.h>
 
 //#include <clopema_motoros/SetSpeed.h>
 
@@ -146,6 +148,44 @@ Eigen::Affine3d getCurrentPose(const std::string &armName) {
     return pose ;
 
 }
+
+bool setGripperState(const std::string &armName, bool open_)
+{
+    string serviceName = armName +"_gripper/set_open" ;
+
+    if ( ros::service::waitForService(serviceName, ros::Duration(5.0)) )
+    {
+        clopema_motoros::SetGripperStateRequest req ;
+        clopema_motoros::SetGripperStateResponse res ;
+        req.open = open_ ;
+
+        if ( ros::service::call(serviceName, req, res) )
+            return true ;
+    }
+
+    return false ;
+}
+
+bool getGripperState(const std::string &armName, bool &open_)
+{
+    string serviceName = armName +"_gripper/get_open" ;
+
+    if ( ros::service::waitForService(serviceName, ros::Duration(5.0)) )
+    {
+        clopema_motoros::GetGripperStateRequest req ;
+        clopema_motoros::GetGripperStateResponse res ;
+
+        if ( ros::service::call(serviceName, req, res) )
+        {
+            open_ = res.open ;
+            return true ;
+        }
+
+    }
+
+    return false ;
+}
+
 /*
 bool setRobotSpeed(float speed)
 {
