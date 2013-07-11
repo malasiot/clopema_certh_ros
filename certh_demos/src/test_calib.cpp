@@ -35,7 +35,9 @@ using namespace std ;
 #include <robot_helpers/Utils.h>
 
 using namespace robot_helpers ;
+using namespace Eigen ;
 
+geometry_msgs::Pose getArmPose( string armName, string frameName="base_link") ;
 
 extern bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture,  Eigen::Vector3f &p, Eigen::Vector3f &n, int cx , int cy) ;
 
@@ -51,23 +53,21 @@ btMatrix3x3 rotMat(
 (btScalar) -1, (btScalar) 0, (btScalar) 0,
 (btScalar) 0, (btScalar) 1, (btScalar) 1);
 
-btMatrix3x3 rotMat2(
-(btScalar) 0, (btScalar) 1, (btScalar) -1,
-(btScalar) -1, (btScalar) 0, (btScalar) 0,
-(btScalar) 0, (btScalar) 1, (btScalar) 1);
-
-btMatrix3x3 rotMat3(
-(btScalar) 0, (btScalar) 1, (btScalar) -1,
-(btScalar) -1, (btScalar) 0, (btScalar) 0,
-(btScalar) 0, (btScalar) 1, (btScalar) 1);
-
 
 btMatrix3x3 homeRotMat(
-        (btScalar) 0, (btScalar) 0, (btScalar) -1,
+        (btScalar) 0, (btScalar) -1, (btScalar) 0,
         (btScalar) -1, (btScalar) 0, (btScalar) 0,
-        (btScalar) 0, (btScalar) 1, (btScalar) 0);
+        (btScalar) 0, (btScalar) 0, (btScalar) -1);
+
+btMatrix3x3 endPoseR1Mat(
+        (btScalar) 0, (btScalar) 0, (btScalar) 1,
+        (btScalar) -1, (btScalar) 0, (btScalar) 0,
+        (btScalar) 0, (btScalar) -1, (btScalar) 0);
 
 geometry_msgs::Quaternion G_Orientation;
+
+
+geometry_msgs::Pose r2RotPose , r1RotPose;
 
 
 extern bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture,  Eigen::Vector3f &p, Eigen::Vector3f &n,int cx, int cy, cv::Mat depthMap) ;
@@ -91,19 +91,18 @@ void mouse_callback( int event, int x, int y, int flags, void* param){
     }
 }
 
-void setGrippersOpen(){
-    ros::service::waitForService("/r2_gripper/set_open");
+void setGrippersOpen(string armName){
+    ros::service::waitForService("/" + armName + "_gripper/set_open");
     clopema_motoros::SetGripperState sopen;
     sopen.request.open=true;
-    ros::service::call("/r2_gripper/set_open", sopen);
+    ros::service::call("/" + armName + "_gripper/set_open", sopen);
 }
-void setGrippersClose(){
-    ros::service::waitForService("/r2_gripper/set_open");
+void setGrippersClose(string armName){
+    ros::service::waitForService("/" + armName + "_gripper/set_open");
     clopema_motoros::SetGripperState sopen;
     sopen.request.open=false;
-    ros::service::call("/r2_gripper/set_open", sopen);
+    ros::service::call("/" + armName + "_gripper/set_open", sopen);
 }
-
 
 
 void setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, float radious , string armName) {
@@ -130,7 +129,20 @@ void setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, float ra
 
     mp.request.motion_plan_req.path_constraints.position_constraints[0].weight = 1.0;
 
-}
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints.resize(1);
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].header.frame_id = armName + "_ee";
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].header.stamp = ros::Time::now();
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].link_name = armName+ "_ee";
+
+//    geometry_msgs::Pose p= getArmPose(armName, armName + "_ee");
+
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].orientation=p.orientation;
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].type = arm_navigation_msgs::OrientationConstraint::HEADER_FRAME;
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_roll_tolerance = 3.14/2.0f;
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_pitch_tolerance = 3.14f*2.0f;
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_yaw_tolerance = 3.14f*2.0f;
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].weight = 1.0;
+ }
 
 float getDistance(geometry_msgs::Point point1, geometry_msgs::Point point2){
 
@@ -163,11 +175,56 @@ float getArmsDistance(){
     tmp_point2.x= transform.getOrigin().x();
     tmp_point2.y= transform.getOrigin().y();
     tmp_point2.z= transform.getOrigin().z();
-
     return getDistance(tmp_point1, tmp_point2);
 
 };
 
+geometry_msgs::Pose getArmPose( string armName, string frameName){
+
+    geometry_msgs::Pose pose;
+    tf::TransformListener listener;
+    tf::StampedTransform transform;
+
+    try {
+        listener.waitForTransform(frameName, armName + "_ee", ros::Time(0), ros::Duration(10.0) );
+        listener.lookupTransform(frameName, armName + "_ee", ros::Time(0), transform);
+    } catch (tf::TransformException ex) {
+        ROS_ERROR("%s",ex.what());
+    }
+    pose.position.x=transform.getOrigin().x();
+    pose.position.y=transform.getOrigin().y();
+    pose.position.z=transform.getOrigin().z();
+
+    pose.orientation.x=transform.getRotation().x();
+    pose.orientation.y=transform.getRotation().y();
+    pose.orientation.z=transform.getRotation().z();
+    pose.orientation.w=transform.getRotation().w();
+
+    return pose;
+}
+
+
+btQuaternion getOrient(string armName){
+
+
+    tf::TransformListener listener;
+    tf::StampedTransform transform;
+    Eigen::Affine3d pose;
+    Eigen::Matrix4d calib;
+
+
+    try {
+        listener.waitForTransform("base_link", armName + "_ee", ros::Time(0), ros::Duration(10.0) );
+        listener.lookupTransform("base_link", armName + "_ee", ros::Time(0), transform);
+
+    }
+    catch (tf::TransformException ex){
+      ROS_ERROR("%s",ex.what());
+    }
+    btQuaternion q;
+    return transform.getRotation().asBt();
+
+}
 
 std::vector<geometry_msgs::Point> calculateCirclePoints(geometry_msgs::Point center ,geometry_msgs::Point currentPos, float r, int steps, bool up) {
 
@@ -200,12 +257,12 @@ std::vector<geometry_msgs::Point> calculateCirclePoints(geometry_msgs::Point cen
     return points;
 }
 
-int moveTo(geometry_msgs::Pose pose){
+int moveTo(geometry_msgs::Pose pose, string armName){
         //Create plan
         clopema_arm_navigation::ClopemaMotionPlan mp;
         ClopemaMove cmove;
 
-        mp.request.motion_plan_req.group_name = "r2_arm";
+        mp.request.motion_plan_req.group_name = armName + "_arm";
         mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
 
         //Set start state
@@ -215,7 +272,7 @@ int moveTo(geometry_msgs::Pose pose){
 
         desired_pose.header.frame_id = "base_link";
         desired_pose.header.stamp = ros::Time::now();
-        desired_pose.link_name = "r2_ee";
+        desired_pose.link_name = armName + "_ee";
 
         desired_pose.pose = pose;
 
@@ -284,6 +341,57 @@ int moveWithConstrains(geometry_msgs::Pose pose, std::string armName, float radi
         cmove.doGoal(goal);
         return 0;
 }
+
+int moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2){
+
+    ClopemaMove cmove;
+
+    //Create plan
+    clopema_arm_navigation::ClopemaMotionPlan mp;
+    mp.request.motion_plan_req.group_name = "arms";
+    mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
+
+    //Set start state
+    if (!cmove.getRobotState(mp.request.motion_plan_req.start_state))
+        return -1;
+
+    arm_navigation_msgs::SimplePoseConstraint desired_pose;
+    desired_pose.header.frame_id = "base_link";
+    desired_pose.header.stamp = ros::Time::now();
+    desired_pose.link_name = "r2_ee";
+    desired_pose.pose=pose2;
+
+    desired_pose.absolute_position_tolerance.x = 0.02;
+    desired_pose.absolute_position_tolerance.y = 0.02;
+    desired_pose.absolute_position_tolerance.z = 0.02;
+    desired_pose.absolute_roll_tolerance = 0.04;
+    desired_pose.absolute_pitch_tolerance = 0.04;
+    desired_pose.absolute_yaw_tolerance = 0.04;
+
+    arm_navigation_msgs::PositionConstraint position_constraint;
+    arm_navigation_msgs::OrientationConstraint orientation_constraint;
+    arm_navigation_msgs::poseConstraintToPositionOrientationConstraints(desired_pose, position_constraint, orientation_constraint);
+    mp.request.motion_plan_req.goal_constraints.orientation_constraints.push_back(orientation_constraint);
+    mp.request.motion_plan_req.goal_constraints.position_constraints.push_back(position_constraint);
+
+    //add r1 goal constraints
+    desired_pose.link_name = "r1_ee";
+    desired_pose.pose=pose1;
+    arm_navigation_msgs::poseConstraintToPositionOrientationConstraints(desired_pose, position_constraint, orientation_constraint);
+    mp.request.motion_plan_req.goal_constraints.orientation_constraints.push_back(orientation_constraint);
+    mp.request.motion_plan_req.goal_constraints.position_constraints.push_back(position_constraint);
+
+    ROS_INFO("Planning");
+    if (!cmove.plan(mp))
+        return -1;
+
+    ROS_INFO("Executing");
+    control_msgs::FollowJointTrajectoryGoal goal;
+    goal.trajectory = mp.response.joint_trajectory;
+    cmove.doGoal(goal);
+
+}
+
 
 void rotateGripper(float angle){
 
@@ -418,8 +526,8 @@ void makeCircle(std::string armName, bool up, geometry_msgs::Pose goalPose){
     tf::StampedTransform transform;
 
     try {
-        listener.waitForTransform("base_link", armName + "_ee", ros::Time(0), ros::Duration(1.0) );
-        listener.lookupTransform("base_link", armName + "_ee", ros::Time(0), transform);
+        listener.waitForTransform("base_link", arm2Name + "_ee", ros::Time(0), ros::Duration(1.0) );
+        listener.lookupTransform("base_link", arm2Name + "_ee", ros::Time(0), transform);
     } catch (tf::TransformException ex) {
         ROS_ERROR("%s",ex.what());
     }
@@ -433,30 +541,26 @@ void makeCircle(std::string armName, bool up, geometry_msgs::Pose goalPose){
 
         if (up==true){
             goalPoint.x += radious;
-            goalPoint.z += radious;
         }
         else{
-            goalPoint.x -= radious;
             goalPoint.z -= radious;
         }
     }
     else{
         if (up==true){
             goalPoint.x -= radious;
-            goalPoint.z += radious;
         }
         else{
-            goalPoint.x += radious;
             goalPoint.z -= radious;
         }
     }
     goalPose.position=goalPoint;
-    addSphereToCollisionModel(arm2Name, radious - 0.1);
+    addSphereToCollisionModel(arm2Name, 2.0*radious/3.0);
     cout<< "HIT ENTER TO CONTINUE" <<endl;
-    cin.ignore();
+    //cin.ignore();
 
-    moveWithConstrains(goalPose, armName, radious + 0.05);
-    //moveTo(goalPose);
+    moveWithConstrains(goalPose, armName, radious + 0.1);
+    //moveTo(goalPose,armName );
 
 }
 
@@ -546,6 +650,32 @@ int main(int argc, char **argv) {
     camera_helpers::OpenNICaptureAll grabber("xtion3") ;
     grabber.connect() ;
 
+    r2RotPose.position.x = -0.25;
+    r2RotPose.position.y = -0.7;
+    r2RotPose.position.z = 1.6;
+    r2RotPose.orientation = rotationMatrixToQuaternion(homeRotMat);
+
+    r1RotPose.position.x = -0.15;
+    r1RotPose.position.y = -0.85;
+    r1RotPose.position.z = 1.6;
+    r1RotPose.orientation = rotationMatrixToQuaternion(homeRotMat);
+
+    geometry_msgs::Pose tempPose;
+
+    tempPose.position.x = 0.5;
+    tempPose.position.y = -0.8;
+    tempPose.position.z = 1.3;
+    tempPose.orientation = rotationMatrixToQuaternion(homeRotMat);
+
+    setGrippersOpen("r1");
+    setGrippersOpen("r2");
+    moveArms(r1RotPose, tempPose);
+
+    cout<< "HIT ENTER TO CLOSE GRIPPERS"<<endl;
+    cin.ignore();
+    setGrippersClose("r1");
+    cout<< "HIT ENTER TO CLOSE CONT"<<endl;
+    cin.ignore();
     cv::Mat rgb, depth ;
     pcl::PointCloud<pcl::PointXYZ> pc ;
     cv::Mat R = cv::Mat(4, 4, CV_32FC1, cv::Scalar::all(0));
@@ -601,7 +731,7 @@ int main(int argc, char **argv) {
             ROS_ERROR("Failed to call service");
             return 1;
         }
-        setGrippersOpen();
+        setGrippersOpen("r2");
         ///////LOWEST POINT/////////
         tf::TransformListener listenR1;
         tf::StampedTransform tanformR1;
@@ -721,18 +851,19 @@ int main(int argc, char **argv) {
         findGraspingOrientation(targetNo);
 
         geometry_msgs::Pose desPos;
+        tempPose=getArmPose("r1");
 
         desPos.orientation = rotationMatrixToQuaternion(rotMat);
 
         if(!ZFar){
-
-            addConeToCollisionModel("r1",0.5, 0.1);
             desPos.position.x = targetP.x()+rotMat[0][0]*0.03-rotMat[0][2]*0.07;
             desPos.position.y = targetP.y()+rotMat[1][0]*0.03-rotMat[1][2]*0.07;
             desPos.position.z = targetP.z()+rotMat[2][0]*0.03-rotMat[2][2]*0.07;
+            addConeToCollisionModel("r1",tempPose.position.z-desPos.position.z-0.1, 0.1);
             cout<<"HIT ENDER TO MOVE THE ARM"<<endl;
-            cin.ignore();
-            if(moveTo(desPos)==-1){
+            //cin.ignore();
+            ros::Duration(0.5).sleep();
+            if(moveTo(desPos, "r2")==-1){
                 resetCollisionModel() ;
                 cout<< "BIAS : " <<findBias(targetNo)<<endl;
                 rotateGripper(findBias(targetNo));
@@ -741,30 +872,64 @@ int main(int argc, char **argv) {
             resetCollisionModel();
 
             cout<<"HIT ENTER TO GRASP"<<endl;
-            cin.ignore();
+            //cin.ignore();
 
             desPos.position.x = targetP.x()+rotMat[0][2]*0.045+rotMat[0][0]*0.03;
             desPos.position.y = targetP.y()+rotMat[1][2]*0.045+rotMat[1][0]*0.03;
             desPos.position.z = targetP.z()+rotMat[2][2]*0.045+rotMat[2][0]*0.03;
-            moveTo(desPos);
-            setGrippersClose();
+            ros::Duration(0.5).sleep();
+            moveTo(desPos,"r2");
+            setGrippersClose("r2");
             desPos.orientation = rotationMatrixToQuaternion(homeRotMat);
             makeCircle("r2", true, desPos);
             resetCollisionModel();
         }
         else{
-            desPos.position.x = 0.3;
+            desPos.orientation = rotationMatrixToQuaternion(homeRotMat);
+            desPos.position.x = 0.5;
             desPos.position.y = -1;
             desPos.position.z = 1.3;
-            moveTo(desPos);
+            ros::Duration(0.5).sleep();
+            moveTo(desPos,"r2");
         }
 
+        geometry_msgs::Pose desPos1, desPos2;
+        desPos1 = getArmPose("r1");
+        desPos2 = getArmPose("r2");
+        float radious=getArmsDistance()/2.f;
+        cout<<"radious/2 = " <<radious <<endl;
+        desPos1.position.x-=radious;
+        desPos2.position.x-=radious;
+        cout<<"pose1= "<<desPos1.position.x<<" "<<desPos1.position.y<<" "<<desPos1.position.z<<endl;
+        cout<<"pose2= "<<desPos2.position.x<<" "<<desPos2.position.y<<" "<<desPos2.position.z<<endl;
+        cout<<"HIT ENDER TO MOVE THE ARMS"<<endl;
+        //cin.ignore();
+        ros::Duration(0.5).sleep();
+        moveArms(desPos1, desPos2);
+
+        btQuaternion q=getOrient("r1");
+        btScalar roll, pitch, yaw;
+        btMatrix3x3(q).getEulerYPR(roll, pitch, yaw);
+        Quaterniond q2 ;
+        q2 = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitZ());
+
+        desPos.orientation.x = q2.x() ;
+        desPos.orientation.y = q2.y() ;
+        desPos.orientation.z = q2.z() ;
+        desPos.orientation.w = q2.w() ;
+
+        cout<<"----HIT ENTER TO MAKE CIRCLES ---"<<endl;
+        //cin.ignore();
+
+        makeCircle("r1", false,desPos);
+        resetCollisionModel();
         cout<<"----HIT ENTER TO OPEN GRIPPERS ---"<<endl;
-        cin.ignore();
-
-        setGrippersOpen();
-
-
+        //cin.ignore();
+        setGrippersOpen("r1");
+        desPos1=getArmPose("r1");
+        desPos1.position.x -= 0.2;
+        ros::Duration(0.5).sleep();
+        moveTo(desPos1,"r1");
 
     }
 
