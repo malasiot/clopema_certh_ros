@@ -20,12 +20,20 @@ public:
     RobotDashboard(ros::NodeHandle nh, QWidget *parent = 0): QWidget(parent), handle(nh)
     {
         ui.setupUi(this);
+        updateState() ;
     }
 
 private Q_SLOTS:
-    void toggleLeftGripper() {}
+    void openLeftGripper() ;
+    void closeLeftGripper() ;
+    void openRightGripper() ;
+    void closeRightGripper() ;
+    void moveHome() ;
 
 private:
+
+    void updateState() ;
+
     Ui::DashboardWidget ui;
     ros::NodeHandle handle ;
 };

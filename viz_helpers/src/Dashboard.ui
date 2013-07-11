@@ -6,47 +6,200 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>681</width>
-    <height>496</height>
+    <width>753</width>
+    <height>380</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QPushButton" name="pushButton">
-   <property name="geometry">
-    <rect>
-     <x>120</x>
-     <y>80</y>
-     <width>121</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Toggle Gripper</string>
-   </property>
-  </widget>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Grippers</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="2" column="1">
+         <widget class="QPushButton" name="closeRightGripperButton">
+          <property name="text">
+           <string>Close Right Gripper</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="openRightGripperButton">
+          <property name="text">
+           <string>Open Right Gripper</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QPushButton" name="openLeftGripperButton">
+          <property name="text">
+           <string>Open Left Gripper</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QPushButton" name="closeLeftGripperButton">
+          <property name="text">
+           <string>Close Left Gripper</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Delay</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QDoubleSpinBox" name="gripperDelay"/>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>Actions</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
+       <layout class="QGridLayout" name="gridLayout_2">
+        <item row="0" column="0">
+         <widget class="QPushButton" name="pushButton">
+          <property name="text">
+           <string>Move Home</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="messageBox">
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections>
   <connection>
-   <sender>pushButton</sender>
+   <sender>openLeftGripperButton</sender>
    <signal>clicked()</signal>
    <receiver>DashboardWidget</receiver>
-   <slot>toggleLeftGripper()</slot>
+   <slot>openLeftGripper()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>202</x>
-     <y>108</y>
+     <y>52</y>
     </hint>
     <hint type="destinationlabel">
-     <x>225</x>
+     <x>186</x>
+     <y>300</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>openRightGripperButton</sender>
+   <signal>clicked()</signal>
+   <receiver>DashboardWidget</receiver>
+   <slot>openRightGripper()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>453</x>
+     <y>49</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>461</x>
+     <y>236</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>closeLeftGripperButton</sender>
+   <signal>clicked()</signal>
+   <receiver>DashboardWidget</receiver>
+   <slot>closeLeftGripper()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>275</x>
+     <y>87</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>271</x>
+     <y>267</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>closeRightGripperButton</sender>
+   <signal>clicked()</signal>
+   <receiver>DashboardWidget</receiver>
+   <slot>closeRightGripper()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>519</x>
+     <y>84</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>752</x>
      <y>195</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>DashboardWidget</receiver>
+   <slot>moveHome()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>368</x>
+     <y>210</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>362</x>
+     <y>489</y>
     </hint>
    </hints>
   </connection>
  </connections>
  <slots>
   <slot>toggleLeftGripper()</slot>
+  <slot>openLeftGripper()</slot>
+  <slot>openRightGripper()</slot>
+  <slot>closeLeftGripper()</slot>
+  <slot>closeRightGripper()</slot>
+  <slot>moveHome()</slot>
  </slots>
 </ui>
