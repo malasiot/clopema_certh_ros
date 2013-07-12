@@ -4,7 +4,6 @@
 #include <highgui.h>
 #include <pcl/io/pcd_io.h>
 
-
 void grabpc(camera_helpers::OpenNICapturePointCloud *grabber)
 {
 
