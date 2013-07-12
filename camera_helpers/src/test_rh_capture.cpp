@@ -7,7 +7,9 @@ int main(int argc, char *argv[])
 
     cv::Mat im_l, im_r ;
 
-    camera_helpers::grabRHImages(im_l, im_r) ;
+    image_geometry::StereoCameraModel cm ;
+
+    camera_helpers::grabRHImages(im_l, im_r, cm) ;
 
     cv::imwrite("/tmp/stereo_L.png", im_l) ;
     cv::imwrite("/tmp/stereo_R.png", im_r) ;

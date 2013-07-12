@@ -3,6 +3,7 @@
 
 #include <cv.h>
 #include <ros/ros.h>
+#include <image_geometry/stereo_camera_model.h>
 
 namespace camera_helpers {
 
@@ -13,7 +14,7 @@ namespace camera_helpers {
     msec: if the acquisition is not completed within the interval the procedure returns false. By default it waits infinitely
 */
 
-bool grabRHImages(cv::Mat &left, cv::Mat &right, bool preview = false, unsigned int delay_msec = 0) ;
+bool grabRHImages(cv::Mat &left, cv::Mat &right, image_geometry::StereoCameraModel &cm, bool preview = false, unsigned int delay_msec = 0) ;
 
 
 }
