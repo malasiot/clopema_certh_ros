@@ -43,7 +43,6 @@ extern bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const E
 
 bool cont;
 int cx, cy;
-
 bool stop=false;
 namespace enc = sensor_msgs::image_encodings;
 bool ZFar;
@@ -104,7 +103,6 @@ void setGrippersClose(string armName){
     ros::service::call("/" + armName + "_gripper/set_open", sopen);
 }
 
-
 void setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, float radious , string armName) {
 
 
@@ -129,18 +127,20 @@ void setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, float ra
 
     mp.request.motion_plan_req.path_constraints.position_constraints[0].weight = 1.0;
 
+    //////////
+
 //    mp.request.motion_plan_req.path_constraints.orientation_constraints.resize(1);
-//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].header.frame_id = armName + "_ee";
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].header.frame_id = "base_link";
 //    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].header.stamp = ros::Time::now();
 //    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].link_name = armName+ "_ee";
 
-//    geometry_msgs::Pose p= getArmPose(armName, armName + "_ee");
+//    geometry_msgs::Pose p= getArmPose(armName);
 
 //    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].orientation=p.orientation;
 //    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].type = arm_navigation_msgs::OrientationConstraint::HEADER_FRAME;
-//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_roll_tolerance = 3.14/2.0f;
-//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_pitch_tolerance = 3.14f*2.0f;
-//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_yaw_tolerance = 3.14f*2.0f;
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_roll_tolerance = 3.14;
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_pitch_tolerance = 3.14;
+//    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_yaw_tolerance = 3.14;
 //    mp.request.motion_plan_req.path_constraints.orientation_constraints[0].weight = 1.0;
  }
 
@@ -176,7 +176,6 @@ float getArmsDistance(){
     tmp_point2.y= transform.getOrigin().y();
     tmp_point2.z= transform.getOrigin().z();
     return getDistance(tmp_point1, tmp_point2);
-
 };
 
 geometry_msgs::Pose getArmPose( string armName, string frameName){
@@ -672,7 +671,7 @@ int main(int argc, char **argv) {
     moveArms(r1RotPose, tempPose);
 
     cout<< "HIT ENTER TO CLOSE GRIPPERS"<<endl;
-    cin.ignore();
+    ros::Duration(5.0).sleep();
     setGrippersClose("r1");
     cout<< "HIT ENTER TO CLOSE CONT"<<endl;
     cin.ignore();
@@ -896,38 +895,47 @@ int main(int argc, char **argv) {
         geometry_msgs::Pose desPos1, desPos2;
         desPos1 = getArmPose("r1");
         desPos2 = getArmPose("r2");
-        float radious=getArmsDistance()/2.f;
-        cout<<"radious/2 = " <<radious <<endl;
-        desPos1.position.x-=radious;
-        desPos2.position.x-=radious;
+        float radious=getArmsDistance();
+
+        cout<<"radious = " <<radious <<endl;
+
         cout<<"pose1= "<<desPos1.position.x<<" "<<desPos1.position.y<<" "<<desPos1.position.z<<endl;
         cout<<"pose2= "<<desPos2.position.x<<" "<<desPos2.position.y<<" "<<desPos2.position.z<<endl;
         cout<<"HIT ENDER TO MOVE THE ARMS"<<endl;
         //cin.ignore();
         ros::Duration(0.5).sleep();
-        moveArms(desPos1, desPos2);
 
-        btQuaternion q=getOrient("r1");
-        btScalar roll, pitch, yaw;
-        btMatrix3x3(q).getEulerYPR(roll, pitch, yaw);
-        Quaterniond q2 ;
-        q2 = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitZ());
+        desPos2.position.x-=radious/2.0f;
 
-        desPos.orientation.x = q2.x() ;
-        desPos.orientation.y = q2.y() ;
-        desPos.orientation.z = q2.z() ;
-        desPos.orientation.w = q2.w() ;
 
-        cout<<"----HIT ENTER TO MAKE CIRCLES ---"<<endl;
-        //cin.ignore();
+        desPos1.position.z-=0.866025404*radious;
+         moveArms(desPos1, desPos2);
+        //moveArms(desPos1, desPos2);
 
-        makeCircle("r1", false,desPos);
-        resetCollisionModel();
+//        btQuaternion q=getOrient("r1");
+//        btScalar roll, pitch, yaw;
+//        btMatrix3x3(q).getEulerYPR(roll, pitch, yaw);
+//        Quaterniond q2 ;
+//        q2 = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitX()) * Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(M_PI/2, Eigen::Vector3d::UnitZ());
+
+//        desPos.orientation.x = q2.x() ;
+//        desPos.orientation.y = q2.y() ;
+//        desPos.orientation.z = q2.z() ;
+//        desPos.orientation.w = q2.w() ;
+
+//        cout<<"----HIT ENTER TO MAKE CIRCLES ---"<<endl;
+//        //cin.ignore();
+
+//        makeCircle("r1", false,desPos);
+//        resetCollisionModel();
+
+
         cout<<"----HIT ENTER TO OPEN GRIPPERS ---"<<endl;
         //cin.ignore();
         setGrippersOpen("r1");
         desPos1=getArmPose("r1");
-        desPos1.position.x -= 0.2;
+        desPos1.position.x -= 0.4;
+        desPos1.position.z += 0.4;
         ros::Duration(0.5).sleep();
         moveTo(desPos1,"r1");
 

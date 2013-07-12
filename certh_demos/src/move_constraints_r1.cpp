@@ -98,20 +98,20 @@ void setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp) {
 		mp.request.motion_plan_req.path_constraints.orientation_constraints.resize(1);
 	 mp.request.motion_plan_req.path_constraints.orientation_constraints[0].header.frame_id = "base_link";
 	 mp.request.motion_plan_req.path_constraints.orientation_constraints[0].header.stamp = ros::Time::now();
-	 mp.request.motion_plan_req.path_constraints.orientation_constraints[0].link_name = "r2_tip_link";
+     mp.request.motion_plan_req.path_constraints.orientation_constraints[0].link_name = "r2_ee";
 	 mp.request.motion_plan_req.path_constraints.orientation_constraints[0].orientation.x = 1.0;
 	 mp.request.motion_plan_req.path_constraints.orientation_constraints[0].orientation.y = 0.0;
 	 mp.request.motion_plan_req.path_constraints.orientation_constraints[0].orientation.z = 0.0;
 	 mp.request.motion_plan_req.path_constraints.orientation_constraints[0].orientation.w = 0.0;
 	 mp.request.motion_plan_req.path_constraints.orientation_constraints[0].type = arm_navigation_msgs::OrientationConstraint::HEADER_FRAME;
-	 mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_roll_tolerance = 0.4;
-	 mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_pitch_tolerance = 0.4;
-	 mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_yaw_tolerance = 0.4;
+     mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_roll_tolerance = 1;
+     mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_pitch_tolerance = 1;
+     mp.request.motion_plan_req.path_constraints.orientation_constraints[0].absolute_yaw_tolerance = 1;
 
 	mp.request.motion_plan_req.path_constraints.position_constraints.resize(1);
 	mp.request.motion_plan_req.path_constraints.position_constraints[0].header.frame_id = "base_link";
 	mp.request.motion_plan_req.path_constraints.position_constraints[0].header.stamp = ros::Time::now();
-	mp.request.motion_plan_req.path_constraints.position_constraints[0].link_name = "r2_tip_link";
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].link_name = "r2_ee";
 	mp.request.motion_plan_req.path_constraints.position_constraints[0].position.x = 0.5;
 	mp.request.motion_plan_req.path_constraints.position_constraints[0].position.y = -1.0;
 	mp.request.motion_plan_req.path_constraints.position_constraints[0].position.z = 1.0;
@@ -142,7 +142,7 @@ bool planToStart(clopema_arm_navigation::ClopemaMotionPlan & mp, ClopemaMove & c
 	arm_navigation_msgs::SimplePoseConstraint desired_pose;
 	desired_pose.header.frame_id = "base_link";
 	desired_pose.header.stamp = ros::Time::now();
-	desired_pose.link_name = "r2_tip_link";
+    desired_pose.link_name = "r2_ee";
 	desired_pose.pose.position.x = 1.0;
 	desired_pose.pose.position.y = -1;
 	desired_pose.pose.position.z = 1.0;
@@ -172,7 +172,7 @@ bool planTrajectory(clopema_arm_navigation::ClopemaMotionPlan & mp, ClopemaMove 
 	arm_navigation_msgs::SimplePoseConstraint desired_pose;
 	desired_pose.header.frame_id = "base_link";
 	desired_pose.header.stamp = ros::Time::now();
-	desired_pose.link_name = "r2_tip_link";
+    desired_pose.link_name = "r2_ee";
 	desired_pose.pose.position.x = 1.0;
 	desired_pose.pose.position.y = -1;
 	desired_pose.pose.position.z = 1.0;
