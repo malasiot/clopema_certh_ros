@@ -110,15 +110,6 @@ private:
 };
 
 
-static void connectCb(ros::Publisher *acq_pub, bool preview)
-{
-    RH_cameras::CamerasSync msgStr ;
-
-    msgStr.data = ( preview ) ? "preview" : "full" ;
-    msgStr.timeStamp = ros::Time::now() ;
-
-    acq_pub->publish(msgStr) ;
-}
 
 bool grabRHImages(cv::Mat &left, cv::Mat &right, image_geometry::StereoCameraModel &cm, bool preview, unsigned int wait)
 {
@@ -133,15 +124,21 @@ bool grabRHImages(cv::Mat &left, cv::Mat &right, image_geometry::StereoCameraMod
     // publish the acqusition command
 
     ros::Publisher acq_pub ;
-    acq_pub = nh.advertise<RH_cameras::CamerasSync>("/RH/cmd/acquire", 1,
-                                                               boost::bind(&connectCb, &acq_pub, preview)) ;
+    acq_pub = nh.advertise<RH_cameras::CamerasSync>("/RH/cmd/acquire", 1) ;
+
+    RH_cameras::CamerasSync msgStr ;
+
+    msgStr.data = ( preview ) ? "preview" : "full" ;
+    msgStr.timeStamp = ros::Time::now() ;
+
+    acq_pub.publish(msgStr) ;
 
     // start spinner to allow the connection callback to be called
 
     ros::AsyncSpinner spinner(4) ;
     spinner.start() ;
 
-    // wait until the image are received
+    // wait until the images are received
 
     if ( wait == 0 ) {
         t.join() ;
