@@ -8,6 +8,7 @@
 
 #include <visualization_msgs/MarkerArray.h>
 #include <planning_environment/models/collision_models.h>
+#include <kinematics_msgs/GetConstraintAwarePositionIK.h>
 
 
 using namespace std ;
@@ -80,6 +81,13 @@ bool moveHome(MoveRobot &cmove)
 
 bool moveGripper(MoveRobot &cmove, const std::string &armName, const Eigen::Vector3d &pos, const Eigen::Quaterniond &q)
 {
+    trajectory_msgs::JointTrajectory traj ;
+
+    return ( planArmToPose(armName, pos, q, traj) && cmove.execTrajectory(traj) ) ;
+}
+
+bool planArmToPose(const string &armName, const Eigen::Vector3d &pos, const Eigen::Quaterniond &q, trajectory_msgs::JointTrajectory &traj)
+{
     clopema_arm_navigation::ClopemaMotionPlan mp;
     mp.request.motion_plan_req.group_name = armName + "_arm" ;
     mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
@@ -105,26 +113,14 @@ bool moveGripper(MoveRobot &cmove, const std::string &armName, const Eigen::Vect
 
     poseToClopemaMotionPlan(mp, desired_pose);
 
-    ROS_INFO("Planning to the start position");
-
     if (!plan(mp)) return false;
 
-    trajectory_msgs::JointTrajectory wholeTraj = mp.response.joint_trajectory;
-    mp.response.joint_trajectory = wholeTraj;
+    traj = mp.response.joint_trajectory ;
 
-    control_msgs::FollowJointTrajectoryGoal goal;
-
-    if ( mp.response.joint_trajectory.points.size() > 2 )
-    {
-        goal.trajectory = mp.response.joint_trajectory;
-        cmove.doGoal(goal) ;
-
-    }
-
-    return true ;
-
+    if ( traj.points.size() > 2 ) return true ;
 
 }
+
 
 bool moveGripperPointingDown(MoveRobot &cmove, const std::string &armName, double X, double Y, double Z)
 {
@@ -132,8 +128,6 @@ bool moveGripperPointingDown(MoveRobot &cmove, const std::string &armName, doubl
     q = Eigen::AngleAxisd(M_PI, Eigen::Vector3d::UnitX()) ;
     return moveGripper(cmove, armName, Eigen::Vector3d(X, Y, Z), q) ;
 }
-
-
 
 bool rotateGripper(MoveRobot &cmove, const std::string &armName, double theta)
 {
@@ -554,7 +548,59 @@ bool resetCollisionModel()
 
 }
 
+using namespace Eigen ;
 
+geometry_msgs::Pose eigenPoseToROS(const Vector3d &pos, const Quaterniond &orient)
+{
+    geometry_msgs::Pose pose ;
+
+    pose.position.x = pos.x() ;
+    pose.position.y = pos.y() ;
+    pose.position.z = pos.z() ;
+
+    pose.orientation.x = orient.x() ;
+    pose.orientation.y = orient.y() ;
+    pose.orientation.z = orient.z() ;
+    pose.orientation.w = orient.w() ;
+
+    return pose ;
+
+}
+
+bool getIK(const string &armName, const Eigen::Vector3d pos, const Eigen::Quaterniond &q, sensor_msgs::JointState &state) {
+
+    geometry_msgs::Pose pose = eigenPoseToROS(pos, q);
+
+    kinematics_msgs::GetConstraintAwarePositionIK ik;
+    ik.request.timeout = ros::Duration(5.0);
+    ik.request.ik_request.ik_link_name = armName + "_tip_link";
+    ik.request.ik_request.pose_stamped.header.frame_id = "base_link";
+    ik.request.ik_request.pose_stamped.header.stamp = ros::Time::now();
+
+    getRobotState(ik.request.ik_request.robot_state) ;
+
+    ik.request.ik_request.ik_seed_state = ik.request.ik_request.robot_state;
+    ik.request.ik_request.pose_stamped.pose = pose;
+
+    string serviceName = "/clopema_" + armName + "_arm_kinematics/get_constraint_aware_ik" ;
+
+    ros::service::waitForService(serviceName) ;
+
+    if (ros::service::call(serviceName, ik)) {
+        if (ik.response.error_code.val == ik.response.error_code.SUCCESS)
+            ROS_DEBUG_STREAM("IK Solution found");
+        else {
+            ROS_WARN_STREAM("Error code: " << ik.response.error_code.val<<": "<<arm_navigation_msgs::armNavigationErrorCodeToString(ik.response.error_code));
+            return false ;
+        }
+    } else {
+        ROS_ERROR("Can't call service");
+        return false ;
+    }
+
+    state = ik.response.solution.joint_state ;
+    return true ;
+}
 
 
 

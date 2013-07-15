@@ -6,6 +6,10 @@
 
 namespace robot_helpers {
 
+// planned end-point to reach given pose
+
+bool planArmToPose(const std::string &armName, const Eigen::Vector3d &pos, const Eigen::Quaterniond &q, trajectory_msgs::JointTrajectory &traj) ;
+
 // move robot to home position
 
 bool moveHome(MoveRobot &cmove) ;
@@ -30,6 +34,10 @@ bool addConeToCollisionModel(const std::string &armName, double length, double r
 bool addSphereToCollisionModel(const std::string &armName, double radius);
 
 bool resetCollisionModel() ;
+
+// get inverse kinematics silution for the tip of given arm
+
+bool getIK(const std::string &armName, const Eigen::Vector3d pos, const Eigen::Quaterniond &q, sensor_msgs::JointState &state) ;
 
 }
 

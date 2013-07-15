@@ -14,7 +14,7 @@ using namespace std ;
 namespace robot_helpers {
 
 MoveRobot::MoveRobot() :
-		cmc_(getServerName().data(), true) {
+    cmc_(getServerName().data(), true), closeServoWhenDone(true) {
 
 	if (!cmc_.waitForServer(ros::Duration(60))) {
 		ROS_ERROR("Can't connect to server: %s", getServerName().data());
@@ -26,11 +26,14 @@ MoveRobot::MoveRobot() :
 MoveRobot::~MoveRobot() {
 }
 
-void MoveRobot::doGoal(const control_msgs::FollowJointTrajectoryGoal & goal) {
+bool MoveRobot::doGoal(const control_msgs::FollowJointTrajectoryGoal & goal) {
     cmc_.sendGoal(goal, boost::bind(&MoveRobot::doneCb, this, _1, _2),
                         boost::bind(&MoveRobot::activeCb, this));
 	if (!cmc_.waitForResult(ros::Duration(30)))
 		cmc_.cancelGoal();
+    else return false ;
+
+    return true ;
 
 }
 
@@ -40,9 +43,10 @@ void MoveRobot::activeCb() {
 
 
 void MoveRobot::doneCb(const actionlib::SimpleClientGoalState& state, const control_msgs::FollowJointTrajectoryResultConstPtr& result) {
-	ROS_INFO("Finished in state [%s:%s]", state.toString().c_str(), state.text_.data());
-	ROS_INFO("Result - error code: %d", result->error_code);
-	setServoPowerOff(false);
+    ROS_DEBUG("Finished in state [%s:%s]", state.toString().c_str(), state.text_.data());
+    ROS_DEBUG("Result - error code: %d", result->error_code);
+
+    if ( closeServoWhenDone ) setServoPowerOff(false);
 
     actionCompleted() ;
 }
@@ -58,6 +62,23 @@ bool MoveRobot::setServoPowerOff(bool force) {
 	return true;
 }
 
+
+bool MoveRobot::execTrajectory(const trajectory_msgs::JointTrajectory &traj)
+{
+    control_msgs::FollowJointTrajectoryGoal goal;
+
+    goal.trajectory = traj ;
+    return doGoal(goal) ;
+}
+
+void MoveRobot::reset() {
+    cmc_.cancelAllGoals();
+    closeServoWhenDone = true ;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+///
+///
 bool getRobotState(arm_navigation_msgs::RobotState & rs) {
 	ros::service::waitForService("/environment_server/get_robot_state");
 	arm_navigation_msgs::GetRobotState r;

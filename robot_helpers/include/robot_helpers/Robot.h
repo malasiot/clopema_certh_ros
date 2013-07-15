@@ -21,10 +21,19 @@ public:
 	MoveRobot();
 	virtual ~MoveRobot();
 
-	/*
-	 * Send goal to the server and wait for result for maximum 30 sec.
-	 */
-	void doGoal(const control_msgs::FollowJointTrajectoryGoal & goal);
+    // execute the trajectory. optionally leave the servos open when finished
+    bool execTrajectory(const trajectory_msgs::JointTrajectory &traj) ;
+
+    /*
+     * Send goal to the server and wait for result for maximum 30 sec.
+     */
+    bool doGoal(const control_msgs::FollowJointTrajectoryGoal & goal);
+
+    // set this true to close servos after each movement (default)
+
+    void setServoMode(bool closeWhenDone) {
+        closeServoWhenDone = closeWhenDone ;
+    }
 
 	/*
 	 * Function calls service to turn power off
@@ -33,7 +42,11 @@ public:
 	 */
 	bool setServoPowerOff(bool force);
 
+    void reset() ;
+
 public:
+
+    // connect these signal to callback functions if need to be
 
     boost::signal<void ()> actionCompleted ;
     boost::signal<void ()> actionStarted ;
@@ -44,13 +57,14 @@ private:
 
     void activeCb() ;
 
-	void doneCb(const actionlib::SimpleClientGoalState& state, const control_msgs::FollowJointTrajectoryResultConstPtr & result);
+    void doneCb(const actionlib::SimpleClientGoalState& state, const control_msgs::FollowJointTrajectoryResultConstPtr & result);
 
 	ClopemaMoveClient cmc_;
 	const std::string getServerName() {
 		return "/clopema_controller/follow_joint_trajectory";
 	}
 
+    bool closeServoWhenDone ;
 } ;
 
 /*
