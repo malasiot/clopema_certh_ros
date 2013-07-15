@@ -28,21 +28,25 @@ class CaptureThread
 {
 public:
 
-    CaptureThread(): sync(sync_policies::ApproximateTime<Image, Image>(10), left_image_sub_, right_image_sub_) {
+    CaptureThread(): sync(sync_policies::ApproximateTime<Image, Image, RH_cameras::CameraInfo, RH_cameras::CameraInfo>(10), left_image_sub_, right_image_sub_, left_camera_info_sub_, right_camera_info_sub_) {
 
 
         nh_.setCallbackQueue(&queue);
 
         left_image_sub_.subscribe(nh_, "/RH/left_camera/image", 1) ;
         right_image_sub_.subscribe(nh_, "/RH/right_camera/image", 1) ;
+        left_camera_info_sub_.subscribe(nh_, "/RH/left_camera/camera_info", 1) ;
+        right_camera_info_sub_.subscribe(nh_, "/RH/right_camera/camera_info", 1) ;
 
-        sync.registerCallback(boost::bind(&CaptureThread::captureCallback, this, _1, _2)) ;
+        sync.registerCallback(boost::bind(&CaptureThread::captureCallback, this, _1, _2, _3, _4)) ;
 
         dataReady = false ;
 
     }
 
-    void captureCallback(const ImageConstPtr& left_image_, const ImageConstPtr& right_image_)
+    void captureCallback(const ImageConstPtr& left_image_, const ImageConstPtr& right_image_,
+                         const RH_cameras::CameraInfoConstPtr &left_cam_info_,
+                         const RH_cameras::CameraInfoConstPtr &right_cam_info_)
     {
         cv_bridge::CvImagePtr cv_ptrL, cv_ptrR;
         try
@@ -58,6 +62,16 @@ public:
             ROS_ERROR("Could not convert from '%s' to 'rgb8'.", left_image_->encoding.c_str());
             return;
         }
+
+        // Translate camera info (TODO)
+        leftInfo.reset(new sensor_msgs::CameraInfo) ;
+        leftInfo->width = left_cam_info_->width ;
+        leftInfo->height = left_cam_info_->height ;
+
+        rightInfo.reset(new sensor_msgs::CameraInfo) ;
+        rightInfo->width = right_cam_info_->width ;
+        rightInfo->height = right_cam_info_->height ;
+
 
         dataReady = true ;
     }
@@ -76,32 +90,28 @@ public:
 
         left_image_sub_.unsubscribe();
         right_image_sub_.unsubscribe() ;
+        left_camera_info_sub_.unsubscribe() ;
+        right_camera_info_sub_.unsubscribe() ;
     }
 
     cv::Mat leftIm, rightIm ;
+    sensor_msgs::CameraInfoPtr leftInfo, rightInfo ;
 
 private:
 
     ros::NodeHandle nh_ ;
     message_filters::Subscriber<sensor_msgs::Image> left_image_sub_, right_image_sub_ ;
-    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> > sync ;
+    message_filters::Subscriber<RH_cameras::CameraInfo> left_camera_info_sub_, right_camera_info_sub_ ;
+    message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image, RH_cameras::CameraInfo, RH_cameras::CameraInfo > > sync ;
+
     ros::CallbackQueue queue ;
     bool dataReady ;
 
 };
 
 
-static void connectCb(ros::Publisher *acq_pub, bool preview)
-{
-    RH_cameras::CamerasSync msgStr ;
 
-    msgStr.data = ( preview ) ? "preview" : "full" ;
-    msgStr.timeStamp = ros::Time::now() ;
-
-    acq_pub->publish(msgStr) ;
-}
-
-bool grabRHImages(cv::Mat &left, cv::Mat &right, bool preview, unsigned int wait)
+bool grabRHImages(cv::Mat &left, cv::Mat &right, image_geometry::StereoCameraModel &cm, bool preview, unsigned int wait)
 {
     ros::NodeHandle nh ;
 
@@ -114,15 +124,21 @@ bool grabRHImages(cv::Mat &left, cv::Mat &right, bool preview, unsigned int wait
     // publish the acqusition command
 
     ros::Publisher acq_pub ;
-    acq_pub = nh.advertise<RH_cameras::CamerasSync>("/RH/cmd/acquire", 1,
-                                                               boost::bind(&connectCb, &acq_pub, preview)) ;
+    acq_pub = nh.advertise<RH_cameras::CamerasSync>("/RH/cmd/acquire", 1) ;
+
+    RH_cameras::CamerasSync msgStr ;
+
+    msgStr.data = ( preview ) ? "preview" : "full" ;
+    msgStr.timeStamp = ros::Time::now() ;
+
+    acq_pub.publish(msgStr) ;
 
     // start spinner to allow the connection callback to be called
 
     ros::AsyncSpinner spinner(4) ;
     spinner.start() ;
 
-    // wait until the image are received
+    // wait until the images are received
 
     if ( wait == 0 ) {
         t.join() ;
@@ -134,6 +150,8 @@ bool grabRHImages(cv::Mat &left, cv::Mat &right, bool preview, unsigned int wait
 
     left = cap.leftIm ;
     right = cap.rightIm ;
+
+   // cm.fromCameraInfo(cap.leftInfo, cap.rightInfo) ;
 
     return true ;
 }

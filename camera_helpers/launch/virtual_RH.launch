@@ -1,0 +1,56 @@
+<!--
+	Launch file for vergence demo
+	
+	After launching this file, it is necessary to publish the
+	acquisition command. This can be done as below:
+		rostopic pub -1 /RH/cmd/acquire RH_cameras/camerasSync_msg '{timeStamp: now, data: full}'
+		
+	SoCS, UoG. Gerardo Aragon-Camarasa and Susanne B Oehler. February 2013 
+-->
+
+<launch>
+
+	<!-- Include Robot Head parameter server configuration. -->
+    <include file="$(find RH_launch)/launch/RH_parameters.launch" />
+    
+    <!-- RH_siftgpu -->
+		<node pkg="camera_helpers" type="robot_head_virtual" name="RH_virtual" output="screen">
+			<param name="imL" value="/home/malasiot/tmp/stereo_L.jpg"/>
+			<param name="imR" value="/home/malasiot/tmp/stereo_R.jpg"/>
+		</node>
+
+	<node pkg="RH_siftgpu" type="RH_siftgpu_node" name="RH_siftgpu_node" output="screen">
+		</node>
+	
+	
+	<!-- RH_cameras -->
+		<!--<node pkg="RH_cameras" type="RHcam_headerCameras" name="RH_correct">
+		</node> -->
+<!--
+		<node pkg="RH_cameras" type="RHcam_left" name="RH_camera_left" output="screen">
+		</node>
+
+		<node pkg="RH_cameras" type="RHcam_right" name="RH_camera_right" output="screen">
+		</node>
+	-->
+	<!--RH_vergence-->
+
+		<node pkg="RH_vergence" type="RH_vergence_node" name="RH_vergence_node" output="screen">
+		</node>
+
+		<node pkg="RH_vergence" type="RH_vergence_main" name="RH_vergence_main" output="screen">
+		</node>
+
+	<!-- RH_ptu -->
+<!--
+		<node pkg="RH_ptu" type="RH_ptu_node" name="RH_ptu_node" output="screen">
+		</node>
+	-->
+	<!-- RH_mainUI -->
+<!--
+		<node pkg="RH_mainUI" type="RH_mainUI" name="RH_mainUI" output="screen">
+		</node>
+-->
+		
+</launch>
+
