@@ -20,7 +20,7 @@ void pointToRobotState(arm_navigation_msgs::RobotState &state, trajectory_msgs::
 std::vector<geometry_msgs::Pose> calculate_circle_points(float x, float y, float z , float r) {
    
     std::vector<geometry_msgs::Pose> points;
-    float tmp_x,tmp_y,tmp_z;
+    float tmp_x,tmp_z;
     geometry_msgs::Pose point;
     point.position.x=x;
     point.position.y=y;

@@ -93,19 +93,7 @@ void doCapture(camera_helpers::OpenNICaptureAll *grabber)
     } while ( !_stoped ) ;
 
 }
-void getRotationAxis(){
-    ros::Time time ;
-    tf::TransformListener listenOnce(ros::Duration(1.0));
-    tf::StampedTransform rotationAxis;
 
-    listenOnce.waitForTransform("xtion3_rgb_optical_frame","r1_ee", time, ros::Duration(1) );
-    listenOnce.lookupTransform("xtion3_rgb_optical_frame","r1_ee", time, rotationAxis);
-
-    ofstream rotAxis ;
-    rotAxis.open("/tmp/rot/rotAxis.txt") ;
-    rotAxis <<"x="<< rotationAxis.getOrigin().x() << " y=" << rotationAxis.getOrigin().y() <<" z=" << rotationAxis.getOrigin().z()<< endl ;
-    rotAxis.close();
-}
 
 void startCapture(camera_helpers::OpenNICaptureAll *grabber)
 {
@@ -123,7 +111,7 @@ int main(int argc, char **argv) {
   // moveHome() ;
     moveGripperPointingDown(cmove, "r1", 0, -0.7, 1.5) ;
 
-    getRotationAxis();
+
 
     camera_helpers::OpenNICaptureAll cap("xtion3") ;
     cap.connect() ;

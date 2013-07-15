@@ -33,6 +33,7 @@ using namespace std ;
 
 #include <robot_helpers/Robot.h>
 #include <robot_helpers/Utils.h>
+#include <robot_helpers/Unfold.h>
 
 using namespace robot_helpers ;
 using namespace Eigen ;
@@ -260,6 +261,7 @@ int moveTo(geometry_msgs::Pose pose, string armName){
         //Create plan
         clopema_arm_navigation::ClopemaMotionPlan mp;
         ClopemaMove cmove;
+
 
         mp.request.motion_plan_req.group_name = armName + "_arm";
         mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
@@ -513,7 +515,7 @@ void moveThrough(	std::vector<geometry_msgs::Point> traj){
 
 }
 
-void makeCircle(std::string armName, bool up, geometry_msgs::Pose goalPose){
+int makeCircle(std::string armName, bool up, geometry_msgs::Pose goalPose){
 
     std::string arm2Name="r1";
 
@@ -558,7 +560,10 @@ void makeCircle(std::string armName, bool up, geometry_msgs::Pose goalPose){
     cout<< "HIT ENTER TO CONTINUE" <<endl;
     //cin.ignore();
 
-    moveWithConstrains(goalPose, armName, radious + 0.1);
+    if (moveWithConstrains(goalPose, armName, radious + 0.1)==-1){
+        cout<<"ABORDING..." <<endl;
+        return -1;
+    }
     //moveTo(goalPose,armName );
 
 }
@@ -583,11 +588,11 @@ void convertCloud(const cv::Mat &dep, const pcl::PointCloud<pcl::PointXYZ>& clou
             if ( val == 0 ) continue ;
 
             // Fill in XYZ
-            cout << (j - center_x) * val * constant_x << ' ';
-            cout << (i - center_y) * val * constant_y << ' ' ;
-            cout <<  val * 0.001 << endl ;
+//            cout << (j - center_x) * val * constant_x << ' ';
+//            cout << (i - center_y) * val * constant_y << ' ' ;
+//            cout <<  val * 0.001 << endl ;
 
-            cout << cloud.at(j, i) << endl ;
+//            cout << cloud.at(j, i) << endl ;
 
 
         }
@@ -617,8 +622,8 @@ void findGraspingOrientation(Eigen::Vector4d vector){
     rotMat[1][2]=-B.y();
     rotMat[2][2]=-B.z();
 
-    cout<<N<<"\n"<<C<<"\n "<<B<<endl;
-    cout<<C.dot(N)<< " "<<B.dot(N)<< endl;
+//    cout<<N<<"\n"<<C<<"\n "<<B<<endl;
+//    cout<<C.dot(N)<< " "<<B.dot(N)<< endl;
 
 }
 
@@ -651,13 +656,13 @@ int main(int argc, char **argv) {
 
     r2RotPose.position.x = -0.25;
     r2RotPose.position.y = -0.7;
-    r2RotPose.position.z = 1.6;
+    r2RotPose.position.z = 1.65;
     r2RotPose.orientation = rotationMatrixToQuaternion(homeRotMat);
-
+    r1RotPose =  getArmPose("r1");
     r1RotPose.position.x = -0.15;
     r1RotPose.position.y = -0.85;
-    r1RotPose.position.z = 1.6;
-    r1RotPose.orientation = rotationMatrixToQuaternion(homeRotMat);
+    r1RotPose.position.z = 1.65;
+    //r1RotPose.orientation = rotationMatrixToQuaternion(homeRotMat);
 
     geometry_msgs::Pose tempPose;
 
@@ -668,7 +673,10 @@ int main(int argc, char **argv) {
 
     setGrippersOpen("r1");
     setGrippersOpen("r2");
-    moveArms(r1RotPose, tempPose);
+    if ( moveArms(r1RotPose, tempPose)==-1){
+        cout<<"ABORDING..."<<endl;
+        return 0;
+    }
 
     cout<< "HIT ENTER TO CLOSE GRIPPERS"<<endl;
     ros::Duration(5.0).sleep();
@@ -721,9 +729,9 @@ int main(int argc, char **argv) {
             }
 
             pcl::PointXYZ p = pc.at(cx, cy);
-            cout<< "click x= "<< cx << " y= "<< cy<<endl;
+          //  cout<< "click x= "<< cx << " y= "<< cy<<endl;
             Eigen::Vector4d pM(p.x, p.y, p.z, 1);
-            cout<< "pc x= "<<pM[0]<<" pc y= "<< pM[1] << "pc z= "<< pM[2]<<endl;
+        //    cout<< "pc x= "<<pM[0]<<" pc y= "<< pM[1] << "pc z= "<< pM[2]<<endl;
             targetP = calib.inverse()*pM;
         }
         else{
@@ -758,27 +766,6 @@ int main(int argc, char **argv) {
         Eigen::Vector3f targetN;
         float angle=M_PI_2;
 
-
-        pcl::PointXYZ val;
-        //cout<< "pc width= "<< pc.width << "pc height= "<< pc.height<< endl;
-
-
-        for(int j=0 ; j< pc.width ; j++ )
-        {
-
-            for(int i=0 ; i< pc.height ; i++)
-            {
-
-
-                val  = pc.at(j, i) ;
-                if ( !pcl_isfinite(val.z) ) continue ;
-
-               // cout <<"for i="<< i <<"j= "<<j<<"coords are = "<<  val.x << ' ' << val.y << ' ' << val.z << endl;
-
-           }
-
-
-        }
         findLowestPoint(pc,top,bottom,angle,targetPo,targetN, cx, cy ,depth );
         cout<<"lowest point is x="<<targetPo.x()<< " y="<<targetPo.y()<<" z="<<targetPo.z()<<endl;
         cout<<"target vector x= "<<targetN.x()<< " y="<<targetN.y()<<" z="<<targetN.z()<<endl;
@@ -790,50 +777,50 @@ int main(int argc, char **argv) {
 
        ///////////// DRAW ARROW MARKER //////////////////////
 
-          ros::Rate r(1);
-          ros::Publisher marker_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 1);
+//          ros::Rate r(1);
+//          ros::Publisher marker_pub = nh.advertise<visualization_msgs::Marker>("visualization_marker", 1);
 
-          uint32_t shape = visualization_msgs::Marker::ARROW;
-          int count=0;
-          while (ros::ok())
-          {
-            visualization_msgs::Marker marker;
-            marker.header.frame_id = "/xtion3_rgb_optical_frame";
-            marker.header.stamp = ros::Time::now();
+//          uint32_t shape = visualization_msgs::Marker::ARROW;
+//          int count=0;
+//          while (ros::ok())
+//          {
+//            visualization_msgs::Marker marker;
+//            marker.header.frame_id = "/xtion3_rgb_optical_frame";
+//            marker.header.stamp = ros::Time::now();
 
-            marker.ns = "basic_shapes";
-            marker.id = 0;
+//            marker.ns = "basic_shapes";
+//            marker.id = 0;
 
-            marker.type = shape;
+//            marker.type = shape;
 
-            marker.action = visualization_msgs::Marker::ADD;
+//            marker.action = visualization_msgs::Marker::ADD;
 
 
-           marker.points.resize(2);
-           marker.points[0].x = targetPo.x();
-           marker.points[0].y = targetPo.y();
-           marker.points[0].z = targetPo.z();
+//           marker.points.resize(2);
+//           marker.points[0].x = targetPo.x();
+//           marker.points[0].y = targetPo.y();
+//           marker.points[0].z = targetPo.z();
 
-           marker.points[1].x = targetPo.x()+targetN.x();
-           marker.points[1].y = targetPo.y()+targetN.y();
-           marker.points[1].z = targetPo.z()+targetN.z();
+//           marker.points[1].x = targetPo.x()+targetN.x();
+//           marker.points[1].y = targetPo.y()+targetN.y();
+//           marker.points[1].z = targetPo.z()+targetN.z();
 
-            marker.scale.x = 0.01;
-            marker.scale.y = 0.02;
-            marker.scale.z = 0.03;
+//            marker.scale.x = 0.01;
+//            marker.scale.y = 0.02;
+//            marker.scale.z = 0.03;
 
-            marker.color.r = 0.0f;
-            marker.color.g = 1.0f;
-            marker.color.b = 0.0f;
-            marker.color.a = 1.0;
+//            marker.color.r = 0.0f;
+//            marker.color.g = 1.0f;
+//            marker.color.b = 0.0f;
+//            marker.color.a = 1.0;
 
-            marker.lifetime = ros::Duration();
+//            marker.lifetime = ros::Duration();
 
-            marker_pub.publish(marker);
-           r.sleep();
-           if(count>4) break;
-             count++;
-          }
+//            marker_pub.publish(marker);
+//           r.sleep();
+//           if(count>4) break;
+//             count++;
+//          }
 
         //////////////////////////
 
@@ -877,10 +864,19 @@ int main(int argc, char **argv) {
             desPos.position.y = targetP.y()+rotMat[1][2]*0.045+rotMat[1][0]*0.03;
             desPos.position.z = targetP.z()+rotMat[2][2]*0.045+rotMat[2][0]*0.03;
             ros::Duration(0.5).sleep();
-            moveTo(desPos,"r2");
+            if(moveTo(desPos,"r2")==-1){
+                cout<<"ABORDING......"<<endl;
+                return 0;
+            }
+
+
             setGrippersClose("r2");
             desPos.orientation = rotationMatrixToQuaternion(homeRotMat);
-            makeCircle("r2", true, desPos);
+            if ( makeCircle("r2", true, desPos)==-1){
+                cout<<"ABORDING..." << endl;
+                return 0;
+            }
+
             resetCollisionModel();
         }
         else{
@@ -889,7 +885,10 @@ int main(int argc, char **argv) {
             desPos.position.y = -1;
             desPos.position.z = 1.3;
             ros::Duration(0.5).sleep();
-            moveTo(desPos,"r2");
+            if(moveTo(desPos,"r2")==-1){
+                cout<<"ABORDING......"<<endl;
+                return 0;
+            }
         }
 
         geometry_msgs::Pose desPos1, desPos2;
@@ -897,10 +896,10 @@ int main(int argc, char **argv) {
         desPos2 = getArmPose("r2");
         float radious=getArmsDistance();
 
-        cout<<"radious = " <<radious <<endl;
+//        cout<<"radious = " <<radious <<endl;
 
-        cout<<"pose1= "<<desPos1.position.x<<" "<<desPos1.position.y<<" "<<desPos1.position.z<<endl;
-        cout<<"pose2= "<<desPos2.position.x<<" "<<desPos2.position.y<<" "<<desPos2.position.z<<endl;
+//        cout<<"pose1= "<<desPos1.position.x<<" "<<desPos1.position.y<<" "<<desPos1.position.z<<endl;
+//        cout<<"pose2= "<<desPos2.position.x<<" "<<desPos2.position.y<<" "<<desPos2.position.z<<endl;
         cout<<"HIT ENDER TO MOVE THE ARMS"<<endl;
         //cin.ignore();
         ros::Duration(0.5).sleep();
@@ -909,7 +908,10 @@ int main(int argc, char **argv) {
 
 
         desPos1.position.z-=0.866025404*radious;
-         moveArms(desPos1, desPos2);
+        if ( moveArms(desPos1, desPos2)==-1){
+            cout<<"ABORDING..."<<endl;
+            return 0;
+        }
         //moveArms(desPos1, desPos2);
 
 //        btQuaternion q=getOrient("r1");
@@ -937,7 +939,10 @@ int main(int argc, char **argv) {
         desPos1.position.x -= 0.4;
         desPos1.position.z += 0.4;
         ros::Duration(0.5).sleep();
-        moveTo(desPos1,"r1");
+        if(moveTo(desPos1,"r1")==-1){
+            cout<<"ABORDING......"<<endl;
+            return 0;
+        }
 
     }
 
