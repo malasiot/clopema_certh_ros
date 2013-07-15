@@ -64,8 +64,13 @@ rosbuild_add_executable(cloth_simulator src/cloth_simulator.cpp)
 rosbuild_add_executable(grippers_testing src/grippers_testing.cpp)
 
 include_directories(${Eigen_INCLUDE_DIRS})
-rosbuild_add_executable(test_calib src/test_calib.cpp src/lowestPoint)
-target_link_libraries(test_calib clopema_move)
+
+#rosbuild_add_executable(test_calib src/test_calib.cpp src/lowestPoint)
+#target_link_libraries(test_calib clopema_move)
+
+rosbuild_add_executable(test_ src/test_.cpp src/lowestPoint)
+
+
 
 #Intermediate - JOINT
 rosbuild_add_executable(move_home src/move_home.cpp)
