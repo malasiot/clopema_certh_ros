@@ -4,14 +4,71 @@
 #include <opencv2/highgui/highgui.hpp>
 namespace robot_helpers{
 
-Unfold::Unfold(){
-
+Unfold::Unfold(const std::string &armName){
+    setHoldingArm(armName);
 }
 
 Unfold::~Unfold() {
 }
 
+bool Unfold::moveHomeArm(const std::string &armName){
 
+    MoveRobot cmove;
+    clopema_arm_navigation::ClopemaMotionPlan mp;
+    mp.request.motion_plan_req.group_name = armName + "_arm";
+    mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
+
+    if (!getRobotState(mp.request.motion_plan_req.start_state)) return false ;
+
+    std::vector<std::string> joint_names ;
+
+    joint_names.push_back(armName + "_joint_s");
+    joint_names.push_back(armName + "_joint_l");
+    joint_names.push_back(armName + "_joint_u");
+    joint_names.push_back(armName + "_joint_r");
+    joint_names.push_back(armName + "_joint_b");
+    joint_names.push_back(armName + "_joint_t");
+
+
+
+    mp.request.motion_plan_req.goal_constraints.joint_constraints.resize(joint_names.size());
+
+    for (unsigned int i = 0; i < mp.request.motion_plan_req.goal_constraints.joint_constraints.size(); ++i) {
+        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].joint_name = joint_names[i];
+        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].position = 0.0;
+        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].tolerance_below = 0.1;
+        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].tolerance_above = 0.1;
+    }
+
+    if (!plan(mp)) return false ;
+
+    control_msgs::FollowJointTrajectoryGoal goal;
+    goal.trajectory = mp.response.joint_trajectory;
+    cmove.doGoal(goal);
+
+    mp.request.motion_plan_req.group_name = "ext_axis";
+    mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
+    if (!getRobotState(mp.request.motion_plan_req.start_state)) return false ;
+
+    joint_names.clear() ;
+    joint_names.push_back("ext_axis") ;
+
+    mp.request.motion_plan_req.goal_constraints.joint_constraints.resize(joint_names.size());
+    for (unsigned int i = 0; i < mp.request.motion_plan_req.goal_constraints.joint_constraints.size(); ++i) {
+        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].joint_name = joint_names[i];
+        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].position = 0.0;
+        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].tolerance_below = 0.1;
+        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].tolerance_above = 0.1;
+    }
+
+    if ( !plan(mp) ) return false ;
+
+
+    goal.trajectory = mp.response.joint_trajectory;
+    cmove.doGoal(goal);
+
+    return true ;
+}
 
 int Unfold::moveArm(geometry_msgs::Pose pose, const std::string &armName){
 
@@ -307,6 +364,52 @@ void Unfold::rotateGripper(float angle ,const std::string &armName){
 
 }
 
+
+void Unfold::rotateHoldingGripper(float angle){
+
+    //Create plan
+    clopema_arm_navigation::ClopemaMotionPlan mp;
+    MoveRobot cmove;
+
+    mp.request.motion_plan_req.group_name = holdingArm + "_arm";
+    mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
+
+    //Set start state
+    getRobotState(mp.request.motion_plan_req.start_state);
+
+    arm_navigation_msgs::SimplePoseConstraint desired_pose;
+
+    desired_pose.header.frame_id = holdingArm + "_ee";
+    desired_pose.header.stamp = ros::Time::now();
+    desired_pose.link_name = holdingArm + "_ee";
+
+    desired_pose.pose.position.x = 0;
+    desired_pose.pose.position.y = 0;
+    desired_pose.pose.position.z = 0;
+    desired_pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0, 0, angle );
+
+
+   // cout<< "\n going to --- >  "<< desired_pose.pose.position.x<< " "  << desired_pose.pose.position.y<<"  " << desired_pose.pose.position.z <<"\n";
+
+    desired_pose.absolute_position_tolerance.x = 0.002;
+    desired_pose.absolute_position_tolerance.y = 0.002;
+    desired_pose.absolute_position_tolerance.z = 0.002;
+    desired_pose.absolute_roll_tolerance = 0.004;
+    desired_pose.absolute_pitch_tolerance = 0.004;
+    desired_pose.absolute_yaw_tolerance = 0.004;
+    poseToClopemaMotionPlan(mp, desired_pose);
+
+    ROS_INFO("Planning");
+    if (!plan(mp))
+        return ;
+
+    ROS_INFO("Executing");
+    control_msgs::FollowJointTrajectoryGoal goal;
+    goal.trajectory = mp.response.joint_trajectory;
+    cmove.doGoal(goal);
+
+}
+
 void Unfold::switchArms(){
 
     std::string tmp=holdingArm;
@@ -318,19 +421,22 @@ void Unfold::switchArms(){
 
 void Unfold::setHoldingArm(const std::string &armName){
 
-    if(armName == "r1"){
-        holdingArm = armName;
-        movingArm = "r2";
-    }
-    else{
-        holdingArm = armName;
+    holdingArm = armName;
+    if(armName == "r1")
+        movingArm = "r2";    
+    else
         movingArm = "r1";
-    }
 
 }
 
 
-void Unfold::findGraspingOrientation(Eigen::Vector4d vector, Eigen::Matrix4d rotMat){
+Eigen::Matrix4d Unfold::findGraspingOrientation(Eigen::Vector4d vector ){
+
+    Eigen::Matrix4d rotMat;
+
+    rotMat(0, 0) = vector.x();
+    rotMat(0, 1) = vector.y();
+    rotMat(0, 2) = vector.z();
 
     Eigen::Vector3d N(vector.x(), vector.y(), vector.z());
     N.normalize();
@@ -353,9 +459,7 @@ void Unfold::findGraspingOrientation(Eigen::Vector4d vector, Eigen::Matrix4d rot
     rotMat(1, 2)=-B.y();
     rotMat(2, 2)=-B.z();
 
-//    cout<<N<<"\n"<<C<<"\n "<<B<<endl;
-//    cout<<C.dot(N)<< " "<<B.dot(N)<< endl;
-
+return rotMat;
 }
 
 float Unfold::findBias(Eigen::Vector4d vector){
@@ -365,13 +469,13 @@ float Unfold::findBias(Eigen::Vector4d vector){
     return theta;
 }
 
-geometry_msgs::Quaternion Unfold::rotationMatrixToQuaternion(btMatrix3x3 matrix){
+geometry_msgs::Quaternion Unfold::rotationMatrixToQuaternion(Eigen::Matrix4d matrix){
 
     float roll , pitch, yaw;
 
-    roll= atan2f(matrix[2][1],matrix[2][2] );
-    pitch= atan2f(-matrix[2][0],sqrt(pow(matrix[2][2],2)+pow(matrix[2][1],2)));
-    yaw= atan2f(matrix[1][0],matrix[0][0]);
+    roll= atan2f(matrix(2, 1),matrix(2, 2) );
+    pitch= atan2f(-matrix(2,0),sqrt(pow(matrix(2, 2),2)+pow(matrix(2, 1),2)));
+    yaw= atan2f(matrix(1, 0),matrix(0, 0));
     return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
 }
 
@@ -415,26 +519,281 @@ tf::StampedTransform  Unfold::getTranformation( const std::string &frameName, co
     return transform;
 }
 
+void mouse_callback( int event, int x, int y, int flags, void* param){
+    if(event == CV_EVENT_LBUTTONDOWN){
+        std::cout << x << " " << y << std::endl;
+    }
+}
 
-int Unfold::GraspLowestPoint(const std::string &armName){
+
+void Unfold::robustPlane3DFit(std::vector<Eigen::Vector3f> &x, Eigen::Vector3f  &c, Eigen::Vector3f &u)
+{
+    int i, k, N = x.size() ;
+    Eigen::Vector3f u1, u2, u3 ;
+    const int NITER = 5 ;
+
+    double *weight = new double [N] ;
+    double *res = new double [N] ;
+
+    for( i=0 ; i<N ; i++ ) weight[i] = 1.0 ;
+
+    double wsum = N ;
+
+    for( k=0 ; k<NITER ; k++ )
+    {
+
+        c = Eigen::Vector3f::Zero() ;
+        Eigen::Matrix3f cov = Eigen::Matrix3f::Zero();
+
+        for( i=0 ; i<N ; i++ )
+        {
+            const Eigen::Vector3f &P = x[i] ;
+            double w = weight[i] ;
+
+            c += w * P ;
+        }
+
+        c /= wsum ;
+
+        for( i=0 ; i<N ; i++ )
+        {
+            const Eigen::Vector3f &P = x[i] ;
+            double w = weight[i] ;
+
+            cov += w *  (P - c) * (P - c).adjoint();
+
+        }
+
+        cov *= 1.0/wsum ;
+
+        Eigen::Matrix3f U ;
+        Eigen::Vector3f L ;
+
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigensolver(cov);
+        L = eigensolver.eigenvalues() ;
+        U = eigensolver.eigenvectors() ;
+
+        // Recompute weights
+
+        u1 = U.col(0) ;
+        u2 = U.col(1) ;
+        u3 = U.col(2) ;
+
+        for( i=0 ; i<N ; i++ )
+        {
+            const Eigen::Vector3f &P = x[i] ;
+
+        //    double r = (P -c).dot(P-c) ;
+        //    double ss = (P-c).dot(u1);
+
+         //   r -= ss * ss ;
+
+          //  r = sqrt(r) ;
+
+            double r = fabs((P-c).dot(u1));
+
+            weight[i] = r ;
+            res[i] = r ;
+        }
+
+        // Estimate residual variance
+        double sigma ;
+
+        std::sort(weight, weight + N) ;
+
+        sigma = weight[N/2]/0.6745 ;
+
+        // Update weights using Hubers scheme
+
+        wsum = 0.0 ;
+
+        for( i=0 ; i<N ; i++ )
+        {
+
+            double r = fabs(res[i]) ;
+
+            if ( r <= sigma )  weight[i] = 1.0 ;
+            else if ( r > sigma && r <= 3.0*sigma ) weight[i] = sigma/r ;
+            else weight[i] = 0.0 ;
+
+            wsum += weight[i] ;
+        }
+    }
+
+    u = u1 ;
+
+    delete weight ;
+    delete res ;
+}
+
+Eigen::Vector3f Unfold::computeNormal(const pcl::PointCloud<pcl::PointXYZ> &pc, int x, int y){
+    const int nrmMaskSize = 7 ;
+    int w = pc.width, h = pc.height ;
+
+    std::vector<Eigen::Vector3f> pts ;
+
+    for(int i = y - nrmMaskSize ; i<= y + nrmMaskSize ; i++  )
+        for(int j = x - nrmMaskSize ; j<= x + nrmMaskSize ; j++  )
+        {
+            if ( i < 0 || j < 0 || i > h-1 || j > w-1 ) continue ;
+
+            pcl::PointXYZ val = pc.at(j, i) ;
+
+            if ( !pcl_isfinite(val.z) ) continue ;
+
+            pts.push_back(Eigen::Vector3f(val.x, val.y, val.z)) ;
+        }
+
+    if ( pts.size() < 3 ) return Eigen::Vector3f() ;
+
+    Eigen::Vector3f u, c ;
+    robustPlane3DFit(pts, c, u);
+
+    if ( u(2) < 0 ) u = -u ;
+
+    return u ;
+
+}
 
 
-    setHoldingArm(armName);
+bool Unfold::findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture, Eigen::Vector3f &p, Eigen::Vector3f &n, cv::Mat depthMap){
+
+    int w = depth.width, h = depth.height ;
+
+    int best_i=-1, best_j=-1;
+    float best_x=-1, best_y=-1, best_z=-1;
+
+
+    bool found = false ;
+    float minx = 10 ;
+    for(int j=66 ; j<626 ; j++ )
+    {
+
+
+        for(int i=100 ; i<350 ; i++)
+        {
+            pcl::PointXYZ val = depth.at(j, i) ;
+
+            if ( val.z<1 || val.z>1.5 ) continue ;
+
+            if ( minx>val.x )
+            {
+                minx = val.x ;
+                best_j = j ;
+                best_i = i ;
+
+                found = true ;
+            }
+
+        }
+    }
+
+
+
+    for(int i=0; i<depthMap.rows; ++i)
+        for(int j=0; j<depthMap.cols; ++j)
+            if( (depthMap.at<unsigned short>(i, j) < 900) || (depthMap.at<unsigned short>(i, j) > 1400) )
+                depthMap.at<unsigned short>(i, j) = 0;
+
+    cv::TermCriteria criteria(1, 10, 0.1);
+    cv::Rect rect1(best_j-10, best_i-10, 20, 20);
+    cv::meanShift(depthMap, rect1, criteria);
+    best_j = rect1.x + rect1.width/2;
+    best_i = rect1.y + rect1.height/2;
+//    cout<< "best2= (" << best_j <<" , "<< best_i <<")"<<endl;
+
+    pcl::PointXYZ p_ = depth.at(best_j, best_i ) ;
+    n = computeNormal(depth, best_j, best_i ) ;
+    p = Eigen::Vector3f(p_.x, p_.y, p_.z) ;
+
+    if ( !found ) return false ;
+
+}
+
+
+
+
+int Unfold::GraspLowestPoint(){
+
     setGripperStates(movingArm , true);
     ros::Duration(1.0).sleep();
-
+    //starting position
+    bool grasp = false;
+    int tries = 0;
     camera_helpers::OpenNICaptureAll grabber("xtion3") ;
     grabber.connect() ;
 
-    cv::Mat rgb, depth;
-    pcl::PointCloud<pcl::PointXYZ> pc;
-    cv::Mat R = cv::Mat(4, 4, CV_32FC1, cv::Scalar::all(0));
-    ros::Time ts(0);
-    image_geometry::PinholeCameraModel cm;
 
-    Eigen::Matrix4d calib = Unfold::getTranformationMatrix("xtion3_rgb_optical_frame");
+    while(!grasp || tries<5){
 
-    grabber.grab(rgb, depth, pc, ts, cm);
+        cv::Mat rgb, depth;
+        pcl::PointCloud<pcl::PointXYZ> pc;
+        cv::Mat R = cv::Mat(4, 4, CV_32FC1, cv::Scalar::all(0));
+        ros::Time ts(0);
+        image_geometry::PinholeCameraModel cm;
+
+        Eigen::Matrix4d calib = getTranformationMatrix("xtion3_rgb_optical_frame");
+
+        tf::StampedTransform st;
+        Eigen::Vector3f top , bottom, p, n;
+        float angle=0.2;
+
+        st= getTranformation("xtion3_rgb_optical_frame", holdingArm + "_ee");
+
+        top.x()=st.getOrigin().x();
+        top.y()=st.getOrigin().y();
+        top.z()=st.getOrigin().z();
+        bottom = top;
+        bottom.x()-=1.2;
+
+        grabber.grab(rgb, depth, pc, ts, cm);
+
+        findLowestPoint(pc, top, bottom, angle, p, n, depth);
+
+        Eigen::Vector4d tar(p.x(), p.y(), p.z(), 1);
+        Eigen::Vector4d targetP;
+        targetP = calib * tar;
+
+        Eigen::Vector4d norm (n.x(), n.y(), n.z(), 0);
+        Eigen::Vector4d targetN;
+        targetN = calib * norm.normalized();
+
+        Eigen::Matrix4d rotMat = findGraspingOrientation(targetN);
+
+        geometry_msgs::Pose desPose;
+        desPose.orientation = rotationMatrixToQuaternion(rotMat);
+        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.03 - rotMat(0, 2) * 0.07;
+        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.03 - rotMat(1, 2) * 0.07;
+        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.03 - rotMat(2, 2) * 0.07;
+
+        st= getTranformation(holdingArm + "_ee");
+
+        addConeToCollisionModel(holdingArm, st.getOrigin().z() - desPose.position.z - 0.1, 0.2 );
+
+        if(moveArm(desPose, movingArm) == -1){
+            resetCollisionModel();
+            std::cout<< "BIAS : " <<findBias(targetN)<<std::endl;
+            rotateGripper(findBias(targetN), holdingArm);
+            tries++;
+            continue;
+        }
+        resetCollisionModel();
+        break;
+
+    }
+
+
+//    ros::Duration(1,0).sleep();
+
+//    cv::namedWindow("rgb");
+//    cv::setMouseCallback("rgb", mouse_callback, NULL);
+
+//    int k=0;
+//    while(k!=1048603){
+//        grabber.grab(rgb, depth, pc, ts, cm);
+//        cv::imshow("rgb", rgb);
+//        k = cv::waitKey(1);
+//    }
 
 
 

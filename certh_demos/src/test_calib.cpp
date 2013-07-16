@@ -769,7 +769,6 @@ int main(int argc, char **argv) {
         findLowestPoint(pc,top,bottom,angle,targetPo,targetN, cx, cy ,depth );
         cout<<"lowest point is x="<<targetPo.x()<< " y="<<targetPo.y()<<" z="<<targetPo.z()<<endl;
         cout<<"target vector x= "<<targetN.x()<< " y="<<targetN.y()<<" z="<<targetN.z()<<endl;
-
         cout<<"-------------------------------------------"<<endl;
 
         Eigen::Vector4d tar(targetPo.x(), targetPo.y(), targetPo.z(), 1);

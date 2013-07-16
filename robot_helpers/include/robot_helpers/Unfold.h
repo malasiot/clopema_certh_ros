@@ -29,13 +29,18 @@
 #include <camera_helpers/OpenNICapture.h>
 
 
+#include <cv.h>
+#include <Eigen/Core>
+#include <Eigen/Eigenvalues> // for cwise access
+
+
 namespace robot_helpers {
 
 
 class Unfold {
 
 public:
-    Unfold();
+    Unfold(const std::string &armName);
     virtual ~Unfold();
 
 private:
@@ -52,6 +57,7 @@ private:
 
     int moveArm(geometry_msgs::Pose pose, const std::string &armName);
     int moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2);
+    bool moveHomeArm(const std::string &armName);
 
     int setGripperStates(const std::string &armName  , bool open);
     int setGrippersStates( bool open);
@@ -60,9 +66,13 @@ private:
 
     geometry_msgs::Pose getArmPose( const std::string &armName, const std::string &frameName = "base_link");
 
-    void findGraspingOrientation(Eigen::Vector4d vector, Eigen::Matrix4d rotMat);
+    Eigen::Matrix4d findGraspingOrientation(Eigen::Vector4d vector );
     float findBias(Eigen::Vector4d vector);
-    geometry_msgs::Quaternion rotationMatrixToQuaternion(btMatrix3x3 matrix);
+    geometry_msgs::Quaternion rotationMatrixToQuaternion(Eigen::Matrix4d matrix);
+    bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture, Eigen::Vector3f &p, Eigen::Vector3f &n, cv::Mat depthMap);
+    Eigen::Vector3f computeNormal(const pcl::PointCloud<pcl::PointXYZ> &pc, int x, int y);
+    void robustPlane3DFit(std::vector<Eigen::Vector3f> &x, Eigen::Vector3f  &c, Eigen::Vector3f &u);
+
 
     Eigen::Matrix4d getTranformationMatrix(const std::string &frameName, const std::string &coordSys = "base_link" );
     tf::StampedTransform getTranformation(const std::string &frameName, const std::string &coordSys = "base_link" );
@@ -70,7 +80,8 @@ private:
 
 public:
 
-    int GraspLowestPoint(const std::string &armName);
+    int GraspLowestPoint();
+    void rotateHoldingGripper(float angle);
 
 };
 
