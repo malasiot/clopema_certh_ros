@@ -18,6 +18,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_boost_directories()
 
-rosbuild_add_library(robot_helpers src/RobotHelpers.cpp src/RobotUtils.cpp src/RobotUnfloding.cpp)
+rosbuild_add_library(robot_helpers src/RobotHelpers.cpp src/RobotUtils.cpp src/RobotUnfloding.cpp src/Geometry.cpp)
 
 
