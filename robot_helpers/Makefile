@@ -307,6 +307,21 @@ tests/fast:
 .PHONY : tests/fast
 
 # target to build an object file
+src/Geometry.o:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/Geometry.o
+.PHONY : src/Geometry.o
+
+# target to preprocess a source file
+src/Geometry.i:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/Geometry.i
+.PHONY : src/Geometry.i
+
+# target to generate assembly for a file
+src/Geometry.s:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/Geometry.s
+.PHONY : src/Geometry.s
+
+# target to build an object file
 src/RobotHelpers.o:
 	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/RobotHelpers.o
 .PHONY : src/RobotHelpers.o
@@ -375,6 +390,9 @@ help:
 	@echo "... test-results"
 	@echo "... test-results-run"
 	@echo "... tests"
+	@echo "... src/Geometry.o"
+	@echo "... src/Geometry.i"
+	@echo "... src/Geometry.s"
 	@echo "... src/RobotHelpers.o"
 	@echo "... src/RobotHelpers.i"
 	@echo "... src/RobotHelpers.s"

@@ -68,11 +68,15 @@ int main(int argc, char **argv) {
 		//~ (btScalar) -1, (btScalar) 0, (btScalar) 0,
 		//~ (btScalar) 0, (btScalar) 1, (btScalar) 0);
 		
-		btMatrix3x3 rotMat( 
-		(btScalar) 1, (btScalar) 0, (btScalar) 0,
-		(btScalar) 0, (btScalar) -1, (btScalar) 0,
-		(btScalar) 0, (btScalar) 0, (btScalar) -1);
+//        btMatrix3x3 rotMat(
+//        (btScalar) 1, (btScalar) 0, (btScalar) 0,
+//        (btScalar) 0, (btScalar) -1, (btScalar) 0,
+//        (btScalar) 0, (btScalar) 0, (btScalar) -1);
 		
+    btMatrix3x3 rotMat(
+    (btScalar) 0, (btScalar) 1, (btScalar) 0,
+    (btScalar) 1, (btScalar) 0, (btScalar) 0,
+    (btScalar) 0, (btScalar) 0, (btScalar) -1);
 	 
 	roll= atan2f(rotMat[2][1],rotMat[2][2] );
 	pitch= atan2f(-rotMat[2][0],sqrt(pow(rotMat[2][2],2)+pow(rotMat[2][1],2)));

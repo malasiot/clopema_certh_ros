@@ -1,17 +1,17 @@
 #include "robot_helpers/Unfold.h"
-
-
 #include <opencv2/highgui/highgui.hpp>
+
+using namespace std;
 namespace robot_helpers{
 
-Unfold::Unfold(const std::string &armName){
+Unfold::Unfold(const string &armName){
     setHoldingArm(armName);
 }
 
 Unfold::~Unfold() {
 }
 
-bool Unfold::moveHomeArm(const std::string &armName){
+bool Unfold::moveHomeArm(const string &armName){
 
     MoveRobot cmove;
     clopema_arm_navigation::ClopemaMotionPlan mp;
@@ -20,7 +20,7 @@ bool Unfold::moveHomeArm(const std::string &armName){
 
     if (!getRobotState(mp.request.motion_plan_req.start_state)) return false ;
 
-    std::vector<std::string> joint_names ;
+    vector<string> joint_names ;
 
     joint_names.push_back(armName + "_joint_s");
     joint_names.push_back(armName + "_joint_l");
@@ -70,7 +70,7 @@ bool Unfold::moveHomeArm(const std::string &armName){
     return true ;
 }
 
-int Unfold::moveArm(geometry_msgs::Pose pose, const std::string &armName){
+int Unfold::moveArm(geometry_msgs::Pose pose, const string &armName){
 
         //Create plan
         clopema_arm_navigation::ClopemaMotionPlan mp;
@@ -109,7 +109,8 @@ int Unfold::moveArm(geometry_msgs::Pose pose, const std::string &armName){
         return 0;
 }
 
-int Unfold::moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2){
+
+int Unfold::moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, const string &arm1Name, const string &arm2Name){
 
     MoveRobot cmove;
 
@@ -125,7 +126,7 @@ int Unfold::moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2){
     arm_navigation_msgs::SimplePoseConstraint desired_pose;
     desired_pose.header.frame_id = "base_link";
     desired_pose.header.stamp = ros::Time::now();
-    desired_pose.link_name = "r2_ee";
+    desired_pose.link_name = arm2Name + "_ee";
     desired_pose.pose=pose2;
 
     desired_pose.absolute_position_tolerance.x = 0.02;
@@ -142,7 +143,7 @@ int Unfold::moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2){
     mp.request.motion_plan_req.goal_constraints.position_constraints.push_back(position_constraint);
 
     //add r1 goal constraints
-    desired_pose.link_name = "r1_ee";
+    desired_pose.link_name = arm1Name + "_ee";
     desired_pose.pose=pose1;
     arm_navigation_msgs::poseConstraintToPositionOrientationConstraints(desired_pose, position_constraint, orientation_constraint);
     mp.request.motion_plan_req.goal_constraints.orientation_constraints.push_back(orientation_constraint);
@@ -159,7 +160,7 @@ int Unfold::moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2){
 
 }
 
-int Unfold::setGripperStates(const std::string &armName  , bool open){
+int Unfold::setGripperStates(const string &armName  , bool open){
     ros::service::waitForService("/" + armName + "_gripper/set_open");
     clopema_motoros::SetGripperState sopen;
     sopen.request.open=open;
@@ -194,7 +195,7 @@ float Unfold::getArmsDistance(){
     point1.setY( transform.getOrigin().y() );
     point1.setZ( transform.getOrigin().z() );
 
-    std::cout<<"point 1 " << point1.getX() << " " << point1.getY()<< " " << point1.getZ() << std::endl;
+    cout<<"point 1 " << point1.getX() << " " << point1.getY()<< " " << point1.getZ() << endl;
 
     try {
         listener.waitForTransform("base_link", "r1_ee", ros::Time(0), ros::Duration(10.0) );
@@ -208,12 +209,12 @@ float Unfold::getArmsDistance(){
     point2.setY( transform.getOrigin().y() );
     point2.setZ( transform.getOrigin().z() );
 
-    std::cout<<"point 1 " << point2.getX() << " " << point2.getY()<< " " << point2.getZ() << std::endl;
+    cout<<"point 1 " << point2.getX() << " " << point2.getY()<< " " << point2.getZ() << endl;
 
     return tf::tfDistance(point1, point2);
 }
 
-geometry_msgs::Pose Unfold::getArmPose( const std::string &armName, const std::string &frameName){
+geometry_msgs::Pose Unfold::getArmPose( const string &armName, const string &frameName){
 
     geometry_msgs::Pose pose;
     tf::TransformListener listener;
@@ -237,9 +238,9 @@ geometry_msgs::Pose Unfold::getArmPose( const std::string &armName, const std::s
     return pose;
 }
 
-void Unfold::setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, float radious , const std::string &armName, geometry_msgs::Quaternion q ) {
+void Unfold::setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, float radious , const string &armName, geometry_msgs::Quaternion q ) {
 
-    std::string arm2Name="r1";
+    string arm2Name="r1";
     if (armName == "r1")
         arm2Name="r2";
 
@@ -250,7 +251,11 @@ void Unfold::setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, 
     mp.request.motion_plan_req.path_constraints.position_constraints[0].position.x = 0.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[0].position.y = 0.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[0].position.z = 0.0;
-    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation= q;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.x = 1;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.y = 0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.z = 0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.w = 0;
+
     mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.type = arm_navigation_msgs::Shape::SPHERE;
     mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious); //radius
     mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious);
@@ -274,7 +279,7 @@ void Unfold::setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, 
 }
 
 
-int Unfold::moveArmConstrains(geometry_msgs::Pose pose, const std::string &armName, float radious, geometry_msgs::Quaternion q){
+int Unfold::moveArmConstrains(geometry_msgs::Pose pose, const string &armName, float radious){
         //Create plan
         clopema_arm_navigation::ClopemaMotionPlan mp;
         MoveRobot cmove;
@@ -302,7 +307,7 @@ int Unfold::moveArmConstrains(geometry_msgs::Pose pose, const std::string &armNa
         desired_pose.absolute_pitch_tolerance = 0.004;
         desired_pose.absolute_yaw_tolerance = 0.004;
 
-        setPathConstraints(mp, radious, armName, q);
+        setPathConstraints(mp, radious, armName, rotationMatrix3ToQuaternion(vertical()));
 
         poseToClopemaMotionPlan(mp, desired_pose);
 
@@ -319,7 +324,7 @@ int Unfold::moveArmConstrains(geometry_msgs::Pose pose, const std::string &armNa
 
 
 
-void Unfold::rotateGripper(float angle ,const std::string &armName){
+void Unfold::rotateGripper(float angle ,const string &armName){
 
     //Create plan
     clopema_arm_navigation::ClopemaMotionPlan mp;
@@ -412,14 +417,14 @@ void Unfold::rotateHoldingGripper(float angle){
 
 void Unfold::switchArms(){
 
-    std::string tmp=holdingArm;
+    string tmp=holdingArm;
 
     holdingArm=movingArm;
     movingArm=tmp;
 
 }
 
-void Unfold::setHoldingArm(const std::string &armName){
+void Unfold::setHoldingArm(const string &armName){
 
     holdingArm = armName;
     if(armName == "r1")
@@ -433,14 +438,26 @@ void Unfold::setHoldingArm(const std::string &armName){
 Eigen::Matrix4d Unfold::findGraspingOrientation(Eigen::Vector4d vector ){
 
     Eigen::Matrix4d rotMat;
+    Eigen::Vector3d N;
 
     rotMat(0, 0) = vector.x();
     rotMat(0, 1) = vector.y();
     rotMat(0, 2) = vector.z();
 
-    Eigen::Vector3d N(vector.x(), vector.y(), vector.z());
+    N << vector.x(), vector.y(), vector.z();
+    if(holdingArm == "r2"){
+        rotMat(0, 0) = -vector.x();
+        rotMat(0, 1) = -vector.y();
+        rotMat(0, 2) = -vector.z();
+
+        N << -vector.x(), -vector.y(), -vector.z();
+    }
     N.normalize();
+
     Eigen::Vector3d A(1,0,-1);
+    if(holdingArm == "r2")
+         A << -1,0,-1;
+
     Eigen::Vector3d B=A-(A.dot(N))*N;
     Eigen::Vector3d C=N.cross(B);
 
@@ -469,7 +486,7 @@ float Unfold::findBias(Eigen::Vector4d vector){
     return theta;
 }
 
-geometry_msgs::Quaternion Unfold::rotationMatrixToQuaternion(Eigen::Matrix4d matrix){
+geometry_msgs::Quaternion Unfold::rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix){
 
     float roll , pitch, yaw;
 
@@ -479,9 +496,17 @@ geometry_msgs::Quaternion Unfold::rotationMatrixToQuaternion(Eigen::Matrix4d mat
     return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
 }
 
+geometry_msgs::Quaternion Unfold::rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix){
 
+    float roll , pitch, yaw;
 
-Eigen::Matrix4d Unfold::getTranformationMatrix(const std::string &frameName, const std::string &coordSys ){
+    roll= atan2f(matrix(2, 1),matrix(2, 2) );
+    pitch= atan2f(-matrix(2,0),sqrt(pow(matrix(2, 2),2)+pow(matrix(2, 1),2)));
+    yaw= atan2f(matrix(1, 0),matrix(0, 0));
+    return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
+}
+
+Eigen::Matrix4d Unfold::getTranformationMatrix(const string &frameName, const string &coordSys ){
     tf::TransformListener listener;
     ros::Time ts(0) ;
     tf::StampedTransform transform;
@@ -501,7 +526,7 @@ Eigen::Matrix4d Unfold::getTranformationMatrix(const std::string &frameName, con
     return pose.matrix();
 }
 
-tf::StampedTransform  Unfold::getTranformation( const std::string &frameName, const std::string &coordSys ){
+tf::StampedTransform  Unfold::getTranformation( const string &frameName, const string &coordSys ){
 
     tf::TransformListener listener;
     ros::Time ts(0) ;
@@ -521,12 +546,12 @@ tf::StampedTransform  Unfold::getTranformation( const std::string &frameName, co
 
 void mouse_callback( int event, int x, int y, int flags, void* param){
     if(event == CV_EVENT_LBUTTONDOWN){
-        std::cout << x << " " << y << std::endl;
+        cout << x << " " << y << endl;
     }
 }
 
 
-void Unfold::robustPlane3DFit(std::vector<Eigen::Vector3f> &x, Eigen::Vector3f  &c, Eigen::Vector3f &u)
+void Unfold::robustPlane3DFit(vector<Eigen::Vector3f> &x, Eigen::Vector3f  &c, Eigen::Vector3f &u)
 {
     int i, k, N = x.size() ;
     Eigen::Vector3f u1, u2, u3 ;
@@ -599,7 +624,7 @@ void Unfold::robustPlane3DFit(std::vector<Eigen::Vector3f> &x, Eigen::Vector3f  
         // Estimate residual variance
         double sigma ;
 
-        std::sort(weight, weight + N) ;
+        sort(weight, weight + N) ;
 
         sigma = weight[N/2]/0.6745 ;
 
@@ -630,7 +655,7 @@ Eigen::Vector3f Unfold::computeNormal(const pcl::PointCloud<pcl::PointXYZ> &pc, 
     const int nrmMaskSize = 7 ;
     int w = pc.width, h = pc.height ;
 
-    std::vector<Eigen::Vector3f> pts ;
+    vector<Eigen::Vector3f> pts ;
 
     for(int i = y - nrmMaskSize ; i<= y + nrmMaskSize ; i++  )
         for(int j = x - nrmMaskSize ; j<= x + nrmMaskSize ; j++  )
@@ -711,16 +736,69 @@ bool Unfold::findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const 
 }
 
 
+int Unfold::moveArmBetweenSpheres( string armName, bool up, geometry_msgs::Pose goalPose){
+
+    float radious = getArmsDistance();
+
+    tf::StampedTransform st = getTranformation(holdingArm + "_ee");
+    geometry_msgs::Point goalPoint;
+    goalPoint.x = st.getOrigin().x();
+    goalPoint.y = st.getOrigin().y();
+    goalPoint.z = st.getOrigin().z();
+
+    if(movingArm == "r2"){
+        if (up == true){
+            goalPoint.x += radious;
+        }
+        else{
+            goalPoint.z -= radious;
+        }
+    }
+    else{
+        if (up==true){
+            goalPoint.x -= radious;
+        }
+        else{
+            goalPoint.z -= radious;
+        }
+    }
+
+    goalPose.position=goalPoint;
+    cout<< "CIRCLE" << endl;
+    printPose( goalPose);
+    addSphereToCollisionModel(holdingArm, radious/2.0);
+
+    if ( moveArmConstrains( goalPose, armName, radious + 0.1) == -1){
+        cout<<"ABORDING..." <<endl;
+        return -1;
+    }
+
+    resetCollisionModel();
+
+}
+
+void printPose(geometry_msgs::Pose p){
+
+    cout << "pose = (" << p.position.x << ", "<< p.position.y << ", "<< p.position.z << " )" <<endl;
+
+}
 
 
-int Unfold::GraspLowestPoint(){
+int Unfold::GraspLowestPoint(bool lastMove){
+
+
+    moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
     setGripperStates(movingArm , true);
     ros::Duration(1.0).sleep();
+
     //starting position
     bool grasp = false;
     int tries = 0;
     camera_helpers::OpenNICaptureAll grabber("xtion3") ;
+    geometry_msgs::Pose desPose;
+    Eigen::Vector4d targetP;
+    Eigen::Matrix4d rotMat;
     grabber.connect() ;
 
 
@@ -732,6 +810,7 @@ int Unfold::GraspLowestPoint(){
         ros::Time ts(0);
         image_geometry::PinholeCameraModel cm;
 
+        //grabbing image and making the fit of lowest point
         Eigen::Matrix4d calib = getTranformationMatrix("xtion3_rgb_optical_frame");
 
         tf::StampedTransform st;
@@ -751,28 +830,29 @@ int Unfold::GraspLowestPoint(){
         findLowestPoint(pc, top, bottom, angle, p, n, depth);
 
         Eigen::Vector4d tar(p.x(), p.y(), p.z(), 1);
-        Eigen::Vector4d targetP;
         targetP = calib * tar;
 
         Eigen::Vector4d norm (n.x(), n.y(), n.z(), 0);
         Eigen::Vector4d targetN;
         targetN = calib * norm.normalized();
 
-        Eigen::Matrix4d rotMat = findGraspingOrientation(targetN);
+        rotMat = findGraspingOrientation(targetN);
 
-        geometry_msgs::Pose desPose;
-        desPose.orientation = rotationMatrixToQuaternion(rotMat);
+        desPose.orientation = rotationMatrix4ToQuaternion(rotMat);
         desPose.position.x = targetP.x() + rotMat(0, 0) * 0.03 - rotMat(0, 2) * 0.07;
         desPose.position.y = targetP.y() + rotMat(1, 0) * 0.03 - rotMat(1, 2) * 0.07;
         desPose.position.z = targetP.z() + rotMat(2, 0) * 0.03 - rotMat(2, 2) * 0.07;
 
+        cout << desPose.position.x << "" << desPose.position.y << " " << desPose.position.z << endl;
+
         st= getTranformation(holdingArm + "_ee");
 
+        //grasp lowest point
         addConeToCollisionModel(holdingArm, st.getOrigin().z() - desPose.position.z - 0.1, 0.2 );
 
         if(moveArm(desPose, movingArm) == -1){
             resetCollisionModel();
-            std::cout<< "BIAS : " <<findBias(targetN)<<std::endl;
+            cout<< "BIAS : " <<findBias(targetN)<<endl;
             rotateGripper(findBias(targetN), holdingArm);
             tries++;
             continue;
@@ -781,8 +861,81 @@ int Unfold::GraspLowestPoint(){
         break;
 
     }
+    desPose.position.x = targetP.x() + rotMat(0, 2) * 0.045 + rotMat(0, 0) * 0.03;
+    desPose.position.y = targetP.y() + rotMat(1, 2) * 0.045 + rotMat(1, 0) * 0.03;
+    desPose.position.z = targetP.z() + rotMat(2, 2) * 0.045 + rotMat(2, 0) * 0.03;
+
+    ros::Duration(0.5).sleep();
+    if( moveArm(desPose, movingArm) == -1){
+        cout << "ABORDING......" << endl;
+        return -1;
+    }
+
+    setGripperStates( movingArm, false);
+
+    //Make a circle trajectory
+    desPose.orientation = rotationMatrix3ToQuaternion(vertical());
+
+    geometry_msgs::Pose desPos1, desPos2;
+    float radious=getArmsDistance();
+
+    desPos1 = getArmPose("r1");
+    desPos2 = getArmPose("r2");
+
+    if(holdingArm == "r1"){
+        desPos2.position.x-=radious/2.0;
+        desPos1.position.x-=radious/2.0;
 
 
+    }
+    else{
+        desPos1.position.x+=radious/2.0;
+        desPos2.position.x+=radious/2.0;
+
+    }
+
+    ros::Duration(1.0).sleep();
+    moveArms(desPos1, desPos2);
+
+    ros::Duration(1.0).sleep();
+    moveArmBetweenSpheres(movingArm, true,  desPose);
+    if ( lastMove == true )
+        return -1;
+    desPos1 = getArmPose("r1");
+    desPos2 = getArmPose("r2");
+
+
+    cout<< "holding arm is = " << holdingArm << endl;
+    printPose( desPos1);
+    printPose( desPos2);
+    if(holdingArm == "r1"){
+        desPos2.position.x-=radious/2.0f;
+        desPos1.position.z-=0.866025404*radious;
+    }
+    else{
+        desPos1.position.x+=radious/2.0f;
+        desPos2.position.z-=0.866025404*radious;
+    }
+
+    ros::Duration(1.5).sleep();
+    if ( moveArms(desPos1, desPos2) == -1){
+        cout<<"ABORDING..."<<endl;
+        return -1;
+    }
+
+    setGripperStates(holdingArm, true);
+
+    switchArms();
+
+
+return 0;
+
+}
+
+
+
+
+}
 //    ros::Duration(1,0).sleep();
 
 //    cv::namedWindow("rgb");
@@ -794,16 +947,3 @@ int Unfold::GraspLowestPoint(){
 //        cv::imshow("rgb", rgb);
 //        k = cv::waitKey(1);
 //    }
-
-
-
-
-
-return 0;
-
-}
-
-
-
-
-}
