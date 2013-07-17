@@ -14,6 +14,7 @@ ostream &operator << (ostream &strm, const Quaterniond &q)
     return strm ;
 }
 
+
 Quaterniond quatFromRPY(double roll, double pitch, double yaw)
 {
     Quaterniond q ;

@@ -1,0 +1,14 @@
+<package>
+  <license>LGPL</license>
+  <review status="unreviewed" notes=""/>
+  <rosdep name="eigen"/>
+  <rosdep name="boost"/>
+  <rosdep name="opencv2"/>
+
+  <depend package="roscpp"/>
+ 
+  <depend package="pcl_ros"/>
+  
+  <depend package="std_msgs"/>
+ 
+</package>
