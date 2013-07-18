@@ -6,9 +6,16 @@
 
 namespace robot_helpers {
 
-// planned end-point to reach given pose
+// plan end-point to reach given pose
 
 bool planArmToPose(const std::string &armName, const Eigen::Vector3d &pos, const Eigen::Quaterniond &q, trajectory_msgs::JointTrajectory &traj) ;
+
+// plan Xtion frame to pose
+
+bool planXtionToPose(const std::string &armName, const Eigen::Vector3d &pos, const Eigen::Quaterniond &q, trajectory_msgs::JointTrajectory &traj) ;
+
+// plan reach specified joint goal
+bool planToJointGoal(const std::string &armName, const sensor_msgs::JointState &js, trajectory_msgs::JointTrajectory &traj) ;
 
 // move robot to home position
 
@@ -35,9 +42,13 @@ bool addSphereToCollisionModel(const std::string &armName, double radius);
 
 bool resetCollisionModel() ;
 
-// get inverse kinematics silution for the tip of given arm
+// get inverse kinematics solution for the tip of given arm
 
 bool getIK(const std::string &armName, const Eigen::Vector3d pos, const Eigen::Quaterniond &q, sensor_msgs::JointState &state) ;
+
+// get inverse kinematics solution for the Xtion on the given arm
+
+bool getIKXtion(const std::string &armName, const Eigen::Vector3d pos, const Eigen::Quaterniond &q, sensor_msgs::JointState &state) ;
 
 }
 

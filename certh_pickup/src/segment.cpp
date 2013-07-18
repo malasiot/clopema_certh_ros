@@ -3,10 +3,13 @@
 #include <highgui.h>
 #include <iostream>
 
+
+
 using namespace std;
 
 int main(int argc, char *argv)
 {
+    loadSolver() ;
     cv::Mat clr = cv::imread("/home/malasiot/images/clothes/on_table/kinect_grab_000130_c.tif") ;
     cv::Mat depth = cv::imread("/home/malasiot/images/clothes/on_table/kinect_grab_000130_d.tif", -1) ;
 
