@@ -136,6 +136,81 @@ int Unfold::moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, cons
     desired_pose.absolute_pitch_tolerance = 0.04;
     desired_pose.absolute_yaw_tolerance = 0.04;
 
+
+    arm_navigation_msgs::PositionConstraint position_constraint;
+    arm_navigation_msgs::OrientationConstraint orientation_constraint;
+    arm_navigation_msgs::poseConstraintToPositionOrientationConstraints(desired_pose, position_constraint, orientation_constraint);
+    mp.request.motion_plan_req.goal_constraints.orientation_constraints.push_back(orientation_constraint);
+    mp.request.motion_plan_req.goal_constraints.position_constraints.push_back(position_constraint);
+
+    //add r1 goal constraints
+    desired_pose.link_name = arm1Name + "_ee";
+    desired_pose.pose=pose1;
+
+    arm_navigation_msgs::poseConstraintToPositionOrientationConstraints(desired_pose, position_constraint, orientation_constraint);
+    mp.request.motion_plan_req.goal_constraints.orientation_constraints.push_back(orientation_constraint);
+    mp.request.motion_plan_req.goal_constraints.position_constraints.push_back(position_constraint);
+
+    ROS_INFO("Planning");
+    if (!plan(mp))
+        return -1;
+
+    ROS_INFO("Executing");
+    control_msgs::FollowJointTrajectoryGoal goal;
+    goal.trajectory = mp.response.joint_trajectory;
+    cmove.doGoal(goal);
+
+}
+
+
+int Unfold::moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, const string &arm1Name, const string &arm2Name){
+
+    float radious = getArmsDistance()+0.1;
+
+    MoveRobot cmove;
+     //Create plan
+    clopema_arm_navigation::ClopemaMotionPlan mp;
+    mp.request.motion_plan_req.group_name = "arms";
+    mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
+
+    //Set start state
+    if (!getRobotState(mp.request.motion_plan_req.start_state))
+        return -1;
+
+    arm_navigation_msgs::SimplePoseConstraint desired_pose;
+    desired_pose.header.frame_id = "base_link";
+    desired_pose.header.stamp = ros::Time::now();
+    desired_pose.link_name = arm2Name + "_ee";
+    desired_pose.pose=pose2;
+
+    desired_pose.absolute_position_tolerance.x = 0.02;
+    desired_pose.absolute_position_tolerance.y = 0.02;
+    desired_pose.absolute_position_tolerance.z = 0.02;
+    desired_pose.absolute_roll_tolerance = 0.04;
+    desired_pose.absolute_pitch_tolerance = 0.04;
+    desired_pose.absolute_yaw_tolerance = 0.04;
+
+
+    mp.request.motion_plan_req.path_constraints.position_constraints.resize(2);
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].header.frame_id = arm1Name + "_ee";
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].header.stamp = ros::Time::now();
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].link_name = arm2Name + "_ee";
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].position.x = 0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].position.y = 0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].position.z = 0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.type = arm_navigation_msgs::Shape::SPHERE;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious); //radius
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious);
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious);
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.x = 0.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.y = 0.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.z = 0.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.w = 1.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].weight = 1.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[1] = mp.request.motion_plan_req.path_constraints.position_constraints[0];
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].link_name = arm1Name + "_ee";
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].position.x = 0.4;
+
     arm_navigation_msgs::PositionConstraint position_constraint;
     arm_navigation_msgs::OrientationConstraint orientation_constraint;
     arm_navigation_msgs::poseConstraintToPositionOrientationConstraints(desired_pose, position_constraint, orientation_constraint);
@@ -158,7 +233,65 @@ int Unfold::moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, cons
     goal.trajectory = mp.response.joint_trajectory;
     cmove.doGoal(goal);
 
+
 }
+
+int Unfold::moveArmThrough(vector <geometry_msgs::Pose> poses , const string &armName){
+
+
+    MoveRobot cmove;
+    trajectory_msgs::JointTrajectory wholeTraj;
+
+    //Create plan
+    clopema_arm_navigation::ClopemaMotionPlan mp;
+    mp.request.motion_plan_req.group_name = armName + "_arm";
+    mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
+
+    if (!getRobotState(mp.request.motion_plan_req.start_state))
+        return -1;
+
+    vector <arm_navigation_msgs::SimplePoseConstraint> desired_poses;
+    arm_navigation_msgs::SimplePoseConstraint desPose;
+
+    for (unsigned int i = 0; i < poses.size() ; i ++ ){
+
+        desPose.header.frame_id = "base_link";
+        desPose.header.stamp = ros::Time::now();
+        desPose.link_name = armName + "_ee";
+        desPose.pose = poses[i];
+        desPose.absolute_position_tolerance.x = 0.02;
+        desPose.absolute_position_tolerance.y = 0.02;
+        desPose.absolute_position_tolerance.z = 0.02;
+        desPose.absolute_roll_tolerance = 0.04;
+        desPose.absolute_pitch_tolerance = 0.04;
+        desPose.absolute_yaw_tolerance = 0.04;
+        desired_poses.push_back(desPose);
+
+    }
+
+    poseToClopemaMotionPlan(mp, desired_poses[0]);
+    if (!plan(mp))
+        return -1;
+    wholeTraj = mp.response.joint_trajectory;
+
+    for(unsigned int i=1;i<desired_poses.size();i++){
+        mp.request.motion_plan_req.goal_constraints.orientation_constraints.clear();
+        mp.request.motion_plan_req.goal_constraints.position_constraints.clear();
+        poseToClopemaMotionPlan(mp, desired_poses[i]);
+        pointToRobotState(mp.request.motion_plan_req.start_state, wholeTraj.points.back(), wholeTraj.joint_names);
+        if (!plan(mp))
+            return -1;
+        wholeTraj.points.insert(wholeTraj.points.end(), mp.response.joint_trajectory.points.begin(), mp.response.joint_trajectory.points.end());
+
+    }
+
+    ROS_INFO("Executing trajectory size: %d", wholeTraj.points.size());
+    control_msgs::FollowJointTrajectoryGoal goal;
+    goal.trajectory = wholeTraj;
+    cmove.doGoal(goal);
+
+}
+
 
 int Unfold::setGripperStates(const string &armName  , bool open){
     ros::service::waitForService("/" + armName + "_gripper/set_open");
@@ -784,6 +917,32 @@ void printPose(geometry_msgs::Pose p){
 }
 
 
+
+
+void Unfold::grabFromXtion(cv::Mat rgb, cv::Mat depth, pcl::PointCloud<pcl::PointXYZ> pc){
+
+    camera_helpers::OpenNICaptureAll grabber("xtion3") ;
+    grabber.connect();
+    ros::Time ts(0);
+    image_geometry::PinholeCameraModel cm;
+    grabber.grab(rgb, depth, pc, ts, cm);
+
+    ros::Duration(1,0).sleep();
+
+    cv::namedWindow("rgb");
+    cv::setMouseCallback("rgb", mouse_callback, NULL);
+
+    int k=0;
+    while(k!=1048603){
+        grabber.grab(rgb, depth, pc, ts, cm);
+        cv::imshow("rgb", rgb);
+        k = cv::waitKey(1);
+    }
+
+}
+
+
+
 int Unfold::GraspLowestPoint(bool lastMove){
 
 
@@ -797,6 +956,7 @@ int Unfold::GraspLowestPoint(bool lastMove){
     int tries = 0;
     camera_helpers::OpenNICaptureAll grabber("xtion3") ;
     geometry_msgs::Pose desPose;
+    vector <geometry_msgs::Pose> poses;
     Eigen::Vector4d targetP;
     Eigen::Matrix4d rotMat;
     grabber.connect() ;
@@ -842,15 +1002,17 @@ int Unfold::GraspLowestPoint(bool lastMove){
         desPose.position.x = targetP.x() + rotMat(0, 0) * 0.03 - rotMat(0, 2) * 0.07;
         desPose.position.y = targetP.y() + rotMat(1, 0) * 0.03 - rotMat(1, 2) * 0.07;
         desPose.position.z = targetP.z() + rotMat(2, 0) * 0.03 - rotMat(2, 2) * 0.07;
-
-        cout << desPose.position.x << "" << desPose.position.y << " " << desPose.position.z << endl;
-
+        poses.push_back(desPose);
+        desPose.position.x = targetP.x() + rotMat(0, 2) * 0.045 + rotMat(0, 0) * 0.03;
+        desPose.position.y = targetP.y() + rotMat(1, 2) * 0.045 + rotMat(1, 0) * 0.03;
+        desPose.position.z = targetP.z() + rotMat(2, 2) * 0.045 + rotMat(2, 0) * 0.03;
+        poses.push_back(desPose);
         st= getTranformation(holdingArm + "_ee");
 
         //grasp lowest point
-        addConeToCollisionModel(holdingArm, st.getOrigin().z() - desPose.position.z - 0.1, 0.2 );
+        addConeToCollisionModel(holdingArm, st.getOrigin().z() - desPose.position.z - 0.2, 0.1 );
 
-        if(moveArm(desPose, movingArm) == -1){
+        if(moveArmThrough(poses, movingArm) == -1){
             resetCollisionModel();
             cout<< "BIAS : " <<findBias(targetN)<<endl;
             rotateGripper(findBias(targetN), holdingArm);
@@ -861,16 +1023,6 @@ int Unfold::GraspLowestPoint(bool lastMove){
         break;
 
     }
-    desPose.position.x = targetP.x() + rotMat(0, 2) * 0.045 + rotMat(0, 0) * 0.03;
-    desPose.position.y = targetP.y() + rotMat(1, 2) * 0.045 + rotMat(1, 0) * 0.03;
-    desPose.position.z = targetP.z() + rotMat(2, 2) * 0.045 + rotMat(2, 0) * 0.03;
-
-    ros::Duration(0.5).sleep();
-    if( moveArm(desPose, movingArm) == -1){
-        cout << "ABORDING......" << endl;
-        return -1;
-    }
-
     setGripperStates( movingArm, false);
 
     //Make a circle trajectory
@@ -895,7 +1047,7 @@ int Unfold::GraspLowestPoint(bool lastMove){
     }
 
     ros::Duration(1.0).sleep();
-    moveArms(desPos1, desPos2);
+    moveArmsNoTearing(desPos1, desPos2);
 
     ros::Duration(1.0).sleep();
     moveArmBetweenSpheres(movingArm, true,  desPose);
@@ -936,14 +1088,4 @@ return 0;
 
 
 }
-//    ros::Duration(1,0).sleep();
 
-//    cv::namedWindow("rgb");
-//    cv::setMouseCallback("rgb", mouse_callback, NULL);
-
-//    int k=0;
-//    while(k!=1048603){
-//        grabber.grab(rgb, depth, pc, ts, cm);
-//        cv::imshow("rgb", rgb);
-//        k = cv::waitKey(1);
-//    }

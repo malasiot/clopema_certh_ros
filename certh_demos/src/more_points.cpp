@@ -85,6 +85,7 @@ int main(int argc, char **argv) {
 	mp.request.motion_plan_req.goal_constraints.position_constraints.clear();
 	vector<string> joint_names = cmove.getJointsInGroup(mp.request.motion_plan_req.group_name);
 	mp.request.motion_plan_req.goal_constraints.joint_constraints.resize(joint_names.size());
+
 	for (unsigned int i = 0; i < mp.request.motion_plan_req.goal_constraints.joint_constraints.size(); ++i) {
 		mp.request.motion_plan_req.goal_constraints.joint_constraints[i].joint_name = joint_names[i];
 		mp.request.motion_plan_req.goal_constraints.joint_constraints[i].position = 0.0;

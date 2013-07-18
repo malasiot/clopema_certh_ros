@@ -119,6 +119,16 @@ void poseToClopemaMotionPlan(clopema_arm_navigation::ClopemaMotionPlan& mp, arm_
 
 }
 
+void pointToRobotState(arm_navigation_msgs::RobotState &state, trajectory_msgs::JointTrajectoryPoint &point, std::vector<std::string> & joint_names) {
+    for (unsigned int i = 0; i < joint_names.size(); i++) {
+        for (unsigned int j = 0; j < state.joint_state.name.size(); j++) {
+            if (state.joint_state.name.at(j) == joint_names.at(i)) {
+                state.joint_state.position.at(j) = point.positions.at(i);
+                break;
+            }
+        }
+    }
+}
 
 Eigen::Affine3d getPose(const std::string &armName, const std::string &base_link, const ros::Time &ts) {
 

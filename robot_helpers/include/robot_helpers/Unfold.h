@@ -48,19 +48,14 @@ private:
 
     string holdingArm;
     string movingArm;
-
+public:
     inline Eigen::Matrix3d vertical() {
         Eigen::Matrix3d vertical;
         if(holdingArm == "r1"){
-            vertical <<  0, -1, 0,
-                    -1, 0, 0,
-                     0, 0, -1;
-
+            vertical << 0, -1, 0,-1, 0, 0, 0, 0, -1;
         }
         else{
-            vertical <<  0, 1, 0,
-                    1, 0, 0,
-                     0, 0, -1;
+            vertical << 0, 1, 0, 1, 0, 0, 0, 0, -1;
         }
         return vertical;
     }
@@ -98,16 +93,19 @@ private:
         return pose;
     }
 
+
     void switchArms();
     void setHoldingArm(const string &armName);
     int moveArmConstrains(geometry_msgs::Pose pose, const string &armName, float radious);
     void setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, float radious , const string &armName,  geometry_msgs::Quaternion q);
     void rotateGripper(float angle, const string &armName);
     int moveArmBetweenSpheres( string armName, bool up, geometry_msgs::Pose goalPose);
-
     int moveArm(geometry_msgs::Pose pose, const string &armName);
     int moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const string &arm1Name = "r1", const string &arm2Name = "r2");
+    int moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const string &arm1Name = "r1", const string &arm2Name = "r2");
     bool moveHomeArm(const string &armName);
+    int moveArmThrough(vector <geometry_msgs::Pose> poses , const string &armName);
+    void grabFromXtion(cv::Mat rgb, cv::Mat depth, pcl::PointCloud<pcl::PointXYZ> pc);
 
     int setGripperStates(const string &armName  , bool open);
     int setGrippersStates( bool open);

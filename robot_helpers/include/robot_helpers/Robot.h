@@ -108,6 +108,7 @@ bool setRobotSpeed(float speed) ;
 bool setGripperState(const std::string &armName, bool open = true) ;
 bool getGripperState(const std::string &armName, bool &open) ;
 
+void pointToRobotState(arm_navigation_msgs::RobotState &state, trajectory_msgs::JointTrajectoryPoint &point, std::vector<std::string> & joint_names);
 
 }
 
