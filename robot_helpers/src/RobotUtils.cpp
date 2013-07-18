@@ -79,6 +79,10 @@ bool moveHome(MoveRobot &cmove)
     return true ;
 }
 
+
+
+
+
 bool moveGripper(MoveRobot &cmove, const std::string &armName, const Eigen::Vector3d &pos, const Eigen::Quaterniond &q)
 {
     trajectory_msgs::JointTrajectory traj ;

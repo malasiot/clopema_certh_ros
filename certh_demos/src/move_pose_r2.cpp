@@ -7,12 +7,14 @@ using namespace std;
 int main(int argc, char **argv) {
 	ros::init(argc, argv, "move_pose_dual");
 	ros::NodeHandle nh;
-	
+    std::string armName;
+    cout<< "select arm " << endl;
+    cin>> armName ;
 	ClopemaMove cmove;
 
 	//Create plan
 	clopema_arm_navigation::ClopemaMotionPlan mp;
-	mp.request.motion_plan_req.group_name = "r2_arm";
+    mp.request.motion_plan_req.group_name = armName + "_arm";
 	mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
 
 	//Set start state
@@ -23,7 +25,7 @@ int main(int argc, char **argv) {
 	arm_navigation_msgs::SimplePoseConstraint desired_pose;
 	desired_pose.header.frame_id = "base_link";
 	desired_pose.header.stamp = ros::Time::now();
-	desired_pose.link_name = "r2_ee";
+    desired_pose.link_name = armName + "_ee";
 	desired_pose.pose.position.x = 0;
 	desired_pose.pose.position.y = -1;
 	desired_pose.pose.position.z = 1.5;
@@ -66,11 +68,15 @@ int main(int argc, char **argv) {
 		//~ (btScalar) -1, (btScalar) 0, (btScalar) 0,
 		//~ (btScalar) 0, (btScalar) 1, (btScalar) 0);
 		
-		btMatrix3x3 rotMat( 
-		(btScalar) 1, (btScalar) 0, (btScalar) 0,
-		(btScalar) 0, (btScalar) -1, (btScalar) 0,
-		(btScalar) 0, (btScalar) 0, (btScalar) -1);
+//        btMatrix3x3 rotMat(
+//        (btScalar) 1, (btScalar) 0, (btScalar) 0,
+//        (btScalar) 0, (btScalar) -1, (btScalar) 0,
+//        (btScalar) 0, (btScalar) 0, (btScalar) -1);
 		
+    btMatrix3x3 rotMat(
+    (btScalar) 0, (btScalar) 1, (btScalar) 0,
+    (btScalar) 1, (btScalar) 0, (btScalar) 0,
+    (btScalar) 0, (btScalar) 0, (btScalar) -1);
 	 
 	roll= atan2f(rotMat[2][1],rotMat[2][2] );
 	pitch= atan2f(-rotMat[2][0],sqrt(pow(rotMat[2][2],2)+pow(rotMat[2][1],2)));
@@ -118,8 +124,8 @@ int main(int argc, char **argv) {
     tf::StampedTransform transform;
     
 	try {
-		listener.waitForTransform("base_link", "r2_ee", ros::Time(0), ros::Duration(10.0) );
-		listener.lookupTransform("base_link", "r2_ee", ros::Time(0), transform);
+        listener.waitForTransform("base_link", armName + "_ee", ros::Time(0), ros::Duration(10.0) );
+        listener.lookupTransform("base_link", armName + "_ee", ros::Time(0), transform);
 	} catch (tf::TransformException ex) {
 		ROS_ERROR("%s",ex.what());
 	}
