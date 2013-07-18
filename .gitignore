@@ -10,3 +10,4 @@ build/
 CMakeLists.txt.user
 CMakeLists.txt~
 *~
+.svn/
