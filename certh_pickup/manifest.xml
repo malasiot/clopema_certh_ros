@@ -10,5 +10,10 @@
   <depend package="pcl_ros"/>
   
   <depend package="std_msgs"/>
+
+  <depend package="planning_environment"/>
+  <depend package="kinematics_base"/>
+  <depend package="pluginlib" />
+  <depend package="clopema_arm_navigation"/>
  
 </package>

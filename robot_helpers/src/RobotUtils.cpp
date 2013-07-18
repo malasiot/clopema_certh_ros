@@ -86,6 +86,50 @@ bool moveGripper(MoveRobot &cmove, const std::string &armName, const Eigen::Vect
     return ( planArmToPose(armName, pos, q, traj) && cmove.execTrajectory(traj) ) ;
 }
 
+bool planToJointGoal(const string &armName, const sensor_msgs::JointState &js, trajectory_msgs::JointTrajectory &traj)
+{
+
+    clopema_arm_navigation::ClopemaMotionPlan mp;
+    mp.request.motion_plan_req.group_name = armName + "_arm";
+    mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
+
+    if (!getRobotState(mp.request.motion_plan_req.start_state)) return false ;
+
+    vector<string> joint_names ;
+
+    joint_names.push_back(armName + "_joint_s");
+    joint_names.push_back(armName + "_joint_l");
+    joint_names.push_back(armName + "_joint_u");
+    joint_names.push_back(armName + "_joint_r");
+    joint_names.push_back(armName + "_joint_b");
+    joint_names.push_back(armName + "_joint_t");
+
+    mp.request.motion_plan_req.goal_constraints.joint_constraints.resize(joint_names.size());
+
+    for (unsigned int i = 0; i < mp.request.motion_plan_req.goal_constraints.joint_constraints.size(); ++i)
+    {
+        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].joint_name = joint_names[i];
+        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].tolerance_below = 0.1;
+        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].tolerance_above = 0.1;
+
+        vector<string>::const_iterator it = std::find(js.name.begin(), js.name.end(), joint_names[i]) ;
+
+        if ( it == js.name.end() )
+            mp.request.motion_plan_req.goal_constraints.joint_constraints[i].position = 0;
+        else {
+            int d = std::distance(js.name.begin(), it) ;
+            mp.request.motion_plan_req.goal_constraints.joint_constraints[i].position = js.position[d];
+        }
+    }
+
+    if (!plan(mp)) return false ;
+
+    traj = mp.response.joint_trajectory ;
+
+    if ( traj.points.size() > 2 ) return true ;
+
+}
+
 bool planArmToPose(const string &armName, const Eigen::Vector3d &pos, const Eigen::Quaterniond &q, trajectory_msgs::JointTrajectory &traj)
 {
     clopema_arm_navigation::ClopemaMotionPlan mp;
@@ -181,6 +225,14 @@ bool rotateGripper(MoveRobot &cmove, const std::string &armName, double theta)
 }
 
 
+bool planXtionToPose(const string &armName, const Eigen::Vector3d &pos, const Eigen::Quaterniond &q, trajectory_msgs::JointTrajectory &traj)
+{
+    sensor_msgs::JointState goal_state ;
+
+    if ( !getIKXtion(armName, pos, q, goal_state) ) return false ;
+
+    return planToJointGoal(armName, goal_state, traj) ;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -577,7 +629,11 @@ bool getIK(const string &armName, const Eigen::Vector3d pos, const Eigen::Quater
     ik.request.ik_request.pose_stamped.header.frame_id = "base_link";
     ik.request.ik_request.pose_stamped.header.stamp = ros::Time::now();
 
-    getRobotState(ik.request.ik_request.robot_state) ;
+
+    if (!getRobotState(ik.request.ik_request.robot_state)) {
+        ROS_ERROR("Can't get robot state");
+        return false ;
+    }
 
     ik.request.ik_request.ik_seed_state = ik.request.ik_request.robot_state;
     ik.request.ik_request.pose_stamped.pose = pose;
@@ -602,13 +658,44 @@ bool getIK(const string &armName, const Eigen::Vector3d pos, const Eigen::Quater
     return true ;
 }
 
+bool getIKXtion(const string &armName, const Eigen::Vector3d pos, const Eigen::Quaterniond &q, sensor_msgs::JointState &state) {
+
+    geometry_msgs::Pose pose = eigenPoseToROS(pos, q);
 
 
+    kinematics_msgs::GetConstraintAwarePositionIK ik;
+    ik.request.timeout = ros::Duration(5.0);
+    ik.request.ik_request.ik_link_name = armName + "_xtion";
+    ik.request.ik_request.pose_stamped.header.frame_id = "base_link";
+    ik.request.ik_request.pose_stamped.header.stamp = ros::Time::now();
+    ik.request.ik_request.pose_stamped.pose = pose;
 
+    if (!getRobotState(ik.request.ik_request.robot_state)) {
+        ROS_ERROR("Can't get robot state");
+        return false ;
+    }
 
+    ik.request.ik_request.ik_seed_state = ik.request.ik_request.robot_state;
 
+    string serviceName = "/clopema_" + armName + "_xtion_kinematics/get_constraint_aware_ik" ;
 
+    ros::service::waitForService(serviceName) ;
 
+    if (ros::service::call(serviceName, ik)) {
+        if (ik.response.error_code.val == ik.response.error_code.SUCCESS)
+            ROS_DEBUG_STREAM("IK Solution found");
+        else {
+            ROS_WARN_STREAM("Error code: " << ik.response.error_code.val<<": "<<arm_navigation_msgs::armNavigationErrorCodeToString(ik.response.error_code));
+            return false ;
+        }
+    } else {
+        ROS_ERROR("Can't call service");
+        return false ;
+    }
+
+    state = ik.response.solution.joint_state ;
+    return true ;
+}
 
 
 
