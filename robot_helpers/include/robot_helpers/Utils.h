@@ -2,6 +2,7 @@
 #define __ROBOT_HELPERS_UTILS_H__
 
 #include "robot_helpers/Robot.h"
+#include "robot_helpers/Unfold.h"
 #include <Eigen/Geometry>
 
 namespace robot_helpers {
@@ -49,6 +50,38 @@ bool getIK(const std::string &armName, const Eigen::Vector3d pos, const Eigen::Q
 // get inverse kinematics solution for the Xtion on the given arm
 
 bool getIKXtion(const std::string &armName, const Eigen::Vector3d pos, const Eigen::Quaterniond &q, sensor_msgs::JointState &state) ;
+
+////////andreas
+
+
+int moveArmConstrains(geometry_msgs::Pose pose, const std::string &armName, float radious);
+
+void setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, float radious , const std::string &armName,  geometry_msgs::Quaternion q);
+
+void rotateGripper(float angle, const std::string &armName);
+
+int moveArmBetweenSpheres( std::string armName, bool up, geometry_msgs::Pose goalPose);
+
+int moveArm(geometry_msgs::Pose pose, const std::string &armName);
+
+int moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const std::string &arm1Name = "r1", const std::string &arm2Name = "r2");
+
+int moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const std::string &arm1Name = "r1", const std::string &arm2Name = "r2");
+
+bool moveHomeArm(const std::string &armName);
+
+int moveArmThrough(std::vector <geometry_msgs::Pose> poses , const std::string &armName);
+
+//void grabFromXtion(cv::Mat rgb, cv::Mat depth, pcl::PointCloud<pcl::PointXYZ> pc);
+
+float getArmsDistance();
+
+geometry_msgs::Pose getArmPose( const std::string &armName, const std::string &frameName = "base_link");
+
+Eigen::Matrix4d getTranformationMatrix(const std::string &frameName, const std::string &coordSys = "base_link" );
+
+tf::StampedTransform getTranformation(const std::string &frameName, const std::string &coordSys = "base_link" );
+
 
 }
 

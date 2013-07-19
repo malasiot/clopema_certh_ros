@@ -56,4 +56,6 @@ Quaterniond lookAt(const Eigen::Vector3d &dir, double roll)
      return Quaterniond(r) * AngleAxisd(roll, Eigen::Vector3d::UnitZ()) ;
 }
 
+
+
 } // namespace robot_helpers

@@ -2,6 +2,7 @@
 #define __ROBOT_HELPERS_UNFOLDING_H__
 
 #include "robot_helpers/Utils.h"
+#include "Geometry.h"
 #include <geometric_shapes/shape_operations.h>
 #include <planning_environment/util/construct_object.h>
 #include <geometry_msgs/Pose.h>
@@ -97,45 +98,30 @@ public:
 
     void switchArms();
     void setHoldingArm(const string &armName);
-    int moveArmConstrains(geometry_msgs::Pose pose, const string &armName, float radious);
-    void setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, float radious , const string &armName,  geometry_msgs::Quaternion q);
-    void rotateGripper(float angle, const string &armName);
-    int moveArmBetweenSpheres( string armName, bool up, geometry_msgs::Pose goalPose);
-    int moveArm(geometry_msgs::Pose pose, const string &armName);
-    int moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const string &arm1Name = "r1", const string &arm2Name = "r2");
-    int moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const string &arm1Name = "r1", const string &arm2Name = "r2");
-    bool moveHomeArm(const string &armName);
-    int moveArmThrough(vector <geometry_msgs::Pose> poses , const string &armName);
-    void grabFromXtion(cv::Mat rgb, cv::Mat depth, pcl::PointCloud<pcl::PointXYZ> pc);
 
     int setGripperStates(const string &armName  , bool open);
     int setGrippersStates( bool open);
 
-    float getArmsDistance();
-
-    geometry_msgs::Pose getArmPose( const string &armName, const string &frameName = "base_link");
-
     Eigen::Matrix4d findGraspingOrientation(Eigen::Vector4d vector );
     float findBias(Eigen::Vector4d vector);
-    geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
-    geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
+
     bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture, Eigen::Vector3f &p, Eigen::Vector3f &n, cv::Mat depthMap);
+
     Eigen::Vector3f computeNormal(const pcl::PointCloud<pcl::PointXYZ> &pc, int x, int y);
+
     void robustPlane3DFit(vector<Eigen::Vector3f> &x, Eigen::Vector3f  &c, Eigen::Vector3f &u);
 
-
-    Eigen::Matrix4d getTranformationMatrix(const string &frameName, const string &coordSys = "base_link" );
-    tf::StampedTransform getTranformation(const string &frameName, const string &coordSys = "base_link" );
-
-
-public:
-
     int GraspLowestPoint(bool lastMove = false);
+
     void rotateHoldingGripper(float angle);
 
+    geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
+
+    geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
 };
 
 void printPose(geometry_msgs::Pose p);
+
 
 }
 
