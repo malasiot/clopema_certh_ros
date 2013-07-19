@@ -11,11 +11,13 @@
   <depend package="cv_bridge"/>
   <depend package="image_transport"/>
   <depend package="image_geometry"/>
+  <depend package="nodelet"/>
 
   <depend package="RH_cameras"/>
   
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lcamera_helpers"/>
+	 <nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
  
 </package>

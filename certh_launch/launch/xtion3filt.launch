@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<!--
+This launch file starts opnni drivers for Assus Xtion on the 2. robot hand of
+the CloPeMa robot.
+
+Author:     Libor Wagner
+Modified:   November 20, 2012 15:44
+-->
+<launch>
+
+    <arg name="override" default="0"/>
+
+    <!-- Arguments -->
+    <arg name="publish_tf"  default="true" />
+    <arg name="device_id"   default="2@12" />
+    <arg name="workspace"   default="false" />
+    <arg name="start_robot" default="false" />
+    <arg name="debug"       default="false" />
+   
+    <!-- Include common CloPeMa configuration. -->
+    <include file="$(find clopema_config)/launch/clopema.launch"/>
+
+	<param name="/clopema_calibration/handeye/folder" value="certh_launch/handeye"/>
+
+    <!-- Include CloPeMa openni launch file for kinect on the first arm. -->
+    <group>
+        <include file="$(find clopema_perception_launch)/launch/openni.launch">
+            <arg name="override"              value="$(arg override)"/>
+            <arg name="machine"               value="clopema1"/>
+            <arg name="camera"                value="xtion3"/>
+            <arg name="device_id"             value="$(arg device_id)" if="$(arg override)"/>
+            <arg name="link"                  value="base_link" />
+            <arg name="rgb_camera_info_url"   value="file://${ROS_HOME}/clopema_calibration/xtion3_rgb.yaml"/>
+            <arg name="depth_camera_info_url" value="file://${ROS_HOME}/clopema_calibration/xtion3_depth.yaml"/>
+            <arg name="publish_tf"            value="$(arg publish_tf)" />
+            <arg name="debug"                 value="$(arg debug)"/>
+			<arg name="depth_registration"    value="true" />
+
+        </include>
+    </group>
+
+	<arg name="filter" default="true" />
+
+
+	<node if="$(arg filter)" pkg="nodelet" type="nodelet" name="camera_helpers_manager"  args="manager" />
+
+	<node if="$(arg filter)" pkg="nodelet" type="nodelet" name="filter_depth" args="load camera_helpers/depth_filter camera_helpers_manager" >
+	       <remap from="image_rect"  to="/xtion3/depth_registered/image_rect_raw" />
+	    	<param name="num_frames" value="50" />
+	 </node>
+
+
+    <!-- Extract workspace points and transform to base_link if required. -->
+    <group if="$(arg workspace)" ns="workspace_extraction">
+        <include file="$(find clopema_perception_launch)/launch/workspace_extraction_pipeline.launch" ns="depth">
+            <arg name="manager"      value="/xtion3_nodelet_manager"/>
+            <arg name="input_topic"  value="/xtion3/depth/points"/>
+            <arg name="output_topic" value="/workspace/points"/>
+            <arg name="machine"      value="clopema1"/>
+        </include>
+
+        <include file="$(find clopema_perception_launch)/launch/workspace_extraction_pipeline.launch" ns="depth_registered">
+            <arg name="manager"      value="/xtion3_nodelet_manager"/>
+            <arg name="input_topic"  value="/xtion3/depth_registered/points"/>
+            <arg name="output_topic" value="/workspace/points_registered"/>
+            <arg name="machine"      value="clopema1"/>
+        </include>
+
+    </group>
+
+    <include if="$(arg start_robot)" file="$(find clopema_launch)/launch/start_robot.launch"/>
+
+</launch>

@@ -1,0 +1,11 @@
+<library path="lib/libcamera_helpers">
+
+  <class name="camera_helpers/depth_filter"
+	 type="camera_helpers::DepthFilterNodelet"
+	 base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet for temporal filtering of depth images
+    </description>
+  </class>
+
+</library>

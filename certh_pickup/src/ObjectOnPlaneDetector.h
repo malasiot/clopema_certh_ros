@@ -26,7 +26,7 @@ public:
     // find an image mask that designates plane pixels by discarding pixels beyond and above the specified plane
     // Mask filtering is performed to obtain a single cluster
 
-    cv::Mat findObjectMask(const Eigen::Vector3d &n, double d, double thresh, std::vector<cv::Point> &hull) ;
+    cv::Mat findObjectMask(const Eigen::Vector3d &n, double d, double thresh, cv::Mat &dmap, std::vector<cv::Point> &hull) ;
 
     cv::Mat getForegroundMask(const cv::Mat &inmask, std::vector<cv::Point> &hull, int minArea) ;
 

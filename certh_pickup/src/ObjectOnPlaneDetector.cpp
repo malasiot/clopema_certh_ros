@@ -180,11 +180,12 @@ bool ObjectOnPlaneDetector::findPlane(Eigen::Vector3d &n, double &d, cv::Mat &ma
     return true ;
 }
 
-cv::Mat ObjectOnPlaneDetector::findObjectMask(const Eigen::Vector3d &n, double d, double thresh, vector<cv::Point> &hull)
+cv::Mat ObjectOnPlaneDetector::findObjectMask(const Eigen::Vector3d &n, double d, double thresh, cv::Mat &dmap, vector<cv::Point> &hull)
 {
     int w = in_cloud_.width, h = in_cloud_.height ;
 
-    cv::Mat mask = cv::Mat::zeros(h, w, CV_8UC1) ;
+    cv::Mat_<uchar> mask = cv::Mat_<uchar>::zeros(h, w) ;
+    cv::Mat_<ushort> dmap_ = cv::Mat_<ushort>::zeros(h, w) ;
 
     for( int i=0 ; i<h ; i++ )
         for(int j=0 ; j<w ; j++ )
@@ -192,7 +193,6 @@ cv::Mat ObjectOnPlaneDetector::findObjectMask(const Eigen::Vector3d &n, double d
             PointType &p = in_cloud_.at(j, i) ;
 
             if ( !pcl::isFiniteFast(p) ) {
-                mask.at<uchar>(i, j) = 0 ;
                 continue ;
             }
 
@@ -200,11 +200,17 @@ cv::Mat ObjectOnPlaneDetector::findObjectMask(const Eigen::Vector3d &n, double d
 
             double dist = p_.dot(n) + d ;
 
-            if ( dist < -thresh ) mask.at<uchar>(i, j) = 255 ;
+            if ( dist < -thresh ) {
+                mask[i][j] = 255 ;
+                dmap_[i][j] = -dist * 1000 ;
+            }
     }
 
     cv::imwrite("/tmp/mask0.png", mask) ;
+
     cv::Mat fgMask = getForegroundMask(mask, hull, 100) ;
+
+    dmap_.copyTo(dmap, fgMask) ;
 
     return fgMask ;
 
