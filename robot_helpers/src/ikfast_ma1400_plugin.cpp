@@ -349,6 +349,9 @@ namespace clopema_ma1400_kinematics_fast
 
     if ( numSolutions == 0 ) return 0 ;
 
+    double qx, qy, qz, qw ;
+    mult.GetQuaternion(qx, qy, qz, qw);
+
     // find the rotationof the last link: TODO
 
     return numSolutions ;

@@ -21,10 +21,10 @@ int main(int argc, char *argv[])
 
     JointState js = JointState::fromRobotState(), solution ;
 
-    MA1400_R1_IKSolver solver ;
+    MA1400_R1_IKFastSolver solver ;
     solver.setKinematicModel(&kmodel);
 
-    bool res = solver.solveIK("r1_ee", Eigen::Vector3d(0.2, -0.8, 1.4), lookAt(Eigen::Vector3d(1, 0, 0), M_PI/4), js, solution) ;
+    bool res = solver.solveIK("r1_ee", Eigen::Vector3d(0.2, -0.8, 1.4), lookAt(Eigen::Vector3d(1, 0, 0), M_PI/6), js, solution) ;
 
     MA1400_R1_Xtion_IKFastSolver solver_xtion ;
     solver_xtion.setKinematicModel(&kmodel);
