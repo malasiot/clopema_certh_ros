@@ -1,11 +1,22 @@
 #include "robot_helpers/Unfold.h"
 #include <opencv2/highgui/highgui.hpp>
 
+#include <cv.h>
+
+#include <Eigen/Core>
+#include <Eigen/Eigenvalues> // for cwise access
+
+
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <pcl/kdtree/kdtree_flann.h>
+
 using namespace std;
 namespace robot_helpers{
 
-Unfold::Unfold(const string &armName){
+Unfold::Unfold(const string &armName, ros::Publisher markerPub){
     setHoldingArm(armName);
+   marker_pub  = markerPub;
 }
 
 Unfold::~Unfold() {
@@ -126,18 +137,10 @@ Eigen::Matrix4d Unfold::findGraspingOrientation(Eigen::Vector4d vector ){
     Eigen::Matrix4d rotMat;
     Eigen::Vector3d N;
 
-    rotMat(0, 0) = vector.x();
-    rotMat(0, 1) = vector.y();
-    rotMat(0, 2) = vector.z();
 
-    N << vector.x(), vector.y(), vector.z();
-    if(holdingArm == "r2"){
-        rotMat(0, 0) = -vector.x();
-        rotMat(0, 1) = -vector.y();
-        rotMat(0, 2) = -vector.z();
-
-        N << -vector.x(), -vector.y(), -vector.z();
-    }
+    N << -vector.x(), -vector.y(), -vector.z();
+    if(holdingArm == "r2")
+        N << vector.x(), vector.y(), vector.z();
     N.normalize();
 
     Eigen::Vector3d A(1,0,-1);
@@ -145,10 +148,11 @@ Eigen::Matrix4d Unfold::findGraspingOrientation(Eigen::Vector4d vector ){
          A << -1,0,-1;
 
     Eigen::Vector3d B=A-(A.dot(N))*N;
+    B.normalize();
     Eigen::Vector3d C=N.cross(B);
 
     C.normalize();
-    B.normalize();
+
 
     rotMat(0, 0)=N.x();
     rotMat(1, 0)=N.y();
@@ -161,6 +165,7 @@ Eigen::Matrix4d Unfold::findGraspingOrientation(Eigen::Vector4d vector ){
     rotMat(0, 2)=-B.x();
     rotMat(1, 2)=-B.y();
     rotMat(2, 2)=-B.z();
+
 
 return rotMat;
 }
@@ -179,11 +184,11 @@ void mouse_callback( int event, int x, int y, int flags, void* param){
 }
 
 
-void Unfold::robustPlane3DFit(vector<Eigen::Vector3f> &x, Eigen::Vector3f  &c, Eigen::Vector3f &u)
+void Unfold::robustPlane3DFit(vector<Eigen::Vector3d> &x, Eigen::Vector3d  &c, Eigen::Vector3d &u)
 {
     int i, k, N = x.size() ;
-    Eigen::Vector3f u1, u2, u3 ;
-    const int NITER = 5 ;
+    Eigen::Vector3d u1, u2, u3 ;
+    const int NITER = 1 ;
 
     double *weight = new double [N] ;
     double *res = new double [N] ;
@@ -195,12 +200,12 @@ void Unfold::robustPlane3DFit(vector<Eigen::Vector3f> &x, Eigen::Vector3f  &c, E
     for( k=0 ; k<NITER ; k++ )
     {
 
-        c = Eigen::Vector3f::Zero() ;
-        Eigen::Matrix3f cov = Eigen::Matrix3f::Zero();
+        c = Eigen::Vector3d::Zero() ;
+        Eigen::Matrix3d cov = Eigen::Matrix3d::Zero();
 
         for( i=0 ; i<N ; i++ )
         {
-            const Eigen::Vector3f &P = x[i] ;
+            const Eigen::Vector3d &P = x[i] ;
             double w = weight[i] ;
 
             c += w * P ;
@@ -210,7 +215,7 @@ void Unfold::robustPlane3DFit(vector<Eigen::Vector3f> &x, Eigen::Vector3f  &c, E
 
         for( i=0 ; i<N ; i++ )
         {
-            const Eigen::Vector3f &P = x[i] ;
+            const Eigen::Vector3d &P = x[i] ;
             double w = weight[i] ;
 
             cov += w *  (P - c) * (P - c).adjoint();
@@ -219,10 +224,10 @@ void Unfold::robustPlane3DFit(vector<Eigen::Vector3f> &x, Eigen::Vector3f  &c, E
 
         cov *= 1.0/wsum ;
 
-        Eigen::Matrix3f U ;
-        Eigen::Vector3f L ;
+        Eigen::Matrix3d U ;
+        Eigen::Vector3d L ;
 
-        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> eigensolver(cov);
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigensolver(cov);
         L = eigensolver.eigenvalues() ;
         U = eigensolver.eigenvectors() ;
 
@@ -234,7 +239,7 @@ void Unfold::robustPlane3DFit(vector<Eigen::Vector3f> &x, Eigen::Vector3f  &c, E
 
         for( i=0 ; i<N ; i++ )
         {
-            const Eigen::Vector3f &P = x[i] ;
+            const Eigen::Vector3d &P = x[i] ;
 
         //    double r = (P -c).dot(P-c) ;
         //    double ss = (P-c).dot(u1);
@@ -279,11 +284,12 @@ void Unfold::robustPlane3DFit(vector<Eigen::Vector3f> &x, Eigen::Vector3f  &c, E
     delete res ;
 }
 
-Eigen::Vector3f Unfold::computeNormal(const pcl::PointCloud<pcl::PointXYZ> &pc, int x, int y){
-    const int nrmMaskSize = 7 ;
+ Eigen::Vector3d Unfold::computeNormal(const pcl::PointCloud<pcl::PointXYZ> &pc, int x, int y)
+{
+    const int nrmMaskSize = 6 ;
     int w = pc.width, h = pc.height ;
 
-    vector<Eigen::Vector3f> pts ;
+    vector<Eigen::Vector3d> pts ;
 
     for(int i = y - nrmMaskSize ; i<= y + nrmMaskSize ; i++  )
         for(int j = x - nrmMaskSize ; j<= x + nrmMaskSize ; j++  )
@@ -294,74 +300,234 @@ Eigen::Vector3f Unfold::computeNormal(const pcl::PointCloud<pcl::PointXYZ> &pc, 
 
             if ( !pcl_isfinite(val.z) ) continue ;
 
-            pts.push_back(Eigen::Vector3f(val.x, val.y, val.z)) ;
+            pts.push_back(Eigen::Vector3d(val.x, val.y, val.z)) ;
         }
 
-    if ( pts.size() < 3 ) return Eigen::Vector3f() ;
+    if ( pts.size() < 3 ) return Eigen::Vector3d() ;
 
-    Eigen::Vector3f u, c ;
+    Eigen::Vector3d u, c ;
     robustPlane3DFit(pts, c, u);
 
-    if ( u(2) < 0 ) u = -u ;
+    if ( u(2) > 0 ) u = -u ;
 
     return u ;
 
 }
 
 
-bool Unfold::findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture, Eigen::Vector3f &p, Eigen::Vector3f &n, cv::Mat depthMap){
+ bool Unfold::pointInsideCone(const Eigen::Vector3d &x, const Eigen::Vector3d &apex, const Eigen::Vector3d &base, float aperture)
+{
+    // This is for our convenience
+    float halfAperture = aperture/2.f;
+
+    // Vector pointing to X point from apex
+    Eigen::Vector3d apexToXVect = apex - x ;
+    apexToXVect.normalize() ;
+
+    // Vector pointing from apex to circle-center point.
+    Eigen::Vector3d axisVect = apex - base;
+    axisVect.normalize() ;
+
+    // determine angle between apexToXVect and axis.
+
+    double d = apexToXVect.dot(axisVect) ;
+
+    bool isInInfiniteCone = fabs(d) > cos(halfAperture) ;
+
+    if(!isInInfiniteCone) return false;
+
+    // X is contained in cone only if projection of apexToXVect to axis
+    // is shorter than axis.
+    // We'll use dotProd() to figure projection length.
+
+    bool isUnderRoundCap = apexToXVect.dot(axisVect)  < 1 ;
+
+    return isUnderRoundCap;
+}
+
+void Unfold::findMeanShiftPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, int x0, int y0, int &x1, int &y1, double radius, double variance, int maxIter)
+{
+   pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+
+    boost::shared_ptr <pcl::PointCloud<pcl::PointXYZ> > cloud(new pcl::PointCloud<pcl::PointXYZ>(depth)) ;
+
+    kdtree.setInputCloud (cloud);
 
     int w = depth.width, h = depth.height ;
 
-    int best_i=-1, best_j=-1;
-    float best_x=-1, best_y=-1, best_z=-1;
+    pcl::PointXYZ p = depth.at(x0, y0) ;
+    Eigen::Vector3d center(p.x, p.y, p.z) ;
 
+    int iter = 0 ;
+    double centerDist ;
 
-    bool found = false ;
-    float minx = 10 ;
-    for(int j=66 ; j<626 ; j++ )
+    do
     {
 
+        Eigen::Vector3d newCenter(0, 0, 0) ;
 
-        for(int i=100 ; i<350 ; i++)
+        vector<int> pointIdxRadiusSearch;
+        vector<float> pointRadiusSquaredDistance;
+
+        pcl::PointXYZ center_(center.x(), center.y(), center.z()) ;
+        kdtree.radiusSearch (center_, radius, pointIdxRadiusSearch, pointRadiusSquaredDistance) ;
+
+        int n = pointIdxRadiusSearch.size() ;
+
+        double denom = 0.0 ;
+
+        for(int i=0 ; i<n ; i++ )
+        {
+            pcl::PointXYZ p = depth.at(pointIdxRadiusSearch[i]) ;
+            Eigen::Vector3d pc(p.x, p.y, p.z) ;
+
+            double ep = exp(-pointRadiusSquaredDistance[i]/ (2.0 * variance));
+
+            denom += ep ;
+
+            newCenter += ep * pc ;
+        }
+
+        newCenter /= denom ;
+
+        centerDist = (newCenter - center).norm() ;
+
+        center = newCenter ;
+
+        ++iter ;
+
+        //cout << centerDist << endl ;
+
+    } while ( centerDist > variance && iter < maxIter ) ;
+
+    vector<int> pointIdxNNSearch;
+    vector<float> pointNNSquaredDistance;
+
+    pcl::PointXYZ center_(center.x(), center.y(), center.z()) ;
+    if ( kdtree.nearestKSearch(center_, 1, pointIdxNNSearch, pointNNSquaredDistance) > 0 )
+    {
+        int idx = pointIdxNNSearch[0] ;
+
+        y1 = idx / w ;
+        x1 =  idx - y1 * w ;
+
+    }
+}
+
+
+bool Unfold::findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3d &orig, const Eigen::Vector3d &base, float apperture, Eigen::Vector3d &p, Eigen::Vector3d &n)
+{
+
+    int w = depth.width, h = depth.height ;
+
+    int max_y = -1 ;
+    int best_j = -1, best_i = -1 ;
+
+    bool found = false ;
+
+    double maxv = -DBL_MAX ;
+
+    for(int j=0 ; j<w ; j++ )
+    {
+
+        for(int i=0 ; i<h ; i++)
         {
             pcl::PointXYZ val = depth.at(j, i) ;
 
-            if ( val.z<1 || val.z>1.5 ) continue ;
+            if ( !pcl_isfinite(val.z) ) continue ;
 
-            if ( minx>val.x )
+            Eigen::Vector3d p(val.x, val.y, val.z) ;
+
+            // test whether the point lies within the cone
+
+            if ( !pointInsideCone(p, orig, base, apperture) ) continue ;
+
+            // project the point on the cone axis to determine how low it is.
+
+            double s = (p - orig).dot(base - orig) ;
+
+            if ( s > maxv )
             {
-                minx = val.x ;
+                maxv = s ;
                 best_j = j ;
                 best_i = i ;
-
                 found = true ;
             }
 
         }
     }
 
-
-
-    for(int i=0; i<depthMap.rows; ++i)
-        for(int j=0; j<depthMap.cols; ++j)
-            if( (depthMap.at<unsigned short>(i, j) < 900) || (depthMap.at<unsigned short>(i, j) > 1400) )
-                depthMap.at<unsigned short>(i, j) = 0;
-
-    cv::TermCriteria criteria(1, 10, 0.1);
-    cv::Rect rect1(best_j-10, best_i-10, 20, 20);
-    cv::meanShift(depthMap, rect1, criteria);
-    best_j = rect1.x + rect1.width/2;
-    best_i = rect1.y + rect1.height/2;
-//    cout<< "best2= (" << best_j <<" , "<< best_i <<")"<<endl;
-
-    pcl::PointXYZ p_ = depth.at(best_j, best_i ) ;
-    n = computeNormal(depth, best_j, best_i ) ;
-    p = Eigen::Vector3f(p_.x, p_.y, p_.z) ;
-
     if ( !found ) return false ;
 
+    pcl::PointXYZ p_ = depth.at(best_j, best_i) ;
+
+    int ox, oy ;
+
+    // find densest point cluster in a 3cm sphere around the detected point
+    findMeanShiftPoint(depth, best_j, best_i, ox, oy, 0.05) ;
+
+    // compute normal vector around this point
+    n = computeNormal(depth, ox, oy) ;
+
+    p = Eigen::Vector3d(p_.x, p_.y, p_.z) ;
 }
+
+
+
+
+//bool Unfold::findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3d &orig, const Eigen::Vector3d &base, float apperture, Eigen::Vector3d &p, Eigen::Vector3d &n, cv::Mat depthMap){
+
+//    int w = depth.width, h = depth.height ;
+
+//    int best_i=-1, best_j=-1;
+//    float best_x=-1, best_y=-1, best_z=-1;
+
+
+//    bool found = false ;
+//    float minx = 10 ;
+//    for(int j=66 ; j<626 ; j++ )
+//    {
+
+
+//        for(int i=100 ; i<350 ; i++)
+//        {
+//            pcl::PointXYZ val = depth.at(j, i) ;
+
+//            if ( val.z<1 || val.z>1.5 ) continue ;
+
+//            if ( minx>val.x )
+//            {
+//                minx = val.x ;
+//                best_j = j ;
+//                best_i = i ;
+
+//                found = true ;
+//            }
+
+//        }
+//    }
+
+
+
+//    for(int i=0; i<depthMap.rows; ++i)
+//        for(int j=0; j<depthMap.cols; ++j)
+//            if( (depthMap.at<unsigned short>(i, j) < 900) || (depthMap.at<unsigned short>(i, j) > 1400) )
+//                depthMap.at<unsigned short>(i, j) = 0;
+
+//    cv::TermCriteria criteria(1, 10, 0.1);
+//    cv::Rect rect1(best_j-10, best_i-10, 20, 20);
+//    cv::meanShift(depthMap, rect1, criteria);
+//    best_j = rect1.x + rect1.width/2;
+//    best_i = rect1.y + rect1.height/2;
+////    cout<< "best2= (" << best_j <<" , "<< best_i <<")"<<endl;
+
+//    pcl::PointXYZ p_ = depth.at(best_j, best_i ) ;
+//    n = computeNormal(depth, best_j, best_i ) ;
+//    p = Eigen::Vector3d(p_.x, p_.y, p_.z) ;
+
+//    if ( !found ) return false ;
+
+//}
 
 
 
@@ -383,7 +549,6 @@ int Unfold::GraspLowestPoint(bool lastMove){
 
     //starting position
     bool grasp = false;
-    int tries = 0;
     camera_helpers::OpenNICaptureAll grabber("xtion3") ;
     geometry_msgs::Pose desPose;
     vector <geometry_msgs::Pose> poses;
@@ -392,7 +557,7 @@ int Unfold::GraspLowestPoint(bool lastMove){
     grabber.connect() ;
 
 
-    while(!grasp || tries<5){
+    while(!grasp){
 
         cv::Mat rgb, depth;
         pcl::PointCloud<pcl::PointXYZ> pc;
@@ -404,49 +569,55 @@ int Unfold::GraspLowestPoint(bool lastMove){
         Eigen::Matrix4d calib = getTranformationMatrix("xtion3_rgb_optical_frame");
 
         tf::StampedTransform st;
-        Eigen::Vector3f top , bottom, p, n;
-        float angle=0.2;
+        Eigen::Vector3d top , bottom, p, n;
+        float angle=0.5;
 
-        st= getTranformation("xtion3_rgb_optical_frame", holdingArm + "_ee");
+        st= getTranformation(holdingArm + "_ee", "xtion3_rgb_optical_frame");
 
         top.x()=st.getOrigin().x();
         top.y()=st.getOrigin().y();
         top.z()=st.getOrigin().z();
+
         bottom = top;
-        bottom.x()-=1.2;
+        bottom.x()-=1;
 
         grabber.grab(rgb, depth, pc, ts, cm);
+        if(findLowestPoint(pc, top, bottom, angle, p, n)== false)
+            cout<< "Cant find lowest point"<< endl;
 
-        findLowestPoint(pc, top, bottom, angle, p, n, depth);
+        publishLowestPointMarker(marker_pub,p ,n );
 
-        Eigen::Vector4d tar(p.x(), p.y(), p.z(), 1);
+        Eigen::Vector4d tar(p.x(), p.y(), p.z(), 1);       
         targetP = calib * tar;
 
         Eigen::Vector4d norm (n.x(), n.y(), n.z(), 0);
         Eigen::Vector4d targetN;
         targetN = calib * norm.normalized();
+        targetN.normalized();
 
         rotMat = findGraspingOrientation(targetN);
+
 
         desPose.orientation = rotationMatrix4ToQuaternion(rotMat);
         desPose.position.x = targetP.x() + rotMat(0, 0) * 0.03 - rotMat(0, 2) * 0.07;
         desPose.position.y = targetP.y() + rotMat(1, 0) * 0.03 - rotMat(1, 2) * 0.07;
         desPose.position.z = targetP.z() + rotMat(2, 0) * 0.03 - rotMat(2, 2) * 0.07;
         poses.push_back(desPose);
+
         desPose.position.x = targetP.x() + rotMat(0, 2) * 0.045 + rotMat(0, 0) * 0.03;
         desPose.position.y = targetP.y() + rotMat(1, 2) * 0.045 + rotMat(1, 0) * 0.03;
         desPose.position.z = targetP.z() + rotMat(2, 2) * 0.045 + rotMat(2, 0) * 0.03;
         poses.push_back(desPose);
+
         st= getTranformation(holdingArm + "_ee");
 
         //grasp lowest point
-        addConeToCollisionModel(holdingArm, st.getOrigin().z() - desPose.position.z - 0.2, 0.1 );
+       addConeToCollisionModel(holdingArm, st.getOrigin().z() - desPose.position.z - 0.2, 0.1 );
 
         if(moveArmThrough(poses, movingArm) == -1){
             resetCollisionModel();
             cout<< "BIAS : " <<findBias(targetN)<<endl;
-            rotateGripper(findBias(targetN), holdingArm);
-            tries++;
+            rotateGripper(-findBias(targetN), holdingArm);
             continue;
         }
         resetCollisionModel();
@@ -476,10 +647,10 @@ int Unfold::GraspLowestPoint(bool lastMove){
 
     }
 
-    ros::Duration(1.0).sleep();
+    ros::Duration(0.5).sleep();
     moveArmsNoTearing(desPos1, desPos2);
 
-    ros::Duration(1.0).sleep();
+    ros::Duration(0.5).sleep();
     moveArmBetweenSpheres(movingArm, true,  desPose);
     if ( lastMove == true )
         return -1;
@@ -488,8 +659,7 @@ int Unfold::GraspLowestPoint(bool lastMove){
 
 
     cout<< "holding arm is = " << holdingArm << endl;
-    printPose( desPos1);
-    printPose( desPos2);
+
     if(holdingArm == "r1"){
         desPos2.position.x-=radious/2.0f;
         desPos1.position.z-=0.866025404*radious;

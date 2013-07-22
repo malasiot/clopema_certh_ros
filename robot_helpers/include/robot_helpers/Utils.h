@@ -82,6 +82,7 @@ Eigen::Matrix4d getTranformationMatrix(const std::string &frameName, const std::
 
 tf::StampedTransform getTranformation(const std::string &frameName, const std::string &coordSys = "base_link" );
 
+void publishLowestPointMarker(ros::Publisher &vis_pub, const Eigen::Vector3d &p, const Eigen::Vector3d &n);
 
 }
 

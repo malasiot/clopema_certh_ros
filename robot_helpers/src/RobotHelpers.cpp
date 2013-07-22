@@ -197,6 +197,9 @@ bool setGripperState(const std::string &armName, bool open_)
     return false ;
 }
 
+
+
+
 bool getGripperState(const std::string &armName, bool &open_)
 {
     string serviceName = armName +"_gripper/get_open" ;

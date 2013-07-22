@@ -8,17 +8,19 @@ Modified:   November 20, 2012 15:44
 -->
 <launch>
 
-    <arg name="override" default="0"/>
+    <arg name="override" default="true"/>
 
     <!-- Arguments -->
     <arg name="publish_tf"  default="true" />
-    <arg name="device_id"   default="2@12" />
+    <arg name="device_id"   default="2@12" /> 
     <arg name="workspace"   default="false" />
     <arg name="start_robot" default="false" />
-    <arg name="debug"       default="false" />
+    <arg name="debug"       default="true" />
+
 
     <!-- Include common CloPeMa configuration. -->
     <include file="$(find clopema_config)/launch/clopema.launch"/>
+	<param name="/xtion3/driver/device_id" value="2@12"/>
 
     <!-- Include CloPeMa openni launch file for kinect on the first arm. -->
     <group>
@@ -26,7 +28,6 @@ Modified:   November 20, 2012 15:44
             <arg name="override"              value="$(arg override)"/>
             <arg name="machine"               value="clopema1"/>
             <arg name="camera"                value="xtion3"/>
-            <arg name="device_id"             value="$(arg device_id)" if="$(arg override)"/>
             <arg name="link"                  value="base_link" />
             <arg name="rgb_camera_info_url"   value="file://${ROS_HOME}/clopema_calibration/xtion3_rgb.yaml"/>
             <arg name="depth_camera_info_url" value="file://${ROS_HOME}/clopema_calibration/xtion3_depth.yaml"/>

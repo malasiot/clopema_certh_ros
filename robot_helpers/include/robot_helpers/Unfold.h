@@ -42,13 +42,14 @@ namespace robot_helpers {
 class Unfold {
 
 public:
-    Unfold(const string &armName);
+    Unfold(const string &armName, ros::Publisher markerPub);
     virtual ~Unfold();
 
 private:
 
     string holdingArm;
     string movingArm;
+    ros::Publisher marker_pub;
 public:
 
     inline Eigen::Matrix3d vertical() {
@@ -102,14 +103,18 @@ public:
     int setGripperStates(const string &armName  , bool open);
     int setGrippersStates( bool open);
 
-    Eigen::Matrix4d findGraspingOrientation(Eigen::Vector4d vector );
+    Eigen::Matrix4d findLowestPointOrientation(Eigen::Vector4d vector );
     float findBias(Eigen::Vector4d vector);
 
-    bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3f &orig, const Eigen::Vector3f &base, float apperture, Eigen::Vector3f &p, Eigen::Vector3f &n, cv::Mat depthMap);
+    bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3d &orig, const Eigen::Vector3d &base, float apperture, Eigen::Vector3d &p, Eigen::Vector3d &n);
 
-    Eigen::Vector3f computeNormal(const pcl::PointCloud<pcl::PointXYZ> &pc, int x, int y);
+    void findMeanShiftPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, int x0, int y0, int &x1, int &y1, double radius, double variance = 1.0e-3, int maxIter = 10);
 
-    void robustPlane3DFit(vector<Eigen::Vector3f> &x, Eigen::Vector3f  &c, Eigen::Vector3f &u);
+    bool pointInsideCone(const Eigen::Vector3d &x, const Eigen::Vector3d &apex, const Eigen::Vector3d &base, float aperture);
+
+    Eigen::Vector3d computeNormal(const pcl::PointCloud<pcl::PointXYZ> &pc, int x, int y);
+
+    void robustPlane3DFit(vector<Eigen::Vector3d> &x, Eigen::Vector3d  &c, Eigen::Vector3d &u);
 
     int GraspLowestPoint(bool lastMove = false);
 

@@ -294,6 +294,19 @@ test-results-run/fast:
 .PHONY : test-results-run/fast
 
 #=============================================================================
+# Target rules for targets named test_helpers
+
+# Build rule for target.
+test_helpers: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test_helpers
+.PHONY : test_helpers
+
+# fast build rule for target.
+test_helpers/fast:
+	$(MAKE) -f CMakeFiles/test_helpers.dir/build.make CMakeFiles/test_helpers.dir/build
+.PHONY : test_helpers/fast
+
+#=============================================================================
 # Target rules for targets named tests
 
 # Build rule for target.
@@ -320,6 +333,21 @@ src/Geometry.i:
 src/Geometry.s:
 	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/Geometry.s
 .PHONY : src/Geometry.s
+
+# target to build an object file
+src/PlanningContext.o:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/PlanningContext.o
+.PHONY : src/PlanningContext.o
+
+# target to preprocess a source file
+src/PlanningContext.i:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/PlanningContext.i
+.PHONY : src/PlanningContext.i
+
+# target to generate assembly for a file
+src/PlanningContext.s:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/PlanningContext.s
+.PHONY : src/PlanningContext.s
 
 # target to build an object file
 src/RobotHelpers.o:
@@ -366,6 +394,21 @@ src/RobotUtils.s:
 	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/RobotUtils.s
 .PHONY : src/RobotUtils.s
 
+# target to build an object file
+test/test_helpers.o:
+	$(MAKE) -f CMakeFiles/test_helpers.dir/build.make CMakeFiles/test_helpers.dir/test/test_helpers.o
+.PHONY : test/test_helpers.o
+
+# target to preprocess a source file
+test/test_helpers.i:
+	$(MAKE) -f CMakeFiles/test_helpers.dir/build.make CMakeFiles/test_helpers.dir/test/test_helpers.i
+.PHONY : test/test_helpers.i
+
+# target to generate assembly for a file
+test/test_helpers.s:
+	$(MAKE) -f CMakeFiles/test_helpers.dir/build.make CMakeFiles/test_helpers.dir/test/test_helpers.s
+.PHONY : test/test_helpers.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -389,10 +432,14 @@ help:
 	@echo "... test-future"
 	@echo "... test-results"
 	@echo "... test-results-run"
+	@echo "... test_helpers"
 	@echo "... tests"
 	@echo "... src/Geometry.o"
 	@echo "... src/Geometry.i"
 	@echo "... src/Geometry.s"
+	@echo "... src/PlanningContext.o"
+	@echo "... src/PlanningContext.i"
+	@echo "... src/PlanningContext.s"
 	@echo "... src/RobotHelpers.o"
 	@echo "... src/RobotHelpers.i"
 	@echo "... src/RobotHelpers.s"
@@ -402,6 +449,9 @@ help:
 	@echo "... src/RobotUtils.o"
 	@echo "... src/RobotUtils.i"
 	@echo "... src/RobotUtils.s"
+	@echo "... test/test_helpers.o"
+	@echo "... test/test_helpers.i"
+	@echo "... test/test_helpers.s"
 .PHONY : help
 
 

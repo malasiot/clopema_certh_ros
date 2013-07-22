@@ -883,8 +883,6 @@ int moveArmBetweenSpheres( string armName, bool up, geometry_msgs::Pose goalPose
     }
 
     goalPose.position=goalPoint;
-    cout<< "CIRCLE" << endl;
-    printPose( goalPose);
     addSphereToCollisionModel(otherArm, radious/2.0);
 
     if ( moveArmConstrains( goalPose, armName, radious + 0.1) == -1){
@@ -1292,4 +1290,46 @@ tf::StampedTransform  getTranformation( const string &frameName, const string &c
     return transform;
 }
 
+void publishLowestPointMarker(ros::Publisher &vis_pub, const Eigen::Vector3d &p, const Eigen::Vector3d &n)
+{
+
+
+    visualization_msgs::Marker marker;
+        // Set the frame ID and timestamp.  See the TF tutorials for information on these.
+    marker.header.frame_id = "/xtion3_rgb_optical_frame";
+    marker.header.stamp = ros::Time::now();
+
+    marker.ns = "lowest point";
+    marker.id = 0;
+
+    // Set the marker type.  Initially this is CUBE, and cycles between that and SPHERE, ARROW, and CYLINDER
+    marker.type = visualization_msgs::Marker::ARROW ;
+
+    Eigen::Vector3d ep = p + 0.3 *n ;
+
+    geometry_msgs::Point p1, p2 ;
+    p1.x = p.x() ;
+    p1.y = p.y() ;
+    p1.z = p.z() ;
+    p2.x = ep.x() ;
+    p2.y = ep.y() ;
+    p2.z = ep.z() ;
+
+    marker.points.push_back(p1) ;
+    marker.points.push_back(p2) ;
+
+    marker.scale.x = 0.01;
+    marker.scale.y = 0.02;
+    marker.scale.z = 0.0;
+
+    marker.color.r = 0.0f;
+    marker.color.g = 1.0f;
+    marker.color.b = 0.0f;
+    marker.color.a = 1.0;
+
+    marker.lifetime = ros::Duration();
+
+    vis_pub.publish(marker);
+
+}
 }
