@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 
-#include <robot_helpers/PlanningContext.h>
+#include <robot_helpers/KinematicsInterface.h>
 
 using namespace std;
 using namespace robot_helpers ;
@@ -8,34 +8,35 @@ using namespace robot_helpers ;
 int main(int argc, char *argv[])
 {
 
-
     ros::init(argc, argv, "planning") ;
 
     ros::NodeHandle nh_ ;
 
     ros::Publisher pub = nh_.advertise<visualization_msgs::MarkerArray>( "visualization_marker_array", 0 );
 
+    KinematicsModel kmodel ;
+    kmodel.init() ;
 
-    PlanningContext ctx ;
-    ctx.init("r1_arm") ;
+    Eigen::Affine3d pose = kmodel.getWorldTransform("r1_ee") ;
 
-    ctx.initFromRobotState() ;
+    JointState js = JointState::fromRobotState(), solution ;
 
-    sensor_msgs::JointState state ;
+    MA1400_R1_IKSolver solver ;
+    solver.setKinematicModel(&kmodel);
 
-    arm_navigation_msgs::RobotState rs ;
-    getRobotState(rs) ;
+    bool res = solver.solveIK("r1_ee", Eigen::Vector3d(0.2, -0.8, 1.4), lookAt(Eigen::Vector3d(1, 0, 0), M_PI/4), js, solution) ;
 
-    ctx.solveIK("r1_ee", Eigen::Vector3d(0, -0.8, 0.9), lookAt(Eigen::Vector3d(1, 0, 0), M_PI), state) ;
+    MA1400_R1_Xtion_IKFastSolver solver_xtion ;
+    solver_xtion.setKinematicModel(&kmodel);
 
-    //getIK("r1", Eigen::Vector3d(0.2, -0.8, 0.6), lookAt(Eigen::Vector3d(0, 1, 0)), state) ;
+    res = solver_xtion.solveIK("r1_ee", Eigen::Vector3d(0.0, -0.8, 1.4), lookAt(Eigen::Vector3d(1, 0, 0), M_PI), js, solution) ;
 
-    ctx.setStateFromJointState(state) ;
+    kmodel.setJointState(solution) ;
 
     visualization_msgs::MarkerArray markers ;
-    ctx.getRobotMarkers(markers);
+    kmodel.getRobotMarkers(markers);
 
-    cout << ctx.isStateValid() << endl ;
+    cout << kmodel.isStateValid() << endl ;
 
     while ( ros::ok() )
     {
@@ -45,6 +46,4 @@ int main(int argc, char *argv[])
         ros::spinOnce() ;
     }
 
-
-    cout << "ok" << endl ;
 }

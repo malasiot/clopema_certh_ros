@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='ASCII'?>
+<library path="lib/librobot_helpers">
+  <class name="clopema_ma1400_kinematics_fast/IKFastKinematicsPlugin" type="clopema_ma1400_kinematics_fast::IKFastKinematicsPlugin" base_class_type="kinematics::KinematicsBase">
+    <description>A plugin for inverse kinematics for MA1400 motoman arm generated using ikfast</description>
+  </class>
+  <class name="clopema_xtion_kinematics_fast/IKFastKinematicsPlugin" type="clopema_xtion_kinematics_fast::IKFastKinematicsPlugin" base_class_type="kinematics::KinematicsBase">
+    <description>A plugin for inverse kinematics for MA1400 motoman arm Xtion endpoint generated using ikfast</description>
+  </class>
+
+</library>
+
+
