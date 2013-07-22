@@ -24,6 +24,9 @@ geometry_msgs::Pose eigenPoseToROS(const Eigen::Vector3d &pos, const Eigen::Quat
 // create a cone mesh
 void makeSolidCone( shapes::Mesh  &mesh, double base, double height, int slices, int stacks ) ;
 
+// create a camera frustum mesh
+void makeCameraFrustum(shapes::Mesh  &mesh, double near_, double far_, double fovX, double fovY, bool makeSolid, bool addPrism) ;
+
 } // namespace robot_helpers
 
 #endif

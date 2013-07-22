@@ -257,4 +257,93 @@ void makeSolidCone( shapes::Mesh  &mesh, double base, double height, int slices,
 }
 
 
+void makeCameraFrustum(shapes::Mesh  &mesh, double near_, double far_, double fovX, double fovY, bool makeSolid, bool addPrism)
+{
+    double ax = tan(fovX/2) ;
+    double ay = tan(fovY/2) ;
+
+    double nx = near_ * ax ;
+    double ny = near_ * ay ;
+    double fx = far_ * ax ;
+    double fy = far_ * ay ;
+
+    btVector3 p[9] ;
+
+    p[0] = btVector3(0, 0, 0) ; // origin
+
+    p[1] = btVector3( -nx, -ny, near_ );
+    p[2] = btVector3( nx, -ny, near_ );
+    p[3] = btVector3( nx, ny, near_ );
+    p[4] = btVector3( -nx, ny, near_ );
+
+    p[5] = btVector3( -fx, -fy, far_ );
+    p[6] = btVector3( fx, -fy, far_ );
+    p[7] = btVector3( fx, fy, far_ );
+    p[8] = btVector3( -fx, fy, far_ );
+
+    mesh.vertexCount = 9 ;
+    mesh.vertices = new double [3 * mesh.vertexCount] ;
+
+    mesh.triangleCount = 8 ;
+
+    if ( makeSolid ) {
+        mesh.triangleCount += 2 ;
+        if ( !addPrism )
+            mesh.triangleCount += 2 ;
+    }
+
+    if ( addPrism ) mesh.triangleCount += 4 ;
+
+
+    mesh.triangles = new unsigned int [mesh.triangleCount * 3] ;
+
+    for(int i=0, k=0 ; i<9 ; i++  )
+    {
+        mesh.vertices[k++] = p[i].x() ;
+        mesh.vertices[k++] = p[i].y() ;
+        mesh.vertices[k++] = p[i].z() ;
+    }
+
+#define ADD_TRIANGLE(v1, v2, v3)\
+    mesh.triangles[k++] = v1 ;\
+    mesh.triangles[k++] = v2 ;\
+    mesh.triangles[k++] = v3 ;
+
+    int k=0 ;
+
+    ADD_TRIANGLE(1, 5, 4) ;
+    ADD_TRIANGLE(4, 5, 8) ;
+    ADD_TRIANGLE(1, 5, 6) ;
+    ADD_TRIANGLE(1, 6, 2) ;
+    ADD_TRIANGLE(2, 6, 3) ;
+    ADD_TRIANGLE(3, 6, 7) ;
+    ADD_TRIANGLE(4, 8, 7) ;
+    ADD_TRIANGLE(4, 7, 3) ;
+
+    if ( makeSolid )
+    {
+        ADD_TRIANGLE(5, 6, 7) ;
+        ADD_TRIANGLE(5, 7, 8) ;
+
+        if ( !addPrism )
+        {
+            ADD_TRIANGLE(1, 2, 3) ;
+            ADD_TRIANGLE(1, 3, 4) ;
+        }
+    }
+
+    if ( addPrism )
+    {
+        ADD_TRIANGLE(0, 1, 2) ;
+        ADD_TRIANGLE(0, 2, 3) ;
+        ADD_TRIANGLE(0, 3, 4) ;
+        ADD_TRIANGLE(0, 4, 1) ;
+    }
+
+    mesh.normals = 0 ;
+}
+
+
+
+
 } // namespace robot_helpers
