@@ -19,5 +19,15 @@
       <statustip>Provides usefull tools for robot control</statustip>
     </qtgui>
   </class>
+	<class name="viz_helpers/CommandPanelPlugin" type="viz_helpers::CommandPanelPlugin" base_class_type="rqt_gui_cpp::Plugin">
+	<description>
+	  CloPeMa command panel.
+	</description>
+	<qtgui>
+	  <label>CloPeMa command panel</label>
+	  <icon type="theme">image-x-generic</icon>
+	  <statustip>GUI to send commands to a client node</statustip>
+	</qtgui>
+  </class>
 </library>
 
