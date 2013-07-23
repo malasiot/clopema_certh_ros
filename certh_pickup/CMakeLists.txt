@@ -22,7 +22,12 @@ rosbuild_add_boost_directories()
 
 add_subdirectory(src/cvblob)
 
-rosbuild_add_executable(segment_from_table src/segment.cpp src/ObjectOnPlaneDetector.cpp src/ObjectOnPlaneDetector.h)
+rosbuild_add_executable(segment_from_table
+	src/segment.cpp
+	src/graph.cpp
+	src/ObjectOnPlaneDetector.cpp
+	src/ObjectOnPlaneDetector.h)
+
 target_link_libraries(segment_from_table ${OpenCV_LIBS} cvblob)
 
 

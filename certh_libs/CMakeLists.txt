@@ -18,28 +18,25 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 find_package(Eigen REQUIRED)
 find_package(OpenCV REQUIRED)
-include_directories(${Eigen_INCLUDE_DIRS})
 
 rosbuild_add_boost_directories()
 
+rosbuild_add_library(certh_libs_geometry 
+	src/geometry/TriangleMesh2D.cpp
+	src/geometry/Line2D.cpp
+	src/geometry/Polygon2D.cpp
+	src/geometry/PolygonScanIterator.cpp
+	src/geometry/triangle.c
+	src/geometry/triangle.h
+	src/geometry/Triangle2D.cpp
+	src/geometry/TriangleMesh2D.cpp
+	src/geometry/TriangleMeshTopology.cpp
+)
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
-#uncomment if you have defined services
-rosbuild_gensrv()
+target_link_libraries(certh_libs_geometry ${Eigen_LIBRARIES})
 
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+rosbuild_add_library(certh_libs_imageproc
+	src/image/cvHelpers.cpp
+)
 
-rosbuild_add_executable(openni_capture src/openni_capture.cpp)
-rosbuild_link_boost(openni_capture signals)
 
-#rosbuild_add_executable(lowest src/lowestPoint.cpp src/main.cpp)
-#rosbuild_link_boost(lowest signals)
-
-rosbuild_add_executable(test_openni src/test_openni.cpp)

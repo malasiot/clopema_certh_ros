@@ -3,7 +3,7 @@
 #include <highgui.h>
 #include <iostream>
 
-
+extern void seg(const cv::Mat &dim_, const cv::Mat &cim_) ;
 
 using namespace std;
 
@@ -26,13 +26,11 @@ int main(int argc, char *argv)
 
     vector<cv::Point> hull, hull2 ;
     cv::Mat dmap ;
-    cv::Mat mask = det.findObjectMask(n, d, 0.02, dmap, hull) ;
+    cv::Mat mask = det.findObjectMask(n, d, 0.01, dmap, hull) ;
     cv::Mat ref = det.refineSegmentation(clr, mask, hull2) ;
 
 
-    cv::imwrite("/tmp/refined.png", dmap) ;
-
-
+    seg(dmap, clr);
 
 
 }

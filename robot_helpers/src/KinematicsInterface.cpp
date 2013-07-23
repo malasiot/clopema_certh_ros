@@ -4,6 +4,8 @@
 #include <pluginlib/class_loader.h>
 
 #include <tf_conversions/tf_eigen.h>
+#include <geometric_shapes/shape_operations.h>
+
 
 using namespace std ;
 
@@ -124,6 +126,7 @@ Eigen::Affine3d KinematicsModel::getWorldTransform(const string &linkName)
 KinematicsModel::~KinematicsModel() {
     if (cm_) cm_->revertPlanningScene(state_);
 }
+
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

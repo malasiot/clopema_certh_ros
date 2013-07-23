@@ -6,14 +6,9 @@
   <rosdep name="opencv2"/>
 
   <depend package="roscpp"/>
- 
   <depend package="pcl_ros"/>
-  
   <depend package="std_msgs"/>
 
-  <depend package="planning_environment"/>
-  <depend package="kinematics_base"/>
-  <depend package="pluginlib" />
-  <depend package="clopema_arm_navigation"/>
+  <depend package="certh_libs"/>
  
 </package>

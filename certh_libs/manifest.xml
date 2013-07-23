@@ -4,12 +4,10 @@
   <rosdep name="eigen"/>
   <rosdep name="boost"/>
   <rosdep name="opencv2"/>
-  <depend package="roscpp"/>
   <depend package="pcl"/>
-  
-  <depend package="std_msgs"/>
-  <depend package="nodelet"/>
-  <depend package="openni_camera"/>
-  <depend package="cv_bridge"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lcerth_libs_geometry -lcerth_libs_imageproc"/>
+  </export>
  
 </package>
