@@ -52,7 +52,7 @@ private:
     ros::Publisher marker_pub;
 public:
 
-    inline Eigen::Matrix3d vertical() {
+    inline Eigen::Matrix3d vertical(){
         Eigen::Matrix3d vertical;
         if(holdingArm == "r1"){
             vertical << 0, -1, 0,-1, 0, 0, 0, 0, -1;
@@ -63,6 +63,16 @@ public:
         return vertical;
     }
 
+    inline Eigen::Matrix3d horizontal(){
+        Eigen::Matrix3d horizontal;
+        if(holdingArm == "r1"){
+            horizontal << 0, 0, -1, -1, 0, 0, 0, 1, 0 ;
+        }
+        else{
+            horizontal << 0, 0, 1, -1, 0, 0, 0, -1, 0 ;
+        }
+        return horizontal;
+    }
 
     inline geometry_msgs::Pose holdingArmPose(){
         geometry_msgs::Pose pose;
@@ -96,33 +106,32 @@ public:
         return pose;
     }
 
-
     void switchArms();
     void setHoldingArm(const string &armName);
 
     int setGripperStates(const string &armName  , bool open);
     int setGrippersStates( bool open);
+    void rotateHoldingGripper(float angle );
 
     Eigen::Matrix4d findLowestPointOrientation(Eigen::Vector4d vector );
+    Eigen::Matrix4d findGraspingPointOrientation(Eigen::Vector4d vector );
+
     float findBias(Eigen::Vector4d vector);
-
     bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3d &orig, const Eigen::Vector3d &base, float apperture, Eigen::Vector3d &p, Eigen::Vector3d &n);
-
     void findMeanShiftPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, int x0, int y0, int &x1, int &y1, double radius, double variance = 1.0e-3, int maxIter = 10);
 
     bool pointInsideCone(const Eigen::Vector3d &x, const Eigen::Vector3d &apex, const Eigen::Vector3d &base, float aperture);
-
     Eigen::Vector3d computeNormal(const pcl::PointCloud<pcl::PointXYZ> &pc, int x, int y);
-
     void robustPlane3DFit(vector<Eigen::Vector3d> &x, Eigen::Vector3d  &c, Eigen::Vector3d &u);
 
-    int GraspLowestPoint(bool lastMove = false);
-
-    void rotateHoldingGripper(float angle);
+    int graspLowestPoint(bool lastMove = false );
+    int graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove = false );
 
     geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
-
     geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
+
+    bool grabFromXtion(cv::Mat rgb, cv::Mat depth, pcl::PointCloud<pcl::PointXYZ> pc );
+
 };
 
 void printPose(geometry_msgs::Pose p);
