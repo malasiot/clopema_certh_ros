@@ -27,6 +27,10 @@ rosbuild_add_executable(virtual_cam src/virtual_cam_publisher.cpp )
 target_link_libraries(virtual_cam "log4cxx")
 rosbuild_link_boost(virtual_cam system regex filesystem)
 
+rosbuild_add_executable(handeye src/handeye.cpp )
+rosbuild_link_boost(handeye system regex filesystem)
+
+
 ### testers
 
 rosbuild_add_executable(test_openni_capture test/test_openni_capture.cpp)
