@@ -33,13 +33,13 @@ static bool findCorners(const cv::Mat &im, const cv::Size &boardSize, vector<Poi
         cv::cornerSubPix(gray, corners, Size(5, 5), Size(-1, -1),
             TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
 
-/*
+
     cv::drawChessboardCorners(im, boardSize, Mat(corners), patternfound);
 
     cv::imwrite("/home/malasiot/tmp/oo.png", im) ;
 
     cout << "ok here" ;
-*/
+
 
     return patternfound ;
 }
@@ -305,7 +305,8 @@ int main( int argc, char* argv[] )
 
     cv::Mat camMatrix, distCoeffs ;
 
-    runCalibration(img_corners, obj_corners, cv::Size(640, 480), 640/480.0,  CALIB_USE_INTRINSIC_GUESS | CALIB_FIX_FOCAL_LENGTH | CALIB_FIX_PRINCIPAL_POINT,
+    int flag = CALIB_USE_INTRINSIC_GUESS | CALIB_FIX_FOCAL_LENGTH | CALIB_FIX_PRINCIPAL_POINT ;
+    runCalibration(img_corners, obj_corners, cv::Size(640, 480), 640/480.0, 0,
                    camMatrix, distCoeffs, rvecs, tvecs, reprojErrs, totalAvgErr) ;
 
     for(unsigned int i=0 ; i<tvecs.size() ; i++ )

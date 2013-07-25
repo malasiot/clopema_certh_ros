@@ -138,7 +138,7 @@ void onMouseClicked(int x, int y, Context *ctx)
 
     pcl::io::savePCDFileBinary(filenamePrefix + ".pcd", cloud) ;
 
-    Eigen::Affine3d pose_ = robot_helpers::getCurrentPose("r1") ;
+    Eigen::Affine3d pose_ = robot_helpers::getPose("r2") ;
 
     {
         ofstream strm((filenamePrefix + "_pose.txt").c_str()) ;
@@ -235,6 +235,7 @@ int main(int argc, char **argv) {
 
     while (!calibration_finished) ;
 
+    robot_helpers::setServoPowerOff() ;
 
     return 1;
 }
