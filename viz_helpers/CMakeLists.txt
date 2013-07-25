@@ -28,7 +28,7 @@ SET (CAMERA_VIEW_HEADERS
 	src/CameraWidget.h
 	src/QSingleItemSquareLayout.h
 	src/Dashboard.h
-
+	src/Commander.h
 )
 
 SET (CAMERA_VIEW_SOURCES
@@ -38,6 +38,8 @@ SET (CAMERA_VIEW_SOURCES
 	src/CameraViewServer.cpp
 	src/Dashboard.cpp
 	src/CameraViewPlugin.cpp
+	src/Commander.cpp
+	src/CommandPanelServer.cpp
 )
 
 ADD_QT_LIBRARY(viz_helpers SOURCES ${CAMERA_VIEW_SOURCES} HEADERS ${CAMERA_VIEW_HEADERS} FORMS src/Dashboard.ui)
@@ -53,9 +55,12 @@ ADD_QT_EXECUTABLE(dashboard SOURCES src/dashboard.cpp)
 target_link_libraries(dashboard viz_helpers)
 
 
-
 ###############################################################################
 
+ADD_QT_EXECUTABLE(commander SOURCES src/commander.cpp)
+target_link_libraries(commander viz_helpers)
+
+###############################################################################
 
 FIND_PACKAGE(Bullet)
 

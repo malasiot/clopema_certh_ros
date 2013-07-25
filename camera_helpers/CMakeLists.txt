@@ -18,15 +18,24 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_boost_directories()
 
-rosbuild_add_library(camera_helpers src/OpenNICapture.cpp src/robot_head.cpp)
+rosbuild_add_library(camera_helpers src/OpenNICapture.cpp src/robot_head.cpp src/depth_filter.cpp)
 rosbuild_link_boost(camera_helpers signals)
-
-rosbuild_add_executable(test_openni_capture src/test_openni_capture.cpp)
-target_link_libraries(test_openni_capture camera_helpers)
-
-rosbuild_add_executable(test_rh_capture src/test_rh_capture.cpp)
-target_link_libraries(test_rh_capture camera_helpers)
 
 rosbuild_add_executable(robot_head_virtual src/robot_head_virtual.cpp)
 
+rosbuild_add_executable(virtual_cam src/virtual_cam_publisher.cpp )
+target_link_libraries(virtual_cam "log4cxx")
+rosbuild_link_boost(virtual_cam system regex filesystem)
+
+rosbuild_add_executable(handeye src/handeye.cpp )
+rosbuild_link_boost(handeye system regex filesystem)
+
+
+### testers
+
+rosbuild_add_executable(test_openni_capture test/test_openni_capture.cpp)
+target_link_libraries(test_openni_capture camera_helpers)
+
+rosbuild_add_executable(test_rh_capture test/test_rh_capture.cpp)
+target_link_libraries(test_rh_capture camera_helpers )
 

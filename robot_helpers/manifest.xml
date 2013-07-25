@@ -12,9 +12,11 @@
   <depend package="clopema_motoros"/>  
   <depend package="clopema_planning_actions"/>
   <depend package="camera_helpers"/>
+  <depend package="kinematics_base"/>
   
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lrobot_helpers"/>
+    <kinematics_base plugin="${prefix}/kinematics_plugins.xml"/>
   </export>
  
 </package>

@@ -335,19 +335,19 @@ src/Geometry.s:
 .PHONY : src/Geometry.s
 
 # target to build an object file
-src/PlanningContext.o:
-	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/PlanningContext.o
-.PHONY : src/PlanningContext.o
+src/KinematicsInterface.o:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/KinematicsInterface.o
+.PHONY : src/KinematicsInterface.o
 
 # target to preprocess a source file
-src/PlanningContext.i:
-	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/PlanningContext.i
-.PHONY : src/PlanningContext.i
+src/KinematicsInterface.i:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/KinematicsInterface.i
+.PHONY : src/KinematicsInterface.i
 
 # target to generate assembly for a file
-src/PlanningContext.s:
-	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/PlanningContext.s
-.PHONY : src/PlanningContext.s
+src/KinematicsInterface.s:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/KinematicsInterface.s
+.PHONY : src/KinematicsInterface.s
 
 # target to build an object file
 src/RobotHelpers.o:
@@ -395,6 +395,36 @@ src/RobotUtils.s:
 .PHONY : src/RobotUtils.s
 
 # target to build an object file
+src/ikfast_ma1400_plugin.o:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/ikfast_ma1400_plugin.o
+.PHONY : src/ikfast_ma1400_plugin.o
+
+# target to preprocess a source file
+src/ikfast_ma1400_plugin.i:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/ikfast_ma1400_plugin.i
+.PHONY : src/ikfast_ma1400_plugin.i
+
+# target to generate assembly for a file
+src/ikfast_ma1400_plugin.s:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/ikfast_ma1400_plugin.s
+.PHONY : src/ikfast_ma1400_plugin.s
+
+# target to build an object file
+src/ikfast_xtion_plugin.o:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/ikfast_xtion_plugin.o
+.PHONY : src/ikfast_xtion_plugin.o
+
+# target to preprocess a source file
+src/ikfast_xtion_plugin.i:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/ikfast_xtion_plugin.i
+.PHONY : src/ikfast_xtion_plugin.i
+
+# target to generate assembly for a file
+src/ikfast_xtion_plugin.s:
+	$(MAKE) -f CMakeFiles/robot_helpers.dir/build.make CMakeFiles/robot_helpers.dir/src/ikfast_xtion_plugin.s
+.PHONY : src/ikfast_xtion_plugin.s
+
+# target to build an object file
 test/test_helpers.o:
 	$(MAKE) -f CMakeFiles/test_helpers.dir/build.make CMakeFiles/test_helpers.dir/test/test_helpers.o
 .PHONY : test/test_helpers.o
@@ -437,9 +467,9 @@ help:
 	@echo "... src/Geometry.o"
 	@echo "... src/Geometry.i"
 	@echo "... src/Geometry.s"
-	@echo "... src/PlanningContext.o"
-	@echo "... src/PlanningContext.i"
-	@echo "... src/PlanningContext.s"
+	@echo "... src/KinematicsInterface.o"
+	@echo "... src/KinematicsInterface.i"
+	@echo "... src/KinematicsInterface.s"
 	@echo "... src/RobotHelpers.o"
 	@echo "... src/RobotHelpers.i"
 	@echo "... src/RobotHelpers.s"
@@ -449,6 +479,12 @@ help:
 	@echo "... src/RobotUtils.o"
 	@echo "... src/RobotUtils.i"
 	@echo "... src/RobotUtils.s"
+	@echo "... src/ikfast_ma1400_plugin.o"
+	@echo "... src/ikfast_ma1400_plugin.i"
+	@echo "... src/ikfast_ma1400_plugin.s"
+	@echo "... src/ikfast_xtion_plugin.o"
+	@echo "... src/ikfast_xtion_plugin.i"
+	@echo "... src/ikfast_xtion_plugin.s"
 	@echo "... test/test_helpers.o"
 	@echo "... test/test_helpers.i"
 	@echo "... test/test_helpers.s"

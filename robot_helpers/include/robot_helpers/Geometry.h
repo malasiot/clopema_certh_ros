@@ -5,6 +5,7 @@
 #include <iostream>
 #include "Unfold.h"
 #include <geometry_msgs/Pose.h>
+#include <geometric_shapes/shapes.h>
 
 
 namespace robot_helpers {
@@ -23,6 +24,11 @@ Eigen::Quaterniond lookAt(const Eigen::Vector3d &dir, double roll = 0.0) ;
 
 geometry_msgs::Pose eigenPoseToROS(const Eigen::Vector3d &pos, const Eigen::Quaterniond &orient) ;
 
+// create a cone mesh
+void makeSolidCone( shapes::Mesh  &mesh, double base, double height, int slices, int stacks ) ;
+
+// create a camera frustum mesh
+void makeCameraFrustum(shapes::Mesh  &mesh, double near_, double far_, double fovX, double fovY, bool makeSolid, bool addPrism) ;
 
 } // namespace robot_helpers
 
