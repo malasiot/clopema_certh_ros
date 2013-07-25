@@ -30,10 +30,11 @@ bool MoveRobot::doGoal(const control_msgs::FollowJointTrajectoryGoal & goal) {
     cmc_.sendGoal(goal, boost::bind(&MoveRobot::doneCb, this, _1, _2),
                         boost::bind(&MoveRobot::activeCb, this));
 	if (!cmc_.waitForResult(ros::Duration(30)))
+    {
 		cmc_.cancelGoal();
-    else return false ;
-
-    return true ;
+        return false ;
+    }
+    else return true ;
 
 }
 
@@ -51,16 +52,6 @@ void MoveRobot::doneCb(const actionlib::SimpleClientGoalState& state, const cont
     actionCompleted() ;
 }
 
-bool MoveRobot::setServoPowerOff(bool force) {
-	clopema_motoros::SetPowerOff soff;
-	soff.request.force = force;
-	ros::service::waitForService("/joint_trajectory_action/set_power_off");
-	if (!ros::service::call("/joint_trajectory_action/set_power_off", soff)) {
-		ROS_ERROR("Can't call service set_power_off");
-		return false;
-	}
-	return true;
-}
 
 
 bool MoveRobot::execTrajectory(const trajectory_msgs::JointTrajectory &traj)
@@ -104,6 +95,18 @@ bool plan(clopema_arm_navigation::ClopemaMotionPlan& mp) {
 		return false;
 	}
 }
+
+bool setServoPowerOff(bool force) {
+    clopema_motoros::SetPowerOff soff;
+    soff.request.force = force;
+    ros::service::waitForService("/joint_trajectory_action/set_power_off");
+    if (!ros::service::call("/joint_trajectory_action/set_power_off", soff)) {
+        ROS_ERROR("Can't call service set_power_off");
+        return false;
+    }
+    return true;
+}
+
 
 std::vector<std::string> getJointsInGroup(std::string group) {
 	planning_environment::CollisionModels cm("robot_description");

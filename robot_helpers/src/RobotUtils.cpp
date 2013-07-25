@@ -90,7 +90,9 @@ bool moveGripper(MoveRobot &cmove, const std::string &armName, const Eigen::Vect
 {
     trajectory_msgs::JointTrajectory traj ;
 
-    return ( planArmToPose(armName, pos, q, traj) && cmove.execTrajectory(traj) ) ;
+    bool plan_result = planArmToPose(armName, pos, q, traj) ;
+    bool exec_traj = cmove.execTrajectory(traj) ;
+    return ( plan_result && exec_traj ) ;
 }
 
 bool planToJointGoal(const string &armName, const sensor_msgs::JointState &js, trajectory_msgs::JointTrajectory &traj)

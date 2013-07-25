@@ -35,13 +35,6 @@ public:
         closeServoWhenDone = closeWhenDone ;
     }
 
-	/*
-	 * Function calls service to turn power off
-	 * \param force - turn servo power immediately
-	 * \return false if error occurred
-	 */
-	bool setServoPowerOff(bool force);
-
     void reset() ;
 
 public:
@@ -110,6 +103,8 @@ bool getGripperState(const std::string &armName, bool &open) ;
 
 void pointToRobotState(arm_navigation_msgs::RobotState &state, trajectory_msgs::JointTrajectoryPoint &point, std::vector<std::string> & joint_names);
 
+// set servo power
+bool setServoPowerOff(bool force = false) ;
 }
 
 #endif
