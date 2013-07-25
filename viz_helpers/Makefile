@@ -216,6 +216,19 @@ cloth_simulator/fast:
 .PHONY : cloth_simulator/fast
 
 #=============================================================================
+# Target rules for targets named commander
+
+# Build rule for target.
+commander: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 commander
+.PHONY : commander
+
+# fast build rule for target.
+commander/fast:
+	$(MAKE) -f CMakeFiles/commander.dir/build.make CMakeFiles/commander.dir/build
+.PHONY : commander/fast
+
+#=============================================================================
 # Target rules for targets named dashboard
 
 # Build rule for target.
@@ -473,6 +486,36 @@ src/ClothSimulatorServer.s:
 .PHONY : src/ClothSimulatorServer.s
 
 # target to build an object file
+src/CommandPanelServer.o:
+	$(MAKE) -f CMakeFiles/viz_helpers.dir/build.make CMakeFiles/viz_helpers.dir/src/CommandPanelServer.o
+.PHONY : src/CommandPanelServer.o
+
+# target to preprocess a source file
+src/CommandPanelServer.i:
+	$(MAKE) -f CMakeFiles/viz_helpers.dir/build.make CMakeFiles/viz_helpers.dir/src/CommandPanelServer.i
+.PHONY : src/CommandPanelServer.i
+
+# target to generate assembly for a file
+src/CommandPanelServer.s:
+	$(MAKE) -f CMakeFiles/viz_helpers.dir/build.make CMakeFiles/viz_helpers.dir/src/CommandPanelServer.s
+.PHONY : src/CommandPanelServer.s
+
+# target to build an object file
+src/Commander.o:
+	$(MAKE) -f CMakeFiles/viz_helpers.dir/build.make CMakeFiles/viz_helpers.dir/src/Commander.o
+.PHONY : src/Commander.o
+
+# target to preprocess a source file
+src/Commander.i:
+	$(MAKE) -f CMakeFiles/viz_helpers.dir/build.make CMakeFiles/viz_helpers.dir/src/Commander.i
+.PHONY : src/Commander.i
+
+# target to generate assembly for a file
+src/Commander.s:
+	$(MAKE) -f CMakeFiles/viz_helpers.dir/build.make CMakeFiles/viz_helpers.dir/src/Commander.s
+.PHONY : src/Commander.s
+
+# target to build an object file
 src/Dashboard.o:
 	$(MAKE) -f CMakeFiles/viz_helpers.dir/build.make CMakeFiles/viz_helpers.dir/src/Dashboard.o
 .PHONY : src/Dashboard.o
@@ -533,6 +576,21 @@ src/camera_viewer.s:
 .PHONY : src/camera_viewer.s
 
 # target to build an object file
+src/commander.o:
+	$(MAKE) -f CMakeFiles/commander.dir/build.make CMakeFiles/commander.dir/src/commander.o
+.PHONY : src/commander.o
+
+# target to preprocess a source file
+src/commander.i:
+	$(MAKE) -f CMakeFiles/commander.dir/build.make CMakeFiles/commander.dir/src/commander.i
+.PHONY : src/commander.i
+
+# target to generate assembly for a file
+src/commander.s:
+	$(MAKE) -f CMakeFiles/commander.dir/build.make CMakeFiles/commander.dir/src/commander.s
+.PHONY : src/commander.s
+
+# target to build an object file
 src/dashboard.o:
 	$(MAKE) -f CMakeFiles/dashboard.dir/build.make CMakeFiles/dashboard.dir/src/dashboard.o
 .PHONY : src/dashboard.o
@@ -576,6 +634,21 @@ src/moc_CameraWidget.i:
 src/moc_CameraWidget.s:
 	$(MAKE) -f CMakeFiles/viz_helpers.dir/build.make CMakeFiles/viz_helpers.dir/src/moc_CameraWidget.s
 .PHONY : src/moc_CameraWidget.s
+
+# target to build an object file
+src/moc_Commander.o:
+	$(MAKE) -f CMakeFiles/viz_helpers.dir/build.make CMakeFiles/viz_helpers.dir/src/moc_Commander.o
+.PHONY : src/moc_Commander.o
+
+# target to preprocess a source file
+src/moc_Commander.i:
+	$(MAKE) -f CMakeFiles/viz_helpers.dir/build.make CMakeFiles/viz_helpers.dir/src/moc_Commander.i
+.PHONY : src/moc_Commander.i
+
+# target to generate assembly for a file
+src/moc_Commander.s:
+	$(MAKE) -f CMakeFiles/viz_helpers.dir/build.make CMakeFiles/viz_helpers.dir/src/moc_Commander.s
+.PHONY : src/moc_Commander.s
 
 # target to build an object file
 src/moc_Dashboard.o:
@@ -622,6 +695,7 @@ help:
 	@echo "... camera_viewer"
 	@echo "... clean-test-results"
 	@echo "... cloth_simulator"
+	@echo "... commander"
 	@echo "... dashboard"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
@@ -653,6 +727,12 @@ help:
 	@echo "... src/ClothSimulatorServer.o"
 	@echo "... src/ClothSimulatorServer.i"
 	@echo "... src/ClothSimulatorServer.s"
+	@echo "... src/CommandPanelServer.o"
+	@echo "... src/CommandPanelServer.i"
+	@echo "... src/CommandPanelServer.s"
+	@echo "... src/Commander.o"
+	@echo "... src/Commander.i"
+	@echo "... src/Commander.s"
 	@echo "... src/Dashboard.o"
 	@echo "... src/Dashboard.i"
 	@echo "... src/Dashboard.s"
@@ -665,6 +745,9 @@ help:
 	@echo "... src/camera_viewer.o"
 	@echo "... src/camera_viewer.i"
 	@echo "... src/camera_viewer.s"
+	@echo "... src/commander.o"
+	@echo "... src/commander.i"
+	@echo "... src/commander.s"
 	@echo "... src/dashboard.o"
 	@echo "... src/dashboard.i"
 	@echo "... src/dashboard.s"
@@ -674,6 +757,9 @@ help:
 	@echo "... src/moc_CameraWidget.o"
 	@echo "... src/moc_CameraWidget.i"
 	@echo "... src/moc_CameraWidget.s"
+	@echo "... src/moc_Commander.o"
+	@echo "... src/moc_Commander.i"
+	@echo "... src/moc_Commander.s"
 	@echo "... src/moc_Dashboard.o"
 	@echo "... src/moc_Dashboard.i"
 	@echo "... src/moc_Dashboard.s"
