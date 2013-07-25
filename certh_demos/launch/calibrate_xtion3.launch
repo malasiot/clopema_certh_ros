@@ -1,9 +1,9 @@
 <launch>
 
-	<include file="$(find camera_helpers)/launch/xtion3.launch"/>
+<!--	<include file="$(find camera_helpers)/launch/xtion3.launch"/> -->
 	<include file="$(find viz_helpers)/launch/showcam.launch">
 		<arg name="camera" value="xtion3" />
 	</include>
 
-  	<node name="calibrate_fixed_xtion" pkg="certh_demos" type="calibrate_fixed_xtion" output="screen" />
+<!--  	<node name="calibrate_fixed_xtion" pkg="certh_demos" type="calibrate_fixed_xtion" output="screen" /> -->
 </launch>

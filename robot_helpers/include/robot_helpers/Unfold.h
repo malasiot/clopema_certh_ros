@@ -50,6 +50,9 @@ private:
     string holdingArm;
     string movingArm;
     ros::Publisher marker_pub;
+    camera_helpers::OpenNICaptureAll *grabber;
+
+
 public:
 
     inline Eigen::Matrix3d vertical(){
@@ -69,9 +72,20 @@ public:
             horizontal << 0, 0, -1, -1, 0, 0, 0, 1, 0 ;
         }
         else{
-            horizontal << 0, 0, 1, -1, 0, 0, 0, -1, 0 ;
+            horizontal << 0, 0, 1, 1, 0, 0, 0, 1, 0 ;
         }
         return horizontal;
+    }
+
+    inline Eigen::Matrix3d diagonalDown(){
+        Eigen::Matrix3d diagonalDown;
+        if(holdingArm == "r1"){
+            diagonalDown << 0, -1, -1, -1, 0, 0, 0, 1, -1 ;
+        }
+        else{
+            diagonalDown <<  0, 1, 1, 1, 0, 0, 0, 1, -1 ;
+        }
+        return diagonalDown;
     }
 
     inline geometry_msgs::Pose holdingArmPose(){
@@ -125,12 +139,12 @@ public:
     void robustPlane3DFit(vector<Eigen::Vector3d> &x, Eigen::Vector3d  &c, Eigen::Vector3d &u);
 
     int graspLowestPoint(bool lastMove = false );
-    int graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove = false );
+    int graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove = false, bool orientLeft = true );
 
     geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
     geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
 
-    bool grabFromXtion(cv::Mat rgb, cv::Mat depth, pcl::PointCloud<pcl::PointXYZ> pc );
+    bool grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, cv::Rect & r );
 
 };
 

@@ -6,6 +6,7 @@
 #include <visualization_msgs/Marker.h>
 
 #include <fstream>
+#include <highgui.h>
 
 using namespace std ;
 
@@ -98,11 +99,12 @@ void doCalibrate(const vector<pcl::PointXYZ> &pts)
 
 struct Context {
     int currentPoint ;
-    camera_helpers::OpenNICapturePointCloud *grabber ;
+    camera_helpers::OpenNICaptureAll *grabber ;
     vector<pcl::PointXYZ> pts ;
 };
 
 
+int counter = 0 ;
 
 void onMouseClicked(int x, int y, Context *ctx)
 {
@@ -111,9 +113,27 @@ void onMouseClicked(int x, int y, Context *ctx)
     // capture point cloud
 
     pcl::PointCloud<pcl::PointXYZ> cloud ;
+    image_geometry::PinholeCameraModel cm ;
+    cv::Mat clr, depth ;
+
     ros::Time ts ;
 
-    ctx->grabber->grab(cloud, ts) ;
+    ctx->grabber->grab(clr, depth, cloud, ts, cm) ;
+
+    string filenamePrefix = str(boost::format("/tmp/grab_%06d") % counter++) ;
+
+    cv::imwrite(filenamePrefix + "_c.png", clr) ;
+    cv::imwrite(filenamePrefix + "_d.png", depth) ;
+
+    pcl::io::savePCDFileBinary(filenamePrefix + ".pcd", cloud) ;
+
+    Eigen::Affine3d pose_ = robot_helpers::getCurrentPose("r1") ;
+
+    {
+        ofstream strm((filenamePrefix + "_pose.txt").c_str()) ;
+
+        strm << pose_.rotation() << endl << pose_.translation() ;
+    }
 
     // get the 3D coordinate on clicked position
 
@@ -160,7 +180,7 @@ int main(int argc, char **argv) {
     viz_helpers::CameraViewServer srv ;
 
     // open grabber and wait until connection
-    camera_helpers::OpenNICapturePointCloud grabber("xtion3") ;
+    camera_helpers::OpenNICaptureAll grabber("xtion3") ;
     grabber.connect() ;
 
     Context ctx ;

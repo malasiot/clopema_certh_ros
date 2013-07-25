@@ -716,7 +716,7 @@ int moveArmConstrains(geometry_msgs::Pose pose, const string &armName, float rad
         //Create plan
         clopema_arm_navigation::ClopemaMotionPlan mp;
         MoveRobot cmove;
-
+        cmove.setServoMode(false);
         mp.request.motion_plan_req.group_name = armName + "_arm";
         mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
 
@@ -811,6 +811,7 @@ void rotateGripper(float angle ,const string &armName){
     //Create plan
     clopema_arm_navigation::ClopemaMotionPlan mp;
     MoveRobot cmove;
+    cmove.setServoMode(false);
 
     mp.request.motion_plan_req.group_name = armName + "_arm";
     mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
@@ -902,7 +903,7 @@ int moveArm(geometry_msgs::Pose pose, const string &armName){
         clopema_arm_navigation::ClopemaMotionPlan mp;
         MoveRobot cmove;
 
-
+        cmove.setServoMode(false);
         mp.request.motion_plan_req.group_name = armName + "_arm";
         mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
 
@@ -939,6 +940,7 @@ int moveArm(geometry_msgs::Pose pose, const string &armName){
 int moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, const string &arm1Name, const string &arm2Name){
 
     MoveRobot cmove;
+    cmove.setServoMode(false);
 
      //Create plan
     clopema_arm_navigation::ClopemaMotionPlan mp;
@@ -994,6 +996,7 @@ int moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, con
     float radious = getArmsDistance()+0.1;
 
     MoveRobot cmove;
+    cmove.setServoMode(false);
      //Create plan
     clopema_arm_navigation::ClopemaMotionPlan mp;
     mp.request.motion_plan_req.group_name = "arms";
@@ -1128,6 +1131,7 @@ int moveArmThrough(vector <geometry_msgs::Pose> poses , const string &armName){
 
 
     MoveRobot cmove;
+    cmove.setServoMode(false);
     trajectory_msgs::JointTrajectory wholeTraj;
 
     //Create plan
@@ -1318,9 +1322,9 @@ void publishLowestPointMarker(ros::Publisher &vis_pub, const Eigen::Vector3d &p,
     marker.points.push_back(p1) ;
     marker.points.push_back(p2) ;
 
-    marker.scale.x = 0.01;
-    marker.scale.y = 0.02;
-    marker.scale.z = 0.0;
+    marker.scale.x = 0.1;
+    marker.scale.y = 0.1;
+    marker.scale.z = 0.1;
 
     marker.color.r = 0.0f;
     marker.color.g = 1.0f;
