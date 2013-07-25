@@ -589,7 +589,6 @@ int Unfold::graspLowestPoint(bool lastMove){
     moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
     setGripperStates(movingArm , true);
-    ros::Duration(1.0).sleep();
 
     //starting position
     bool grasp = false;
@@ -731,6 +730,7 @@ return 0;
 
 int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove, bool orientLeft  ){
 
+
     Eigen::Vector3d n;
     pcl::PointXYZ val = pc.at(x, y) ;
     Eigen::Vector3d p(val.x, val.y, val.z);
@@ -754,7 +754,7 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
     Eigen::Vector4d tar(p.x(), p.y(), p.z(), 1);
     targetP = calib * tar;
-
+    publishPointMarker(marker_pub, targetP, 1);
     Eigen::Vector4d norm (n.x(), n.y(), n.z(), 0);
     Eigen::Vector4d targetN;
     targetN = calib * norm.normalized();
@@ -770,7 +770,7 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
         if(targetN.x() < 0)
             theta = -theta;
         Eigen::Matrix2d rot;
-        rot << cos(theta) , -sin(theta), sin(theta), cos(theta);
+        rot << cos(theta) , sin(theta), -sin(theta), cos(theta);
         vect = rot * vect;
         targetP << ts.getOrigin().x() + vect.x(), ts.getOrigin().y() + vect.y(), targetP.z(), 1;
         desPose.orientation = rotationMatrix3ToQuaternion(horizontal());
@@ -802,8 +802,39 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
     }
 
     if(moveArmThrough(poses, movingArm) == -1){
-        cout<< "ABORDING..."<< endl;
-        return 0;
+
+        cout << "fixing rotation...." << endl;
+        float theta = findBias(targetN);
+        if(targetN.x() < 0)
+            theta = -theta;
+        cout<< " theta = " << theta/M_PI *180<<endl;
+
+        rotateHoldingGripper(theta);
+        Eigen::Vector2d vect;
+        vect << targetP.x() - ts.getOrigin().x(),  targetP.y() - ts.getOrigin().y();
+        Eigen::Matrix2d rot;
+        rot << cos(theta) , sin(theta), -sin(theta), cos(theta);
+        vect = rot * vect;
+        targetP << ts.getOrigin().x() + vect.x(), ts.getOrigin().y() + vect.y(), targetP.z(), 1;
+        publishPointMarker(marker_pub, targetP, 2);
+        cout<< targetP << endl;
+        desPose.orientation = rotationMatrix3ToQuaternion(horizontal());
+
+        Eigen::Matrix3d orient = horizontal();
+        desPose.position.x = targetP.x() + orient(0, 0) * 0.03 - orient(0, 2) * 0.07;
+        desPose.position.y = targetP.y() + orient(1, 0) * 0.03 - orient(1, 2) * 0.07;
+        desPose.position.z = targetP.z() + orient(2, 0) * 0.03 - orient(2, 2) * 0.07;
+        poses.push_back(desPose);
+
+        desPose.position.x = targetP.x() + orient(0, 2) * 0.045 + orient(0, 0) * 0.03;
+        desPose.position.y = targetP.y() + orient(1, 2) * 0.045 + orient(1, 0) * 0.03;
+        desPose.position.z = targetP.z() + orient(2, 2) * 0.045 + orient(2, 0) * 0.03;
+        poses.push_back(desPose);
+        if(moveArmThrough(poses, movingArm) == -1){
+            cout << "Motion planning failed. ABORDING..." << endl;
+            return 0;
+        }
+
     }
 
     setGripperStates(movingArm , false);

@@ -1146,4 +1146,42 @@ void publishLowestPointMarker(ros::Publisher &vis_pub, const Eigen::Vector3d &p,
 }
 
 
+void publishPointMarker(ros::Publisher &vis_pub, const Eigen::Vector4d &p, int ID)
+{
+
+
+    visualization_msgs::Marker marker;
+        // Set the frame ID and timestamp.  See the TF tutorials for information on these.
+    marker.header.frame_id = "base_link";
+    marker.header.stamp = ros::Time::now();
+
+    marker.ns = "point";
+    marker.id = ID;
+
+    // Set the marker type.  Initially this is CUBE, and cycles between that and SPHERE, ARROW, and CYLINDE
+
+    marker.type = visualization_msgs::Marker::SPHERE;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.position.x = p.x();
+    marker.pose.position.y = p.y();
+    marker.pose.position.z = p.z();
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+    marker.scale.x = 0.05;
+    marker.scale.y = 0.05;
+    marker.scale.z = 0.05;
+    marker.color.a = 1.0;
+    marker.color.r = 1.0;
+    marker.color.g = 0.0;
+    marker.color.b = 0.0;
+
+    marker.lifetime = ros::Duration();
+
+    vis_pub.publish(marker);
+
+}
+
+
 }

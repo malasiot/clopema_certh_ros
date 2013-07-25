@@ -84,6 +84,9 @@ tf::StampedTransform getTranformation(const std::string &frameName, const std::s
 
 void publishLowestPointMarker(ros::Publisher &vis_pub, const Eigen::Vector3d &p, const Eigen::Vector3d &n);
 
+void publishPointMarker(ros::Publisher &vis_pub, const Eigen::Vector4d &p, int ID);
+
+
 }
 
 #endif
