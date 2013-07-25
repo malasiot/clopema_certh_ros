@@ -61,7 +61,7 @@ rosbuild_add_executable(find_lowest src/find_lowest.cpp src/lowestPoint2.cpp)
 
 rosbuild_add_executable(cloth_simulator src/cloth_simulator.cpp)
 
-#rosbuild_add_executable(unfolding src/unfolding.cpp)
+rosbuild_add_executable(unfolding src/unfolding.cpp)
 
 #rosbuild_add_executable(planning src/planning.cpp)
 

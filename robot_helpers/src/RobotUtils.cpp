@@ -1132,9 +1132,9 @@ void publishLowestPointMarker(ros::Publisher &vis_pub, const Eigen::Vector3d &p,
     marker.points.push_back(p1) ;
     marker.points.push_back(p2) ;
 
-    marker.scale.x = 0.1;
-    marker.scale.y = 0.1;
-    marker.scale.z = 0.1;
+    marker.scale.x = 0.02;
+    marker.scale.y = 0.02;
+    marker.scale.z = 0.02;
 
     marker.color.r = 0.0f;
     marker.color.g = 1.0f;

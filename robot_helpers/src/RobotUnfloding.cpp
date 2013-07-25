@@ -712,8 +712,8 @@ int Unfold::graspLowestPoint(bool lastMove){
         desPos1.orientation = rotationMatrix3ToQuaternion(diagonalDown());
     }
 
-    ros::Duration(1.5).sleep();
-    if ( moveArms(desPos1, desPos2) == -1){
+    ros::Duration(0.5).sleep();
+    if ( moveArmsNoTearing(desPos1, desPos2) == -1){
         cout<<"ABORDING..."<<endl;
         return -1;
     }
@@ -788,6 +788,7 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
         rotateHoldingGripper(theta);
 
     }else{
+
         desPose.orientation = rotationMatrix4ToQuaternion(rotMat);
 
         desPose.position.x = targetP.x() + rotMat(0, 0) * 0.03 - rotMat(0, 2) * 0.07;
@@ -803,6 +804,7 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
     if(moveArmThrough(poses, movingArm) == -1){
 
+        poses.clear();
         cout << "fixing rotation...." << endl;
         float theta = findBias(targetN);
         if(targetN.x() < 0)
@@ -830,6 +832,7 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
         desPose.position.y = targetP.y() + orient(1, 2) * 0.045 + orient(1, 0) * 0.03;
         desPose.position.z = targetP.z() + orient(2, 2) * 0.045 + orient(2, 0) * 0.03;
         poses.push_back(desPose);
+
         if(moveArmThrough(poses, movingArm) == -1){
             cout << "Motion planning failed. ABORDING..." << endl;
             return 0;
