@@ -3,12 +3,14 @@
 #include <camera_helpers/OpenNICapture.h>
 #include <viz_helpers/CameraViewServer.h>
 #include <robot_helpers/Utils.h>
+#include <robot_helpers/Geometry.h>
 #include <visualization_msgs/Marker.h>
 
 #include <fstream>
 #include <highgui.h>
 
 using namespace std ;
+using namespace Eigen ;
 
 bool calibration_finished ;
 
@@ -23,6 +25,15 @@ float points[9][3] = {
     {-0.15,   -1.3, 	0.9},
     {0.2,  	-1.3, 	0.9}
 } ;
+
+const double minX = -0.25 ;
+const double maxX = 0.25 ;
+const double minY = -1.3 ;
+const double maxY = -0.8 ;
+const double minZ = 0.9 ;
+const double maxZ = 1.5 ;
+
+const int maxPoints = 20 ;
 
 void doCalibrate(const vector<pcl::PointXYZ> &pts)
 {
@@ -147,7 +158,7 @@ void onMouseClicked(int x, int y, Context *ctx)
 
     ctx->currentPoint++ ;
 
-    if ( ctx->currentPoint == sizeof(points)/sizeof(float[3]) )
+    if ( ctx->currentPoint == maxPoints )
     {
         // all points have been added, do the calibration
 
@@ -160,11 +171,30 @@ void onMouseClicked(int x, int y, Context *ctx)
         // move the robot to the next position
 
         int c = ctx->currentPoint ;
-        Eigen::Quaterniond q ;
-         q = Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitY()) * Eigen::AngleAxisd(-M_PI/2, Eigen::Vector3d::UnitZ());
 
         robot_helpers::MoveRobot mv ;
-        robot_helpers::moveGripper(mv, "r2", Eigen::Vector3d(points[c][0], points[c][1], points[c][2]), q) ;
+        mv.setServoMode(false);
+
+        while (1)
+        {
+            double X = minX + (maxX - minX)*(rand()/(double)RAND_MAX) ;
+            double Y = minY + (maxY - minY)*(rand()/(double)RAND_MAX) ;
+            double Z = minZ + (maxZ - minZ)*(rand()/(double)RAND_MAX) ;
+
+            const double qscale = 0.3 ;
+            double qx = qscale * (rand()/(double)RAND_MAX - 0.5) ;
+            double qy = qscale * (rand()/(double)RAND_MAX - 0.5) ;
+            double qz = qscale * (rand()/(double)RAND_MAX - 0.5) ;
+            double qw = qscale * (rand()/(double)RAND_MAX - 0.5) ;
+
+            Quaterniond q = robot_helpers::lookAt(Vector3d(-1, 0, 0), M_PI) ;
+
+            q = Quaterniond(q.x() + qx, q.y() + qy, q.z() + qz, q.w() + qw) ;
+            q.normalize();
+
+            if ( robot_helpers::moveGripper(mv, "r2", Eigen::Vector3d(X, Y, Z), q) ) break ;
+
+        }
     }
 
 }
@@ -174,6 +204,8 @@ int main(int argc, char **argv) {
 
     ros::init(argc, argv, "calibrate_fixed_xtion");
     ros::NodeHandle nh;
+
+    srand(clock()) ;
 
     ros::Publisher vis_pub = nh.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
@@ -202,5 +234,7 @@ int main(int argc, char **argv) {
     // wait until calibration has finished
 
     while (!calibration_finished) ;
+
+
     return 1;
 }
