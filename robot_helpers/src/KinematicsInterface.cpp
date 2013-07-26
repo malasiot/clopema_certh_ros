@@ -47,6 +47,23 @@ std::vector<double> JointState::getValues(const std::vector<std::string> &joint_
     return res ;
 }
 
+JointState JointState::merged(const JointState &js1, const JointState &js2)
+{
+    JointState res ;
+
+    map<string, double>::const_iterator it = js1.joint_values.begin() ;
+
+    for( ; it != js1.joint_values.end() ; ++it )
+        res.joint_values.insert(*it) ;
+
+    it = js2.joint_values.begin() ;
+
+    for( ; it != js2.joint_values.end() ; ++it )
+        res.joint_values.insert(*it) ;
+
+    return res ;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 KinematicsModel::KinematicsModel() { }
@@ -99,6 +116,27 @@ bool KinematicsModel::isStateValid() const
 	return ( state_->areJointsWithinBounds(joint_names ) && !cm_->isKinematicStateInCollision(*state_) )  ;
 }
 
+bool KinematicsModel::isStateValid(const JointState &js)
+{
+    JointState cs = getJointState() ;
+
+    setJointState(js) ;
+    bool res = isStateValid() ;
+    setJointState(cs) ;
+
+    return res ;
+}
+
+void KinematicsModel::getLimits(const string &joint_, double &lower_, double &upper_)
+{
+    pair<double, double> bounds ;
+
+    state_->getJointState(joint_)->getJointModel()->getVariableBounds(joint_, bounds) ;
+
+    lower_ = bounds.first ;
+    upper_ = bounds.second ;
+}
+
 void KinematicsModel::getRobotMarkers(visualization_msgs::MarkerArray &markers)
 {
 
@@ -127,7 +165,11 @@ KinematicsModel::~KinematicsModel() {
     if (cm_) cm_->revertPlanningScene(state_);
 }
 
+std::vector<std::string> KinematicsModel::getJoints(const std::string &groupName) const
+{
+    return state_->getJointStateGroup(groupName)->getJointNames() ;
 
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -162,10 +204,11 @@ public:
 
 };
 
+static IKSolverLoader loader ;
 
 bool IKSolver::init(const string &groupName, const string &instanceName, const string &baseLink, const string &tipLink)
 {
-    IKSolverLoader loader ;
+
     solver_ = loader.load(groupName, instanceName, baseLink, tipLink) ;
 
     if ( solver_ )  {

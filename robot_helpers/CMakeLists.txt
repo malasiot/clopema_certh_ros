@@ -14,6 +14,9 @@ rosbuild_init()
 find_package(LAPACK REQUIRED)
 find_package(BLAS REQUIRED)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(OMPL REQUIRED ompl)
+
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
@@ -27,10 +30,14 @@ rosbuild_add_library(robot_helpers
 	src/RobotUnfloding.cpp
 	src/Geometry.cpp
 	src/KinematicsInterface.cpp
+	src/JointTrajectory.cpp
+	src/GoalRegion.cpp
+	src/TaskSpace.cpp
+	src/Planner.cpp
 	src/ikfast_ma1400_plugin.cpp
 	src/ikfast_xtion_plugin.cpp)
 
-target_link_libraries(robot_helpers ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES})
+target_link_libraries(robot_helpers ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OMPL_LIBRARIES})
 
 rosbuild_add_executable(test_helpers test/test_helpers.cpp)
 target_link_libraries(test_helpers robot_helpers)

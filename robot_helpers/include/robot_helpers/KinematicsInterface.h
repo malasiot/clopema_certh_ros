@@ -29,6 +29,8 @@ struct JointState {
 
     static JointState fromRobotState() ;
 
+    static JointState merged(const JointState &js1, const JointState &js2) ;
+
     std::map<std::string, double> joint_values ;
 
 protected:
@@ -48,12 +50,15 @@ public:
     JointState getJointState() const ;
     JointState getJointState(const std::vector<std::string> &joints) ;
 
+    std::vector<std::string> getJoints(const std::string &groupName) const ;
+
     void setJointValue(const std::string &joint, double val) ;
     void setJointState(const JointState &state) ;
 
     void getLimits(const std::string &joint_, double &lower_, double &upper_) ;
 
     bool isStateValid() const ;
+    bool isStateValid(const JointState &js)  ;
 
     void getRobotMarkers(visualization_msgs::MarkerArray &markers) ;
 
@@ -97,6 +102,7 @@ protected:
     boost::shared_ptr<kinematics::KinematicsBase> solver_ ;
     KinematicsModel *model_ ;
     std::vector<std::string> joint_names_ ;
+
 
 };
 

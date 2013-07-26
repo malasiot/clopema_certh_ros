@@ -2,9 +2,11 @@
 
 #include <robot_helpers/KinematicsInterface.h>
 #include <robot_helpers/Geometry.h>
+#include <robot_helpers/Planner.h>
 
 using namespace std;
 using namespace robot_helpers ;
+using namespace Eigen ;
 
 void createMarkerFromMesh( shapes::Mesh &mesh, const Eigen::Affine3d &trans, visualization_msgs::Marker &marker)
 {
@@ -61,6 +63,75 @@ void createMarkerFromMesh( shapes::Mesh &mesh, const Eigen::Affine3d &trans, vis
 
 }
 
+void planSingle(KinematicsModel &kmodel)
+{
+
+    MA1400_R1_IKSolver solver_r1 ;
+    solver_r1.setKinematicModel(&kmodel);
+
+    Quaterniond q = lookAt(Eigen::Vector3d(1, 0, 0), M_PI/6) ;
+
+    double roll, pitch, yaw ;
+    robot_helpers::rpyFromQuat(q, roll, pitch, yaw) ;
+
+    PlanningContextSingle pctx("r1_arm", &kmodel, &solver_r1, "r1_ee" ) ;
+
+    BoxShapedRegion region(Vector3d(0.2, -0.8, 1.4), Vector3d(0.01, 0.01, 0.01), Vector3d() ) ;
+
+    region.roll_min = -M_PI/4 ;
+    region.roll_max = M_PI/4 ;
+
+    region.pitch_min = -M_PI/4 ;
+    region.pitch_max = M_PI/4 ;
+
+    JointSpacePlanner planner(&pctx) ;
+
+    JointTrajectory traj ;
+
+    bool rplan = planner.solve(region, traj) ;
+
+    traj.completeTrajectory(kmodel.getJointState()) ;
+
+    trajectory_msgs::JointTrajectory msg = traj.toMsg(10) ;
+
+    MoveRobot mv ;
+
+    mv.execTrajectory(msg) ;
+
+}
+
+void planDual(KinematicsModel &kmodel)
+{
+
+    MA1400_R1_IKSolver solver_r1 ;
+    solver_r1.setKinematicModel(&kmodel);
+
+    MA1400_R2_IKSolver solver_r2 ;
+    solver_r2.setKinematicModel(&kmodel);
+
+    PlanningContextDual pctx("arms", &kmodel, &solver_r1, "r1_ee", &solver_r2, "r2_ee" ) ;
+
+    BoxShapedRegion region1(Vector3d(0.2, -0.8, 1.4), Vector3d(0.05, 0.05, 0.05), Vector3d() ) ;
+    BoxShapedRegion region2(Vector3d(0.3, -0.5, 1.4), Vector3d(0.05, 0.05, 0.05), Vector3d() ) ;
+
+    GoalDualCompositeRegion rg(&region1, &region2) ;
+
+    JointSpacePlanner planner(&pctx) ;
+
+    JointTrajectory traj ;
+
+    bool rplan = planner.solve(rg, traj) ;
+
+    traj.completeTrajectory(kmodel.getJointState()) ;
+
+    trajectory_msgs::JointTrajectory msg = traj.toMsg(10) ;
+
+    MoveRobot mv ;
+
+    mv.execTrajectory(msg) ;
+
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -73,6 +144,13 @@ int main(int argc, char *argv[])
 
     KinematicsModel kmodel ;
     kmodel.init() ;
+
+    planDual(kmodel) ;
+
+    ros::spin() ;
+    Quaterniond q = lookAt(Eigen::Vector3d(1, 0, 0), M_PI/6) ;
+
+
 
     Eigen::Affine3d pose = kmodel.getWorldTransform("r1_ee") ;
 

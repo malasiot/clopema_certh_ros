@@ -4,6 +4,7 @@
 
   <rosdep name="boost"/>
   <rosdep name="opencv2"/>
+  <rosdep name="ompl" />
   
   <depend package="roscpp"/>
   <depend package="pcl_ros"/>

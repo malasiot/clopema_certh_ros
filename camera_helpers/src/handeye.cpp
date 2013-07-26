@@ -12,6 +12,7 @@
 
 #include <Eigen/Geometry>
 #include <Eigen/Eigenvalues>
+#include <unsupported/Eigen/NonLinearOptimization>
 
 using namespace std ;
 using namespace cv ;
@@ -32,18 +33,17 @@ static bool findCorners(const cv::Mat &im, const cv::Size &boardSize, vector<Poi
     if(patternfound)
         cv::cornerSubPix(gray, corners, Size(5, 5), Size(-1, -1),
             TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
-
+/*
 
     cv::drawChessboardCorners(im, boardSize, Mat(corners), patternfound);
 
     cv::imwrite("/home/malasiot/tmp/oo.png", im) ;
 
     cout << "ok here" ;
-
+*/
 
     return patternfound ;
 }
-
 
 static double computeReprojectionErrors(
         const vector<vector<Point3f> >& objectPoints,
@@ -59,6 +59,7 @@ static double computeReprojectionErrors(
 
     for( i = 0; i < (int)objectPoints.size(); i++ )
     {
+
         projectPoints(Mat(objectPoints[i]), rvecs[i], tvecs[i],
                       cameraMatrix, distCoeffs, imagePoints2);
         err = norm(Mat(imagePoints[i]), Mat(imagePoints2), CV_L2);
@@ -105,8 +106,140 @@ static bool runCalibration( const vector<vector<Point2f> > &imagePoints,
     return ok;
 }
 
-bool solveHandEye(const vector<Affine3d> &A, const vector<Affine3d> &B,
-                  Affine3d &X, Affine3d &Y )
+// Generic functor
+template<typename _Scalar, int NX=Dynamic, int NY=Dynamic>
+struct Functor
+{
+  typedef _Scalar Scalar;
+  enum {
+    InputsAtCompileTime = NX,
+    ValuesAtCompileTime = NY
+  };
+  typedef Matrix<Scalar,InputsAtCompileTime,1> InputType;
+  typedef Matrix<Scalar,ValuesAtCompileTime,1> ValueType;
+  typedef Matrix<Scalar,ValuesAtCompileTime,InputsAtCompileTime> JacobianType;
+
+  const int m_inputs, m_values;
+
+  Functor() : m_inputs(InputsAtCompileTime), m_values(ValuesAtCompileTime) {}
+  Functor(int inputs, int values) : m_inputs(inputs), m_values(values) {}
+
+  int inputs() const { return m_inputs; }
+  int values() const { return m_values; }
+
+  // you should define that in the subclass :
+//  void operator() (const InputType& x, ValueType* v, JacobianType* _j=0) const;
+};
+
+struct SolverFunctor: public Functor<double>
+{
+
+    SolverFunctor(const vector<Affine3d> &A_, const vector<Affine3d> &B_):
+        A(A_), B(B_) {}
+
+  int operator()(const VectorXd &x, VectorXd &fvec) const
+  {
+      Matrix4d X, Z ;
+
+      for(int i=0, k=0 ; i<3 ; i++)
+          for(int j=0 ; j<4 ; j++, k++)
+          {
+              X(i, j) = x[k] ;
+              Z(i, j) = x[k+12];
+          }
+
+      int n = A.size() ;
+
+      Matrix3d Rx = X.block<3, 3>(0, 0), Rz = Z.block<3, 3>(0, 0) ;
+      Vector3d Tx = X.block<3, 1>(0, 3), Tz = Z.block<3, 1>(0, 3) ;
+
+      int k = 0 ;
+
+      for(int r=0 ; r<n ; r++ )
+      {
+          Matrix3d Ra = A[r].rotation(), Rb = B[r].rotation() ;
+          Vector3d Ta = A[r].translation(), Tb = B[r].translation() ;
+
+          Matrix3d C = Ra * Rx - Rz * Rb ;
+          Vector3d S = Ra * Tx + Ta - Rz * Tb - Tz ;
+
+          for(int i=0 ; i<3 ; i++ )
+              for(int j=0 ; j<3 ; j++ )
+                  fvec[k++] = C(i, j) ;
+
+          for(int i=0 ; i<3 ; i++ )
+              fvec[k++] = S[i] ;
+      }
+
+      const double cfactor = 1.0e3 ;
+
+      Matrix3d Cx = Rx.transpose() * Rx - Matrix3d::Identity() ;
+      Matrix3d Cz = Rz.transpose() * Rz - Matrix3d::Identity() ;
+
+      for(int i=0 ; i<3 ; i++ )
+          for(int j=0 ; j<3 ; j++ )
+              fvec[k++] = cfactor * Cx(i, j) ;
+
+      for(int i=0 ; i<3 ; i++ )
+          for(int j=0 ; j<3 ; j++ )
+              fvec[k++] = cfactor * Cz(i, j) ;
+
+      return 0;
+  }
+
+  int inputs() const { return 24 ; }
+  int values() const { return 12*A.size() + 18; } // number of constraints
+
+  const vector<Affine3d> &A,  &B ;
+
+};
+
+bool solveHandEyeNonLinear(const vector<Affine3d> &A, const vector<Affine3d> &B,
+                  Affine3d &X, Affine3d &Z )
+{
+    SolverFunctor functor(A, B);
+    NumericalDiff<SolverFunctor> numDiff(functor);
+
+    LevenbergMarquardt<NumericalDiff<SolverFunctor>, double> lm(numDiff);
+//    lm.parameters.factor =10 ;
+
+    VectorXd Y(24) ;
+
+    for(int i=0, k=0 ; i<3 ; i++)
+        for(int j=0 ; j<4 ; j++, k++)
+        {
+            Y[k] = X(i, j) ;
+            Y[k+12] = Z(i, j) ;
+        }
+
+    LevenbergMarquardtSpace::Status status = lm.minimizeInit(Y);
+    do {
+        status = lm.minimizeOneStep(Y);
+          double fnorm = lm.fvec.blueNorm();
+          cout << "-------\n" ;
+          cout << lm.fvec << endl ;
+    } while (status==LevenbergMarquardtSpace::Running);
+
+
+    lm.minimize(Y) ;
+
+    for(int i=0, k=0 ; i<3 ; i++)
+        for(int j=0 ; j<4 ; j++, k++)
+        {
+            X(i, j) = Y[k] ;
+            Z(i, j) = Y[k+12];
+        }
+
+    Matrix3d Rx = X.rotation(), Rz = Z.rotation() ;
+    Vector3d Tx = X.translation(), Tz = Z.translation() ;
+
+    double fnorm = lm.fvec.blueNorm();
+
+    return true ;
+}
+
+bool solveHandEyeLinear(const vector<Affine3d> &A, const vector<Affine3d> &B,
+                  Affine3d &X, Affine3d &Z )
 {
     assert(A.size() == B.size()) ;
 
@@ -166,24 +299,19 @@ bool solveHandEye(const vector<Affine3d> &A, const vector<Affine3d> &B,
         }
     }
 
+
     Vector4d eg = eigensolver.eigenvectors().col(best) ;
 
-    qz = Quaterniond(eg[1], eg[2], eg[3], eg[0]) ;
+    qz = Quaterniond(eg[0], eg[1], eg[2], eg[3]) ;
 
-    Vector4d qx_ = (1.0/(eval[best] - n)) * C * eg ;
+    Vector4d qx_ = (1.0/(min_eig - n)) * C * eg ;
 
-    qx = Quaterniond(qx_[1], qx_[2], qx_[3], qx_[0]) ;
+    qx = Quaterniond(qx_[0], qx_[1], qx_[2], qx_[3]) ;
+    qx.normalize();
 
     Matrix3d RX = qx.toRotationMatrix() ;
     Matrix3d RZ = qz.toRotationMatrix() ;
-/*
-    double error_ = 0.0 ;
 
-    for(int i=0 ; i<n ; i++)
-        error_ += (A[i].rotation() * RX - RZ * B[i].rotation()).norm() ;
-
-    error_ /= n ;
-*/
 
     // Solve for translation
 
@@ -202,13 +330,10 @@ bool solveHandEye(const vector<Affine3d> &A, const vector<Affine3d> &B,
     Vector3d TX = sol.segment<3>(0) ;
     Vector3d TZ = sol.segment<3>(3) ;
 
+    X = Translation3d(TX) * RX ;
+    Z = Translation3d(TZ) * RZ ;
 
-    cout << (MA * sol - MB).norm() << endl ;
-
-
-return true ;
-
-
+    return true ;
 }
 
 
@@ -219,8 +344,8 @@ int main( int argc, char* argv[] )
     string fileSuffix = "_c.*" ;
     string dataFolder = "/home/malasiot/images/clothes/calibration/" ;
 
-    const cv::Size boardSize(6, 9) ;
-    const double squareSize = 0.02 ;
+    const cv::Size boardSize(3, 5) ;
+    const double squareSize = 0.04 ;
 
     namespace fs = boost::filesystem  ;
 
@@ -230,7 +355,7 @@ int main( int argc, char* argv[] )
 
     vector<vector<Point2f> > img_corners ;
     vector<vector<Point3f> > obj_corners ;
-    vector<Affine3d> base_to_gripper ;
+    vector<Affine3d> gripper_to_base ;
 
     fs::directory_iterator it(dataFolder), end ;
 
@@ -286,7 +411,7 @@ int main( int argc, char* argv[] )
                 for( int j = 0; j < boardSize.width; j++ )
                     obj_corners.back().push_back(Point3f(float(j*squareSize), float(i*squareSize), 0));
 
-            base_to_gripper.push_back(tr) ;
+            gripper_to_base.push_back(tr.inverse()) ;
         }
         else
         {
@@ -299,14 +424,14 @@ int main( int argc, char* argv[] )
 
     vector<Mat> rvecs, tvecs;
     vector<float> reprojErrs;
-    vector<Affine3d> sensor_to_target ;
+    vector<Affine3d> target_to_sensor ;
 
     double totalAvgErr = 0;
 
     cv::Mat camMatrix, distCoeffs ;
 
     int flag = CALIB_USE_INTRINSIC_GUESS | CALIB_FIX_FOCAL_LENGTH | CALIB_FIX_PRINCIPAL_POINT ;
-    runCalibration(img_corners, obj_corners, cv::Size(640, 480), 640/480.0, 0,
+    runCalibration(img_corners, obj_corners, cv::Size(640, 480), 640/480.0, flag,
                    camMatrix, distCoeffs, rvecs, tvecs, reprojErrs, totalAvgErr) ;
 
     for(unsigned int i=0 ; i<tvecs.size() ; i++ )
@@ -314,22 +439,33 @@ int main( int argc, char* argv[] )
         Matrix3d r ;
         Vector3d t ;
 
-        cv::Mat_<double> rmat(rvecs[i]) ;
+        cv::Mat rmat_ ;
+        cv::Rodrigues(rvecs[i], rmat_) ;
+
+        cv::Mat_<double> rmat(rmat_) ;
         cv::Mat_<double> tmat(tvecs[i]) ;
 
         r << rmat(0, 0), rmat(0, 1), rmat(0, 2), rmat(1, 0), rmat(1, 1), rmat(1, 2), rmat(2, 0), rmat(2, 1), rmat(2, 2) ;
-        t << tmat(0, 0), rmat(0, 1), rmat(0, 2) ;
+        t << tmat(0, 0), tmat(0, 1), tmat(0, 2) ;
 
         Affine3d tr = Translation3d(t) * r ;
 
-        sensor_to_target.push_back(tr) ;
+        target_to_sensor.push_back(tr) ;
     }
 
-    Affine3d base_to_sensor, gripper_to_target ;
+    Affine3d sensor_to_base, target_to_gripper ;
 
-    solveHandEye(base_to_gripper, sensor_to_target, gripper_to_target,  base_to_sensor ) ;
+//    gripper_to_base * target_to_gripper = sensor_to_base * target_to_sensor
+//
+//            A       *        X          =       Z        *        B
 
-    cout << camMatrix << endl ;
+    solveHandEyeLinear(gripper_to_base, target_to_sensor,
+                       target_to_gripper,  sensor_to_base ) ;
+
+
+    //solveHandEyeNonLinear(base_to_gripper, sensor_to_target, gripper_to_target,  base_to_sensor) ;
+
+    cout << sensor_to_base.inverse().translation() << endl ;
 
     return 0;
 }
