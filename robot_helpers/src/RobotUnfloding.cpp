@@ -25,6 +25,17 @@ Unfold::Unfold(const string &armName, ros::Publisher markerPub){
 Unfold::~Unfold() {
 }
 
+
+string Unfold::getHoldingArm(){
+
+    return holdingArm;
+}
+
+string Unfold::getMovingArm(){
+
+    return movingArm;
+}
+
 int Unfold::setGripperStates(const string &armName  , bool open){
     ros::service::waitForService("/" + armName + "_gripper/set_open");
     clopema_motoros::SetGripperState sopen;
@@ -147,9 +158,9 @@ Eigen::Matrix4d Unfold::findLowestPointOrientation(Eigen::Vector4d vector ){
         N << vector.x(), vector.y(), vector.z();
     N.normalize();
 
-    Eigen::Vector3d A(1,0,-1);
+    Eigen::Vector3d A(sqrt(3.0)/2.f,0,-0.5);
     if(holdingArm == "r2")
-         A << -1,0,-1;
+         A << -sqrt(3.0)/2.f,0,-0.5;
 
     Eigen::Vector3d B=A-(A.dot(N))*N;
     B.normalize();
@@ -169,7 +180,11 @@ Eigen::Matrix4d Unfold::findLowestPointOrientation(Eigen::Vector4d vector ){
     rotMat(0, 2)=-B.x();
     rotMat(1, 2)=-B.y();
     rotMat(2, 2)=-B.z();
-    cout<<rotMat<< endl;
+
+
+//    diagonalDown <<  0, -0.5, sqrt(3.0)/2.f,
+//                    1, 0, 0,
+//            0, sqrt(3.0)/2.f,  0.5;
 
 
 return rotMat;
@@ -179,6 +194,7 @@ Eigen::Matrix4d Unfold::findGraspingPointOrientation(Eigen::Vector4d vector ){
 
     Eigen::Matrix4d rotMat;
     Eigen::Vector3d N;
+    cout<< "Fit vector is" << N << endl;
 
 
     N << -vector.x(), -vector.y(), -vector.z();
@@ -591,8 +607,9 @@ int Unfold::graspLowestPoint(bool lastMove){
     setGripperStates(movingArm , true);
 
     //starting position
-    bool grasp = false;
 
+    bool grasp = false;
+    bool firstTime = true;
     geometry_msgs::Pose desPose;
     vector <geometry_msgs::Pose> poses;
     Eigen::Vector4d targetP;
@@ -624,7 +641,7 @@ int Unfold::graspLowestPoint(bool lastMove){
 
         grabber->grab(rgb, depth, pc, ts, cm);
         if(findLowestPoint(pc, top, bottom, angle, p, n)== false)
-            cout<< "Cant find lowest point"<< endl;
+//            cout<< "Cant find lowest point"<< endl;
 
         publishLowestPointMarker(marker_pub,p ,n );
 
@@ -640,16 +657,23 @@ int Unfold::graspLowestPoint(bool lastMove){
 
 
         desPose.orientation = rotationMatrix4ToQuaternion(rotMat);
-        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.03 - rotMat(0, 2) * 0.07;
-        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.03 - rotMat(1, 2) * 0.07;
-        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.03 - rotMat(2, 2) * 0.07;
+        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.03 - rotMat(0, 2) * 0.03;
+        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.03 - rotMat(1, 2) * 0.03;
+        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.03 - rotMat(2, 2) * 0.03;
 
         st= getTranformation(holdingArm + "_ee");
 
        // grasp lowest point
         addConeToCollisionModel(holdingArm, st.getOrigin().z() - desPose.position.z-0.1 , 0.1 );
 
+        if (firstTime){
+        rotateGripper(-findBias(targetN), holdingArm);
+        firstTime = false;
+        continue;
+        }
+
         if(moveArm(desPose, movingArm)==-1){
+            cout<< "Cant reach lowest Point" << endl;
             resetCollisionModel();
             cout<< "BIAS : " <<findBias(targetN)<<endl;
             rotateGripper(-findBias(targetN), holdingArm);
@@ -660,18 +684,24 @@ int Unfold::graspLowestPoint(bool lastMove){
 
     }
 
-    desPose.position.x = targetP.x() + rotMat(0, 2) * 0.045 + rotMat(0, 0) * 0.03;
-    desPose.position.y = targetP.y() + rotMat(1, 2) * 0.045 + rotMat(1, 0) * 0.03;
-    desPose.position.z = targetP.z() + rotMat(2, 2) * 0.045 + rotMat(2, 0) * 0.03;
+    desPose.position.x = targetP.x() + rotMat(0, 2) * 0.03 + rotMat(0, 0) * 0.03;
+    desPose.position.y = targetP.y() + rotMat(1, 2) * 0.03 + rotMat(1, 0) * 0.03;
+    desPose.position.z = targetP.z() + rotMat(2, 2) * 0.03 + rotMat(2, 0) * 0.03;
 
-    if(moveArm(desPose, movingArm)==-1){
-        cout<< "ARBORDING .... " <<endl;
-        return -1;
+    for (unsigned int i =0 ; i < 4 ;  i++){
+        if(moveArm(desPose, movingArm)==-1){
+            cout<< "Cant grasp lowest Point .. " << i << "TIMES" <<endl;
+            if (i == 3){
+                cout<< "ABORDING ..." << endl;
+                return -1;
+            }
+        }else
+            break;
     }
 
     setGripperStates( movingArm, false);
 
-    //Make a circle trajectory
+    //MOVING SIDEWAYS
 
     geometry_msgs::Pose desPos1, desPos2;
     float radious=getArmsDistance();
@@ -688,35 +718,74 @@ int Unfold::graspLowestPoint(bool lastMove){
         desPos2.position.x+=radious/2.0;
     }
 
-    ros::Duration(0.5).sleep();
-    moveArmsNoTearing(desPos1, desPos2);
+    ros::Duration(0.3).sleep();
+
+    for (unsigned int i =0 ; i < 4 ;  i++){
+        if (moveArmsNoTearing(desPos1, desPos2) == -1 ){
+            cout << "cant move sideways ..." << endl;
+            if (i == 3){
+                cout<< "ABORDING ..." << endl;
+                return -1;
+            }
+        }
+        else
+            break;
+
+    }
+     //MOVING UP
+
     desPose.orientation = rotationMatrix3ToQuaternion(diagonalDown());
-    ros::Duration(0.5).sleep();
-    moveArmBetweenSpheres(movingArm, true,  desPose);
+    ros::Duration(0.3).sleep();
+    for (unsigned int i =0 ; i < 4 ;  i++){
+        if (moveArmBetweenSpheres(movingArm, true,  desPose) == -1) {
+            cout << "cant move up ..." << endl;
+            if (i == 3){
+                cout<< "ABORDING ..." << endl;
+                return -1;
+            }
+        }
+        else
+            break;
+    }
+
     if ( lastMove == true )
         return -1;
-    desPos1 = getArmPose("r1");
-    desPos2 = getArmPose("r2");
 
 
-    cout<< "holding arm is = " << holdingArm << endl;
+    desPos1 = getArmPose(holdingArm);
+    desPos2 = getArmPose(movingArm);
+
+    //MOVING DOWN
+
+
 
     if(holdingArm == "r1"){
         desPos2.position.x-=radious/2.0f;
-        desPos1.position.z-=0.866025404*radious;
+
         desPos2.orientation = rotationMatrix3ToQuaternion(diagonalDown());
     }
     else{
-        desPos1.position.x+=radious/2.0f;
-        desPos2.position.z-=0.866025404*radious;
-        desPos1.orientation = rotationMatrix3ToQuaternion(diagonalDown());
+        desPos2.position.x+=radious/2.0f;
+
+        desPos2.orientation = rotationMatrix3ToQuaternion(diagonalDown());
+    }
+        desPos1.position.z-=0.7*radious;
+
+    ros::Duration(0.3).sleep();
+
+    for (unsigned int i =0 ; i < 4 ;  i++){
+        if (moveArmsNoTearing(desPos2,desPos1, movingArm, holdingArm) == -1) {
+            cout << "cant move down ..." << endl;
+            if (i == 3){
+                cout<< "ABORDING ..." << endl;
+                setGripperStates(holdingArm, true);
+            }
+        }
+        else
+            break;
     }
 
-    ros::Duration(0.5).sleep();
-    if ( moveArmsNoTearing(desPos1, desPos2) == -1){
-        cout<<"ABORDING..."<<endl;
-        return -1;
-    }
+
 
     setGripperStates(holdingArm, true);
 
@@ -740,14 +809,11 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
     Eigen::Vector4d targetP;
     tf::Transform ts;
     setGripperStates(movingArm , true);
-
-    if ( pcl_isfinite(val.z) || val.z > 2.0 || val.z < 0.5 ){
-        cout<< "Invalid Coords" << endl;
-        //return -1;
-    }
-
-    n = computeNormal(pc, x, y) ;
-
+    int ox , oy;
+   findMeanShiftPoint(pc, x, y, ox, oy, 0.05) ;
+    n = computeNormal(pc, ox, oy) ;
+    x= ox;
+    y= oy;
     Eigen::Matrix4d calib = getTranformationMatrix("xtion3_rgb_optical_frame");
 
     publishLowestPointMarker(marker_pub,p ,n );
@@ -805,11 +871,12 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
     if(moveArmThrough(poses, movingArm) == -1){
 
         poses.clear();
-        cout << "fixing rotation...." << endl;
-        float theta = findBias(targetN);
-        if(targetN.x() < 0)
+       // cout << "fixing rotation...." << endl;
+        //float theta = findBias(targetN);
+        double theta = acos(targetN.y() / sqrt((targetN.x()*targetN.x() + targetN.y()*targetN.y())));
+        if(targetN.x() > 0)
             theta = -theta;
-        cout<< " theta = " << theta/M_PI *180<<endl;
+     //   cout<< " theta = " << theta/M_PI *180<<endl;
 
         rotateHoldingGripper(theta);
         Eigen::Vector2d vect;
@@ -819,7 +886,7 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
         vect = rot * vect;
         targetP << ts.getOrigin().x() + vect.x(), ts.getOrigin().y() + vect.y(), targetP.z(), 1;
         publishPointMarker(marker_pub, targetP, 2);
-        cout<< targetP << endl;
+       // cout<< targetP << endl;
         desPose.orientation = rotationMatrix3ToQuaternion(horizontal());
 
         Eigen::Matrix3d orient = horizontal();
@@ -833,21 +900,25 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
         desPose.position.z = targetP.z() + orient(2, 2) * 0.045 + orient(2, 0) * 0.03;
         poses.push_back(desPose);
 
-        if(moveArmThrough(poses, movingArm) == -1){
-            cout << "Motion planning failed. ABORDING..." << endl;
-            return 0;
+         // GRASPING POINT
+        for (unsigned int i =0 ; i < 4 ;  i++){
+            if(moveArmThrough(poses, movingArm) == -1){
+                cout<< "Cant grasp Point .. " << i << "TIMES" <<endl;
+                if (i == 3){
+                    cout<< "ABORDING ..." << endl;
+                    return -1;
+                }
+            }else
+                break;
         }
 
     }
 
     setGripperStates(movingArm , false);
 
-    desPose.orientation = rotationMatrix3ToQuaternion(diagonalDown());
-
-    moveArmBetweenSpheres(movingArm, true ,desPose);
-
     geometry_msgs::Pose desPos1, desPos2;
-    float radious=getArmsDistance();
+
+   float radious=getArmsDistance();
 
     desPos1 = getArmPose("r1");
     desPos2 = getArmPose("r2");
@@ -855,44 +926,110 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
     if(holdingArm == "r1"){
         desPos2.position.x-=radious/2.0;
         desPos1.position.x-=radious/2.0;
-
     }
     else{
         desPos1.position.x+=radious/2.0;
         desPos2.position.x+=radious/2.0;
+    }
+
+    ros::Duration(0.3).sleep();
+
+ // MOVING SIDEWAYS
+
+    for (unsigned int i =0 ; i < 4 ;  i++){
+        if (moveArmsNoTearing(desPos1, desPos2) == -1 ){
+            cout << "cant move sideways ..." << endl;
+            if (i == 3){
+                cout<< "ABORDING ..." << endl;
+                moveArms(desPos1, desPos2 );
+            }
+        }
+        else
+            break;
 
     }
 
-    ros::Duration(0.5).sleep();
-    moveArmsNoTearing(desPos1, desPos2);
+    // MOVING UP
 
     desPose.orientation = rotationMatrix3ToQuaternion(diagonalDown());
-
+    for (unsigned int i =0 ; i < 4 ;  i++){
+        if(moveArmBetweenSpheres(movingArm, true ,desPose) == -1){
+            cout<< "Cant move up .. " << i << "TIMES" <<endl;
+            if (i == 3){
+                cout<< "ABORDING ..." << endl;
+                return -1;
+            }
+        }else
+            break;
+    }
     if ( lastMove == true )
         return -1;
+
+    radious=getArmsDistance();
 
     desPos1 = getArmPose("r1");
     desPos2 = getArmPose("r2");
 
-
-    cout<< "holding arm is = " << holdingArm << endl;
-
     if(holdingArm == "r1"){
         desPos2.position.x-=radious/2.0f;
-        desPos1.position.z-=0.866025404*radious;
+
         desPos2.orientation = rotationMatrix3ToQuaternion(diagonalDown());
     }
     else{
-        desPos1.position.x+=radious/2.0f;
-        desPos2.position.z-=0.866025404*radious;
-        desPos1.orientation = rotationMatrix3ToQuaternion(diagonalDown());
+        desPos2.position.x+=radious/2.0f;
+
+        desPos2.orientation = rotationMatrix3ToQuaternion(diagonalDown());
+    }
+        desPos1.position.z-=0.7*radious;
+
+    ros::Duration(0.3).sleep();
+    // MOVING DOWN
+
+    for (unsigned int i =0 ; i < 4 ;  i++){
+        if (moveArmsNoTearing(desPos2,desPos1, movingArm, holdingArm) == -1) {
+            cout << "cant move down ..." << endl;
+            if (i == 3){
+                cout<< "ABORDING ..." << endl;
+                 setGripperStates(holdingArm, true);
+            }
+        }
+        else
+            break;
     }
 
-    ros::Duration(1.5).sleep();
-    if ( moveArms(desPos1, desPos2) == -1){
-        cout<<"ABORDING..."<<endl;
-        return -1;
-    }
+//    desPose.orientation = rotationMatrix3ToQuaternion(horizontal());
+
+
+
+//    desPos1 = getArmPose("r1");
+//    desPos2 = getArmPose("r2");
+
+
+//    cout<< "holding arm is = " << holdingArm << endl;
+
+//    if(holdingArm == "r1"){
+//        desPos2.position.x-=radious/3.0f;
+//        desPos1.position.z-=2.23606 *radious/3.f;
+//    }
+//    else{
+//        desPos1.position.x+=radious/3.0f;
+//        desPos2.position.z-=2.23606 *radious/3.f;;
+//    }
+
+//    desPos1.orientation = rotationMatrix3ToQuaternion(horizontal());
+
+
+//    for (unsigned int i =0 ; i < 4 ;  i++){
+//        if (moveArmsNoTearing(desPos1, desPos2, movingArm, holdingArm) == -1) {
+//            cout << "cant move up ..." << endl;
+//            if (i == 3){
+//                cout<< "ABORDING ..." << endl;
+//                return -1;
+//            }
+//        }
+//        else
+//            break;
+//    }
 
     setGripperStates(holdingArm, true);
 

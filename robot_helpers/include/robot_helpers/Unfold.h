@@ -55,6 +55,8 @@ private:
 
 public:
 
+    string getHoldingArm();
+    string getMovingArm();
     inline Eigen::Matrix3d vertical(){
         Eigen::Matrix3d vertical;
         if(holdingArm == "r1"){

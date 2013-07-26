@@ -350,7 +350,20 @@ bool addSphereToCollisionModel(const std::string &armName, double radius)
     att_object.touch_links.push_back(arm2Name + "_xtion");
     att_object.touch_links.push_back(arm2Name + "_cable_1");
 
-
+    att_object.touch_links.push_back("camera_holder");
+    att_object.touch_links.push_back("camera_stick");
+    att_object.touch_links.push_back("camera_box");
+    att_object.touch_links.push_back("camera_holder");
+    att_object.touch_links.push_back("certh_floor");
+    att_object.touch_links.push_back("certh_roof");
+    att_object.touch_links.push_back("certh_wall_1");
+    att_object.touch_links.push_back("certh_wall_2");
+    att_object.touch_links.push_back("certh_wall_3");
+    att_object.touch_links.push_back("certh_wall_4");
+    att_object.touch_links.push_back("dx100");
+    att_object.touch_links.push_back("r750_base");
+    att_object.touch_links.push_back("r750");
+    att_object.touch_links.push_back("xtion3_link");
 
     att_object.object.id = "/attached_sphere";
     att_object.object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
@@ -583,9 +596,9 @@ void setPathConstraints(clopema_arm_navigation::ClopemaMotionPlan & mp, float ra
         arm2Name="r2";
 
     mp.request.motion_plan_req.path_constraints.position_constraints.resize(1);
-    mp.request.motion_plan_req.path_constraints.position_constraints[0].header.frame_id = armName + "_ee";
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].header.frame_id = arm2Name + "_ee";
     mp.request.motion_plan_req.path_constraints.position_constraints[0].header.stamp = ros::Time::now();
-    mp.request.motion_plan_req.path_constraints.position_constraints[0].link_name = arm2Name + "_ee";
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].link_name = armName + "_ee";
     mp.request.motion_plan_req.path_constraints.position_constraints[0].position.x = 0.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[0].position.y = 0.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[0].position.z = 0.0;
@@ -694,7 +707,8 @@ int moveArmBetweenSpheres( string armName, bool up, geometry_msgs::Pose goalPose
     }
 
     goalPose.position=goalPoint;
-    addSphereToCollisionModel(otherArm, radious/2.0);
+    if(radious>0.5)
+        addSphereToCollisionModel(otherArm, radious/2.0);
 
     if ( moveArmConstrains( goalPose, armName, radious + 0.1) == -1){
         cout<<"ABORDING..." <<endl;
@@ -705,6 +719,7 @@ int moveArmBetweenSpheres( string armName, bool up, geometry_msgs::Pose goalPose
 
     return 0;
 }
+
 
 
 int moveArm(geometry_msgs::Pose pose, const string &armName){
@@ -803,14 +818,14 @@ int moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, const string
 
 int moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, const string &arm1Name, const string &arm2Name){
 
-    float radious = getArmsDistance()+0.1;
+    float radious = getArmsDistance()+0.03;
 
     MoveRobot cmove;
     cmove.setServoMode(false);
      //Create plan
     clopema_arm_navigation::ClopemaMotionPlan mp;
     mp.request.motion_plan_req.group_name = "arms";
-    mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
+    mp.request.motion_plan_req.allowed_planning_time = ros::Duration(10.0);
 
     //Set start state
     if (!getRobotState(mp.request.motion_plan_req.start_state))
@@ -830,7 +845,7 @@ int moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, con
     desired_pose.absolute_yaw_tolerance = 0.04;
 
 
-    mp.request.motion_plan_req.path_constraints.position_constraints.resize(2);
+    mp.request.motion_plan_req.path_constraints.position_constraints.resize(1);
     mp.request.motion_plan_req.path_constraints.position_constraints[0].header.frame_id = arm1Name + "_ee";
     mp.request.motion_plan_req.path_constraints.position_constraints[0].header.stamp = ros::Time::now();
     mp.request.motion_plan_req.path_constraints.position_constraints[0].link_name = arm2Name + "_ee";
@@ -846,9 +861,7 @@ int moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, con
     mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.z = 0.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.w = 1.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[0].weight = 1.0;
-    mp.request.motion_plan_req.path_constraints.position_constraints[1] = mp.request.motion_plan_req.path_constraints.position_constraints[0];
-    mp.request.motion_plan_req.path_constraints.position_constraints[1].link_name = arm1Name + "_ee";
-    mp.request.motion_plan_req.path_constraints.position_constraints[1].position.x = 0.4;
+
 
     arm_navigation_msgs::PositionConstraint position_constraint;
     arm_navigation_msgs::OrientationConstraint orientation_constraint;
@@ -1006,14 +1019,14 @@ int moveArmThrough(vector <geometry_msgs::Pose> poses , const string &armName){
 //    ros::Duration(1,0).sleep();
 //}
 
-float getArmsDistance(){
+float getArmsDistance( string frameName){
 
     tf::TransformListener listener;
     tf::StampedTransform transform;
 
     try {
-        listener.waitForTransform("base_link", "r2_ee", ros::Time(0), ros::Duration(10.0) );
-        listener.lookupTransform("base_link", "r2_ee", ros::Time(0), transform);
+        listener.waitForTransform("base_link", "r2" + frameName, ros::Time(0), ros::Duration(10.0) );
+        listener.lookupTransform("base_link", "r2" + frameName, ros::Time(0), transform);
     } catch (tf::TransformException ex) {
         ROS_ERROR("%s",ex.what());
     }
@@ -1023,11 +1036,10 @@ float getArmsDistance(){
     point1.setY( transform.getOrigin().y() );
     point1.setZ( transform.getOrigin().z() );
 
-    cout<<"point 1 " << point1.getX() << " " << point1.getY()<< " " << point1.getZ() << endl;
 
     try {
-        listener.waitForTransform("base_link", "r1_ee", ros::Time(0), ros::Duration(10.0) );
-        listener.lookupTransform("base_link", "r1_ee", ros::Time(0), transform);
+        listener.waitForTransform("base_link", "r1" + frameName, ros::Time(0), ros::Duration(10.0) );
+        listener.lookupTransform("base_link", "r1" + frameName, ros::Time(0), transform);
     } catch (tf::TransformException ex) {
         ROS_ERROR("%s",ex.what());
     }
@@ -1037,7 +1049,6 @@ float getArmsDistance(){
     point2.setY( transform.getOrigin().y() );
     point2.setZ( transform.getOrigin().z() );
 
-    cout<<"point 1 " << point2.getX() << " " << point2.getY()<< " " << point2.getZ() << endl;
 
     return tf::tfDistance(point1, point2);
 }

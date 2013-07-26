@@ -74,7 +74,7 @@ int moveArmThrough(std::vector <geometry_msgs::Pose> poses , const std::string &
 
 //void grabFromXtion(cv::Mat rgb, cv::Mat depth, pcl::PointCloud<pcl::PointXYZ> pc);
 
-float getArmsDistance();
+float getArmsDistance(std::string frameName = "_ee");
 
 geometry_msgs::Pose getArmPose( const std::string &armName, const std::string &frameName = "base_link");
 
