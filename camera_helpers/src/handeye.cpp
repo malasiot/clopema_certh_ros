@@ -1,134 +1,36 @@
-#include <highgui.h>
+#include "calibration.h"
 
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/calib3d/calib3d.hpp>
-
-#include <iostream>
-#include <fstream>
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/regex.hpp>
-#include <boost/algorithm/string.hpp>
-
-#include <Eigen/Geometry>
 #include <Eigen/Eigenvalues>
+#include <Eigen/SVD>
 #include <unsupported/Eigen/NonLinearOptimization>
 
+#include <fstream>
+#include <iostream>
+
 using namespace std ;
-using namespace cv ;
 using namespace Eigen ;
 
-static bool findCorners(const cv::Mat &im, const cv::Size &boardSize, vector<Point2f> &corners)
-{
-    cv::Mat gray ;
-
-    cv::cvtColor(im, gray, CV_BGR2GRAY) ;
-
-    //CALIB_CB_FAST_CHECK saves a lot of time on images
-    //that do not contain any chessboard corners
-
-    bool patternfound = cv::findChessboardCorners(gray, boardSize, corners,
-            CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE );
-
-    if(patternfound)
-        cv::cornerSubPix(gray, corners, Size(5, 5), Size(-1, -1),
-            TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
-/*
-
-    cv::drawChessboardCorners(im, boardSize, Mat(corners), patternfound);
-
-    cv::imwrite("/home/malasiot/tmp/oo.png", im) ;
-
-    cout << "ok here" ;
-*/
-
-    return patternfound ;
-}
-
-static double computeReprojectionErrors(
-        const vector<vector<Point3f> >& objectPoints,
-        const vector<vector<Point2f> >& imagePoints,
-        const vector<Mat>& rvecs, const vector<Mat>& tvecs,
-        const Mat& cameraMatrix, const Mat& distCoeffs,
-        vector<float>& perViewErrors )
-{
-    vector<Point2f> imagePoints2;
-    int i, totalPoints = 0;
-    double totalErr = 0, err;
-    perViewErrors.resize(objectPoints.size());
-
-    for( i = 0; i < (int)objectPoints.size(); i++ )
-    {
-
-        projectPoints(Mat(objectPoints[i]), rvecs[i], tvecs[i],
-                      cameraMatrix, distCoeffs, imagePoints2);
-        err = norm(Mat(imagePoints[i]), Mat(imagePoints2), CV_L2);
-        int n = (int)objectPoints[i].size();
-        perViewErrors[i] = (float)std::sqrt(err*err/n);
-        totalErr += err*err;
-        totalPoints += n;
-    }
-
-    return std::sqrt(totalErr/totalPoints);
-}
-
-static bool runCalibration( const vector<vector<Point2f> > &imagePoints,
-                            const vector<vector<Point3f> > &objectPoints,
-                            const cv::Size &imageSize,
-                            float aspectRatio,
-                            int flags, Mat& cameraMatrix, Mat& distCoeffs,
-                            vector<Mat>& rvecs, vector<Mat>& tvecs,
-                            vector<float>& reprojErrs,
-                            double& totalAvgErr)
-{
-    cameraMatrix = Mat::eye(3, 3, CV_64F);
-
-  //  if( flags & CV_CALIB_FIX_ASPECT_RATIO )
-  //      cameraMatrix.at<double>(0,0) = aspectRatio;
-
-    cameraMatrix.at<double>(0, 0) = 525 ;
-    cameraMatrix.at<double>(1, 1) = 525 ;
-    cameraMatrix.at<double>(0, 2) = imageSize.width/2 - 0.5 ;
-    cameraMatrix.at<double>(1, 2) = imageSize.height/2 - 0.5 ;
-
-    distCoeffs = Mat::zeros(8, 1, CV_64F);
-
-    double rms = cv::calibrateCamera(objectPoints, imagePoints, imageSize, cameraMatrix,
-                    distCoeffs, rvecs, tvecs, flags|CV_CALIB_FIX_K4|CV_CALIB_FIX_K5);
-                    ///*|CV_CALIB_FIX_K3*/|CV_CALIB_FIX_K4|CV_CALIB_FIX_K5);
-    printf("RMS error reported by calibrateCamera: %g\n", rms);
-
-    bool ok = cv::checkRange(cameraMatrix) && cv::checkRange(distCoeffs);
-
-    totalAvgErr = computeReprojectionErrors(objectPoints, imagePoints,
-                rvecs, tvecs, cameraMatrix, distCoeffs, reprojErrs);
-
-    return ok;
-}
 
 // Generic functor
 template<typename _Scalar, int NX=Dynamic, int NY=Dynamic>
 struct Functor
 {
-  typedef _Scalar Scalar;
-  enum {
-    InputsAtCompileTime = NX,
-    ValuesAtCompileTime = NY
-  };
-  typedef Matrix<Scalar,InputsAtCompileTime,1> InputType;
-  typedef Matrix<Scalar,ValuesAtCompileTime,1> ValueType;
-  typedef Matrix<Scalar,ValuesAtCompileTime,InputsAtCompileTime> JacobianType;
+    typedef _Scalar Scalar;
+    enum {
+        InputsAtCompileTime = NX,
+        ValuesAtCompileTime = NY
+    };
+    typedef Matrix<Scalar,InputsAtCompileTime,1> InputType;
+    typedef Matrix<Scalar,ValuesAtCompileTime,1> ValueType;
+    typedef Matrix<Scalar,ValuesAtCompileTime,InputsAtCompileTime> JacobianType;
 
-  const int m_inputs, m_values;
+    const int m_inputs, m_values;
 
-  Functor() : m_inputs(InputsAtCompileTime), m_values(ValuesAtCompileTime) {}
-  Functor(int inputs, int values) : m_inputs(inputs), m_values(values) {}
+    Functor() : m_inputs(InputsAtCompileTime), m_values(ValuesAtCompileTime) {}
+    Functor(int inputs, int values) : m_inputs(inputs), m_values(values) {}
 
-  int inputs() const { return m_inputs; }
-  int values() const { return m_values; }
-
-  // you should define that in the subclass :
-//  void operator() (const InputType& x, ValueType* v, JacobianType* _j=0) const;
+    int inputs() const { return m_inputs; }
+    int values() const { return m_values; }
 };
 
 struct SolverFunctor: public Functor<double>
@@ -139,19 +41,18 @@ struct SolverFunctor: public Functor<double>
 
   int operator()(const VectorXd &x, VectorXd &fvec) const
   {
-      Matrix4d X, Z ;
+      Matrix4d X;
 
       for(int i=0, k=0 ; i<3 ; i++)
           for(int j=0 ; j<4 ; j++, k++)
           {
               X(i, j) = x[k] ;
-              Z(i, j) = x[k+12];
           }
 
       int n = A.size() ;
 
-      Matrix3d Rx = X.block<3, 3>(0, 0), Rz = Z.block<3, 3>(0, 0) ;
-      Vector3d Tx = X.block<3, 1>(0, 3), Tz = Z.block<3, 1>(0, 3) ;
+      Matrix3d Rx = X.block<3, 3>(0, 0) ;
+      Vector3d Tx = X.block<3, 1>(0, 3) ;
 
       int k = 0 ;
 
@@ -160,8 +61,8 @@ struct SolverFunctor: public Functor<double>
           Matrix3d Ra = A[r].rotation(), Rb = B[r].rotation() ;
           Vector3d Ta = A[r].translation(), Tb = B[r].translation() ;
 
-          Matrix3d C = Ra * Rx - Rz * Rb ;
-          Vector3d S = Ra * Tx + Ta - Rz * Tb - Tz ;
+          Matrix3d C = Ra * Rx - Rx * Rb ;
+          Vector3d S = Ra * Tx + Ta - Rx * Tb - Tx ;
 
           for(int i=0 ; i<3 ; i++ )
               for(int j=0 ; j<3 ; j++ )
@@ -171,84 +72,273 @@ struct SolverFunctor: public Functor<double>
               fvec[k++] = S[i] ;
       }
 
-      const double cfactor = 1.0e3 ;
+      const double cfactor = 1.0e6 ;
 
       Matrix3d Cx = Rx.transpose() * Rx - Matrix3d::Identity() ;
-      Matrix3d Cz = Rz.transpose() * Rz - Matrix3d::Identity() ;
 
       for(int i=0 ; i<3 ; i++ )
           for(int j=0 ; j<3 ; j++ )
               fvec[k++] = cfactor * Cx(i, j) ;
 
-      for(int i=0 ; i<3 ; i++ )
-          for(int j=0 ; j<3 ; j++ )
-              fvec[k++] = cfactor * Cz(i, j) ;
-
       return 0;
   }
 
-  int inputs() const { return 24 ; }
-  int values() const { return 12*A.size() + 18; } // number of constraints
+  int inputs() const { return 12 ; }
+  int values() const { return 12*A.size() + 9; } // number of constraints
 
   const vector<Affine3d> &A,  &B ;
 
 };
 
+// minimize the frobenius norm of residual errors in rotation and translation (according to Dornaika and Horaud)
+// uses numerical differentiation for computing Jacobians
+
 bool solveHandEyeNonLinear(const vector<Affine3d> &A, const vector<Affine3d> &B,
-                  Affine3d &X, Affine3d &Z )
+                  Affine3d &X )
 {
     SolverFunctor functor(A, B);
     NumericalDiff<SolverFunctor> numDiff(functor);
 
     LevenbergMarquardt<NumericalDiff<SolverFunctor>, double> lm(numDiff);
-//    lm.parameters.factor =10 ;
 
-    VectorXd Y(24) ;
+    VectorXd Y(12) ;
 
     for(int i=0, k=0 ; i<3 ; i++)
         for(int j=0 ; j<4 ; j++, k++)
-        {
-            Y[k] = X(i, j) ;
-            Y[k+12] = Z(i, j) ;
-        }
+           Y[k] = X(i, j) ;
 
     LevenbergMarquardtSpace::Status status = lm.minimizeInit(Y);
     do {
         status = lm.minimizeOneStep(Y);
-          double fnorm = lm.fvec.blueNorm();
-          cout << "-------\n" ;
-          cout << lm.fvec << endl ;
-    } while (status==LevenbergMarquardtSpace::Running);
-
-
-    lm.minimize(Y) ;
+        double fnorm = lm.fvec.blueNorm();
+          cout << fnorm << endl ;
+    } while ( status == LevenbergMarquardtSpace::Running );
 
     for(int i=0, k=0 ; i<3 ; i++)
         for(int j=0 ; j<4 ; j++, k++)
-        {
             X(i, j) = Y[k] ;
-            Z(i, j) = Y[k+12];
-        }
 
-    Matrix3d Rx = X.rotation(), Rz = Z.rotation() ;
-    Vector3d Tx = X.translation(), Tz = Z.translation() ;
+    Matrix3d Rx = X.rotation() ;
+    Vector3d Tx = X.translation() ;
 
     double fnorm = lm.fvec.blueNorm();
+
+    X = Translation3d(Tx) * Rx ;
 
     return true ;
 }
 
-bool solveHandEyeLinear(const vector<Affine3d> &A, const vector<Affine3d> &B,
-                  Affine3d &X, Affine3d &Z )
+void getDualQuaternion(const Affine3d &A, Quaterniond &q, Quaterniond &qp)
+{
+    AngleAxisd rod(A.rotation()) ;
+
+    double theta = rod.angle() ;
+    double hc = cos(theta/2.0) ;
+    double hs = sin(theta/2.0) ;
+    Vector3d a = rod.axis() ;
+
+    Vector3d as = hs * a ;
+
+    q = Quaterniond(hc, as.x(), as.y(), as.z()) ;
+
+    Vector3d t = A.translation() ;
+
+    double qpw = -t.dot(as) / 2.0 ;
+
+    Vector3d qpv = (t.cross(as) + hc * t) / 2.0 ;
+
+    qp = Quaterniond(qpw, qpv.x(), qpv.y(), qpv.z()) ;
+}
+
+static Matrix3d crossprod(const Vector3d &a)
+{
+    Matrix3d r ;
+    r << 0, -a.z(), a.y(), a.z(), 0, -a.x(), -a.y(), a.x(), 0 ;
+    return r ;
+}
+
+// Method by K. Danielidis
+
+bool solveHandEyeLinearDualQuaternion(const vector<Affine3d> &A, const vector<Affine3d> &B,
+                  Affine3d &X )
 {
     assert(A.size() == B.size()) ;
 
     int n = A.size() ;
-    Quaterniond qz, qx ;
+
+    MatrixXd T(6*n, 8) ;
+
+    for(int i=0 ; i<n ; i++)
+    {
+        Quaterniond qa, qb, qpa, qpb ;
+
+        // compute dual quaternion representations
+
+        getDualQuaternion(A[i], qa, qpa) ;
+        getDualQuaternion(B[i], qb, qpb) ;
+
+        // Form the A problem matrix (eq. 31)
+        Vector3d s1 = qa.vec() - qb.vec() ;
+        Matrix3d s2 = crossprod(qa.vec() + qb.vec()) ;
+        Vector3d t1 = qpa.vec() - qpb.vec() ;
+        Matrix3d t2 = crossprod(qpa.vec() + qpb.vec()) ;
+
+        T.block<3, 1>(6*i, 0) = s1 ;
+        T.block<3, 3>(6*i, 1) = s2 ;
+        T.block<3, 1>(6*i, 4) = Vector3d::Zero() ;
+        T.block<3, 3>(6*i, 5) = Matrix3d::Zero() ;
+
+        T.block<3, 1>(6*i+3, 0) = t1 ;
+        T.block<3, 3>(6*i+3, 1) = t2 ;
+        T.block<3, 1>(6*i+3, 4) = s1 ;
+        T.block<3, 3>(6*i+3, 5) = s2 ;
+    }
+
+    // Solve problem with SVD
+
+    JacobiSVD<MatrixXd> svd(T, ComputeFullV) ;
+
+    const MatrixXd V = svd.matrixV();
+    const VectorXd S = svd.singularValues() ;
+
+    // The last two singular values should be ideally zero
+
+    const double singValThresh = 1.0e-1 ;
+
+    if ( S[6] > singValThresh || S[7] > singValThresh ) return false ;
+
+    // obtain right eigen-vectors spanning the solution space
+
+    VectorXd v7 = V.col(6) ;
+    VectorXd v8 = V.col(7) ;
+
+    // find lambda1, lambda2 so that lambda1*v7 + lambda2*v8 = [q^T ;qprime^T]
+    // Form the quadratic eq. 35 and solve it to obtain lamba1, lambda2
+
+    Vector4d u1 = v7.segment<4>(0);
+    Vector4d v1 = v7.segment<4>(4);
+
+    Vector4d u2 = v8.segment<4>(0);
+    Vector4d v2 = v8.segment<4>(4);
+
+    double a = u1.dot(v1) ;
+    double b = u1.dot(v2) + u2.dot(v1) ;
+    double c = u2.dot(v2) ;
+
+    // solve for s = lambda1/lambda2
+
+    double det = sqrt(b * b - 4 * a * c) ;
+    double s1 = (-b + det)/2/a ;
+    double s2 = (-b - det)/2/a ;
+
+    double a_ = u1.dot(u1) ;
+    double b_ = u1.dot(u2) ;
+    double c_ = u2.dot(u2) ;
+    double s, val ;
+
+    double val1 = s1 * s1 * a_ + 2 * s1 * b_ + c_ ;
+    double val2 = s2 * s2 * a_ + 2 * s2 * b_ + c_ ;
+
+    if ( val1 > val2 )  {
+        s = s1 ;
+        val = val1 ;
+    }
+    else  {
+        s = s2 ;
+        val = val2 ;
+    }
+
+    double lambda2 = sqrt(1/val) ;
+    double lambda1 = s * lambda2 ;
+
+    // compute the solution
+
+    VectorXd sol = lambda1 * v7 + lambda2 * v8 ;
+
+    Quaterniond q(sol[0], sol[1], sol[2], sol[3]) ;
+    Quaterniond qp(sol[4], sol[5], sol[6], sol[7]) ;
+
+    // obtain rotation and translation from dual quaternion
+
+    Matrix3d rot = q.toRotationMatrix() ;
+    Vector3d trans = 2 * (qp * q.conjugate()).vec() ;
+
+    X = Translation3d(trans) * rot ;
+
+    return true ;
+}
+
+bool solveHandEyeLinearTsai(const vector<Affine3d> &A, const vector<Affine3d> &B, Affine3d &X )
+{
+    assert(A.size() == B.size()) ;
+
+    int n = A.size() ;
+
+    assert(n>2) ;
+
+    MatrixXd A_(3*n, 3) ;
+    VectorXd B_(3*n) ;
+
+    for(int i=0 ; i<n ; i++)
+    {
+        AngleAxisd rg(A[i].rotation()) ;
+        AngleAxisd rc(B[i].rotation()) ;
+
+        double theta_g = rg.angle() ;
+        double theta_c = rc.angle() ;
+
+        Vector3d rng = rg.axis() ;
+        Vector3d rnc = rc.axis() ;
+
+        Vector3d Pg = 2*sin(theta_g/2)*rng;
+        Vector3d Pc = 2*sin(theta_c/2)*rnc;
+
+        A_.block<3, 3>(3*i, 0) = crossprod(Pg + Pc);
+        B_.segment<3>(3*i) = Pc - Pg;
+    }
+
+    // Solve problem with SVD
+
+    JacobiSVD<MatrixXd> svdR(A_, ComputeThinU | ComputeThinV) ;
+
+    // compute rotation
+
+    VectorXd Pcg_prime = svdR.solve(B_) ;
+    double err = (A_* Pcg_prime - B_).norm()/n ;
+
+    VectorXd Pcg = 2*Pcg_prime/(sqrt(1+Pcg_prime.squaredNorm()));
+    MatrixXd Rcg = (1-Pcg.squaredNorm()/2)*Matrix3d::Identity() +
+            0.5*(Pcg*Pcg.adjoint() + sqrt(4 - Pcg.squaredNorm())*crossprod(Pcg));
+
+    // compute translation
+
+    for(int i=0 ; i<n ; i++)
+    {
+        A_.block<3, 3>(3*i, 0) = A[i].rotation() - Matrix3d::Identity() ;
+        B_.segment<3>(3*i) = Rcg * B[i].translation() - A[i].translation() ;
+    }
+
+    JacobiSVD<MatrixXd> svdT(A_, ComputeThinU | ComputeThinV) ;
+
+    VectorXd Tcg = svdT.solve(B_) ;
+    err = (A_* Tcg - B_).norm()/n ;
+
+    X = Translation3d(Tcg) * Rcg ;
+
+    return true ;
+}
+
+// Method by Horaud and Dornaika
+
+bool solveHandEyeLinearHD(const vector<Affine3d> &A, const vector<Affine3d> &B, Affine3d &X )
+{
+    assert(A.size() == B.size()) ;
+
+    int n = A.size() ;
 
     // Solve for rotation
 
-    Matrix4d C = Matrix4d::Zero() ;
+    MatrixXd A_(4*n, 4) ;
 
     for(int i=0 ; i<n ; i++)
     {
@@ -256,216 +346,117 @@ bool solveHandEyeLinear(const vector<Affine3d> &A, const vector<Affine3d> &B,
         qa = Quaterniond(A[i].rotation()) ;
         qb = Quaterniond(B[i].rotation()) ;
 
-        // compute -Q^t * W
+        // compute  (Q-W)'(Q-W)
 
-        Matrix4d Qt, W ;
+        Matrix4d Q, W, QW ;
 
-        Qt <<   -qa.w(), -qa.x(), -qa.y(), -qa.z(),
-                 qa.x(), -qa.w(), -qa.z(),  qa.y(),
-                 qa.y(),  qa.z(), -qa.w(), -qa.x(),
-                 qa.z(), -qa.y(),  qa.x(), -qa.w();
+        Q <<     qa.w(), -qa.x(), -qa.y(), -qa.z(),
+                 qa.x(),  qa.w(), -qa.z(),  qa.y(),
+                 qa.y(),  qa.z(),  qa.w(), -qa.x(),
+                 qa.z(), -qa.y(),  qa.x(),  qa.w();
 
         W <<     qb.w(), -qb.x(), -qb.y(), -qb.z(),
                  qb.x(),  qb.w(),  qb.z(), -qb.y(),
                  qb.y(), -qb.z(),  qb.w(),  qb.x(),
                  qb.z(),  qb.y(), -qb.x(),  qb.w();
 
-        C += Qt*W ;
+        A_.block<4, 4>(4*i, 0) = Q - W ;
+
     }
 
-    SelfAdjointEigenSolver<Matrix4d> eigensolver(C.transpose() * C);
+    // Perform SVD to find rotation
 
-    if ( eigensolver.info() != Success ) return false ;
+    JacobiSVD<MatrixXd> svd(A_, ComputeFullV) ;
 
-    Vector4d eval = eigensolver.eigenvalues() ;
+    const MatrixXd V = svd.matrixV();
 
+    Vector4d vq = V.col(3) ;
 
-    int best = -1 ;
-    double min_eig = DBL_MAX ;
+    Quaterniond q(vq[0], vq[1], vq[2], vq[3]) ;
 
-    for(int i=0 ; i<4 ; i++)
-    {
-        double val ;
-        if ( ( val = n + sqrt(eval[i])) < min_eig )
-        {
-            min_eig = val ;
-            best = i ;
-        }
-
-        if ( ( val = n - sqrt(eval[i])) < min_eig )
-        {
-            min_eig = val ;
-            best = i ;
-        }
-    }
-
-
-    Vector4d eg = eigensolver.eigenvectors().col(best) ;
-
-    qz = Quaterniond(eg[0], eg[1], eg[2], eg[3]) ;
-
-    Vector4d qx_ = (1.0/(min_eig - n)) * C * eg ;
-
-    qx = Quaterniond(qx_[0], qx_[1], qx_[2], qx_[3]) ;
-    qx.normalize();
-
-    Matrix3d RX = qx.toRotationMatrix() ;
-    Matrix3d RZ = qz.toRotationMatrix() ;
-
+    Matrix3d R = q.toRotationMatrix() ;
 
     // Solve for translation
 
-    MatrixXd MA(3*n, 6) ;
+    MatrixXd MA(3*n, 3) ;
     VectorXd MB(3*n) ;
 
     for(int i=0 ; i<n ; i++)
     {
-        MA.block<3, 3>(3*i, 0) = A[i].rotation() ;
-        MA.block<3, 3>(3*i, 3) = -Matrix3d::Identity() ;
-        MB.segment<3>(3*i) = RZ * B[i].translation() - A[i].translation() ;
+        MA.block<3, 3>(3*i, 0) = A[i].rotation() - Matrix3d::Identity() ;
+        MB.segment<3>(3*i) = R * B[i].translation() - A[i].translation() ;
     }
 
-    VectorXd sol = MA.jacobiSvd(ComputeThinU | ComputeThinV).solve(MB) ;
+    Vector3d T = MA.jacobiSvd(ComputeThinU | ComputeThinV).solve(MB) ;
 
-    Vector3d TX = sol.segment<3>(0) ;
-    Vector3d TZ = sol.segment<3>(3) ;
-
-    X = Translation3d(TX) * RX ;
-    Z = Translation3d(TZ) * RZ ;
+    X = Translation3d(T) * R ;
 
     return true ;
+}
+
+void saveMotionsToFile(const vector<Affine3d> &motions, const string &fileName)
+{
+    ofstream strm(fileName.c_str()) ;
+
+    for( int i=0 ; i<motions.size() ; i++ )
+    {
+        Matrix4d m = motions[i].matrix() ;
+
+        for(int r=0 ; r<4 ; r++ )
+            for(int c=0 ; c<4 ; c++ )
+                strm << m(c, r) << endl ;
+    }
+
+
+}
+
+bool solveHandEye(const vector<Affine3d> &gripper_to_base, const vector<Affine3d> &target_to_sensor,
+                  HandEyeMethod method, bool refine,
+                  Affine3d &sensor_to_base )
+{
+    vector<Affine3d> A, B ;
+
+    for(int i=0 ; i<target_to_sensor.size()-1 ; i++)
+    {
+        A.push_back(gripper_to_base[i+1] * gripper_to_base[i].inverse() ) ;
+        B.push_back(target_to_sensor[i+1] * target_to_sensor[i].inverse() ) ;
+    }
+
+//    saveMotionsToFile(A, "/tmp/target_to_sensor.txt") ;
+//    saveMotionsToFile(B, "/tmp/gripper_to_base.txt") ;
+
+    bool res ;
+
+    if ( method == Horaud )
+        res = solveHandEyeLinearHD(A, B, sensor_to_base) ;
+    else if ( method == Tsai )
+        res = solveHandEyeLinearTsai(A, B, sensor_to_base) ;
+    else
+        res = solveHandEyeLinearDualQuaternion(A, B, sensor_to_base) ;
+
+    if ( !res ) return false ;
+
+    if ( refine )
+        res = solveHandEyeNonLinear(A, B, sensor_to_base) ;
+
+
+
+    return true ;
+
 }
 
 
 int main( int argc, char* argv[] )
 {
 
-    string filePrefix = "grab_" ;
-    string fileSuffix = "_c.*" ;
-    string dataFolder = "/home/malasiot/images/clothes/calibration/" ;
+    vector<Affine3d> gripper_to_base, target_to_sensor ;
+    Affine3d sensor_to_base ;
 
-    const cv::Size boardSize(3, 5) ;
-    const double squareSize = 0.04 ;
+    find_target_motions("grab_",  "/home/malasiot/images/clothes/calibration/", cv::Size(3, 5), 0.04, gripper_to_base, target_to_sensor) ;
 
-    namespace fs = boost::filesystem  ;
+    solveHandEye(gripper_to_base, target_to_sensor, Tsai, true, sensor_to_base) ;
 
-    std::string fileNameRegex = filePrefix + "([[:digit:]]+)" + fileSuffix ;
-
-    boost::regex rx(fileNameRegex) ;
-
-    vector<vector<Point2f> > img_corners ;
-    vector<vector<Point3f> > obj_corners ;
-    vector<Affine3d> gripper_to_base ;
-
-    fs::directory_iterator it(dataFolder), end ;
-
-    for( ; it != end ; ++it)
-    {
-        fs::path p = (*it).path() ;
-
-        string fileName = p.filename().string() ;
-
-        boost::smatch sm ;
-
-        // test of this is a valid filename
-
-        if ( !boost::regex_match(fileName, sm, rx ) ) continue ;
-
-        std::string imageNumber = sm[1] ;
-
-        cv::Mat im = imread(p.string(), -1) ;
-
-        Affine3d tr ;
-
-        {
-            boost::replace_all(fileName,"_c.png", "_pose.txt") ;
-
-            string filePath = p.parent_path().string() + '/' + fileName ;
-            ifstream strm(filePath.c_str()) ;
-
-            Matrix3d r ;
-            Vector3d t ;
-
-            double vals[12] ;
-
-            for(int i=0 ; i<12 ; i++ ) strm >> vals[i] ;
-
-            r << vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8] ;
-            t << vals[9], vals[10], vals[11] ;
-
-            tr = Translation3d(t) * r ;
-
-        }
-
-
-        vector<Point2f> img_corners_ ;
-        vector<Point3f> obj_corners_ ;
-
-        img_corners.push_back(vector<Point2f>()) ;
-        obj_corners.push_back(vector<Point3f>()) ;
-
-        if ( findCorners(im, boardSize, img_corners.back()) )
-        {
-
-            for( int i = 0; i < boardSize.height; i++ )
-                for( int j = 0; j < boardSize.width; j++ )
-                    obj_corners.back().push_back(Point3f(float(j*squareSize), float(i*squareSize), 0));
-
-            gripper_to_base.push_back(tr.inverse()) ;
-        }
-        else
-        {
-            img_corners.pop_back() ;
-            obj_corners.pop_back() ;
-
-        }
-
-    }
-
-    vector<Mat> rvecs, tvecs;
-    vector<float> reprojErrs;
-    vector<Affine3d> target_to_sensor ;
-
-    double totalAvgErr = 0;
-
-    cv::Mat camMatrix, distCoeffs ;
-
-    int flag = CALIB_USE_INTRINSIC_GUESS | CALIB_FIX_FOCAL_LENGTH | CALIB_FIX_PRINCIPAL_POINT ;
-    runCalibration(img_corners, obj_corners, cv::Size(640, 480), 640/480.0, flag,
-                   camMatrix, distCoeffs, rvecs, tvecs, reprojErrs, totalAvgErr) ;
-
-    for(unsigned int i=0 ; i<tvecs.size() ; i++ )
-    {
-        Matrix3d r ;
-        Vector3d t ;
-
-        cv::Mat rmat_ ;
-        cv::Rodrigues(rvecs[i], rmat_) ;
-
-        cv::Mat_<double> rmat(rmat_) ;
-        cv::Mat_<double> tmat(tvecs[i]) ;
-
-        r << rmat(0, 0), rmat(0, 1), rmat(0, 2), rmat(1, 0), rmat(1, 1), rmat(1, 2), rmat(2, 0), rmat(2, 1), rmat(2, 2) ;
-        t << tmat(0, 0), tmat(0, 1), tmat(0, 2) ;
-
-        Affine3d tr = Translation3d(t) * r ;
-
-        target_to_sensor.push_back(tr) ;
-    }
-
-    Affine3d sensor_to_base, target_to_gripper ;
-
-//    gripper_to_base * target_to_gripper = sensor_to_base * target_to_sensor
-//
-//            A       *        X          =       Z        *        B
-
-    solveHandEyeLinear(gripper_to_base, target_to_sensor,
-                       target_to_gripper,  sensor_to_base ) ;
-
-
-    //solveHandEyeNonLinear(base_to_gripper, sensor_to_target, gripper_to_target,  base_to_sensor) ;
-
-    cout << sensor_to_base.inverse().translation() << endl ;
+    cout << sensor_to_base.translation() << endl << sensor_to_base.rotation() << endl ;
 
     return 0;
 }
