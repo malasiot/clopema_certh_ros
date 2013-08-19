@@ -816,9 +816,7 @@ int moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, const string
     return 0;
 }
 
-int moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, const string &arm1Name, const string &arm2Name){
-
-    float radious = getArmsDistance()+0.03;
+int moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, const string &arm1Name, const string &arm2Name, float radious){
 
     MoveRobot cmove;
     cmove.setServoMode(false);

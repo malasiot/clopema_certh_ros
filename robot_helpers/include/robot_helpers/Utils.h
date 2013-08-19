@@ -53,6 +53,7 @@ bool getIKXtion(const std::string &armName, const Eigen::Vector3d pos, const Eig
 
 ////////andreas
 
+float getArmsDistance(std::string frameName = "_ee");
 
 int moveArmConstrains(geometry_msgs::Pose pose, const std::string &armName, float radious);
 
@@ -66,15 +67,13 @@ int moveArm(geometry_msgs::Pose pose, const std::string &armName);
 
 int moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const std::string &arm1Name = "r1", const std::string &arm2Name = "r2");
 
-int moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const std::string &arm1Name = "r1", const std::string &arm2Name = "r2");
+int moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const std::string &arm1Name = "r1", const std::string &arm2Name = "r2", float radious = getArmsDistance()+0.03 );
 
 bool moveHomeArm(const std::string &armName);
 
 int moveArmThrough(std::vector <geometry_msgs::Pose> poses , const std::string &armName);
 
 //void grabFromXtion(cv::Mat rgb, cv::Mat depth, pcl::PointCloud<pcl::PointXYZ> pc);
-
-float getArmsDistance(std::string frameName = "_ee");
 
 geometry_msgs::Pose getArmPose( const std::string &armName, const std::string &frameName = "base_link");
 

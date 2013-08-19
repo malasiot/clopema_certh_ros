@@ -106,8 +106,8 @@ int setPose(float x,float y ,float z ){
 
 	btMatrix3x3 rotMat(
 	(btScalar) 0, (btScalar) 0, (btScalar) -1,
-	(btScalar) -1, (btScalar) 0, (btScalar) 0,
-	(btScalar) 0, (btScalar) 1, (btScalar) 0);
+    (btScalar) 1, (btScalar) 0, (btScalar) 0,
+    (btScalar) 0, (btScalar) -1, (btScalar) 0);
 
 	rotMat.getRotation(q);
 
@@ -150,15 +150,15 @@ void mouse_callback( int event, int x, int y, int flags, void* param){
 }
 
 float points[9][3] = {
--0.5, 	-0.9,   1.5,
--0.15,   -0.9,   1.5,
-0.2,  	-0.9,   1.5,
--0.5, 	-1.1,	1.2,
--0.15,   -1.1, 	1.2,
-0.2,  	-1.1, 	1.2,
--0.5, 	-1.3, 	0.9,
--0.15,   -1.3, 	0.9,
-0.2,  	-1.3, 	0.9
+-0.2, 	-0.9,   1.4,
+-0.0,   -0.9,   1.4,
+0.2,  	-0.9,   1.4,
+-0.2, 	-1,     1.1,
+-0.0,   -1, 	1.1,
+0.2,  	-1, 	1.1,
+-0.2, 	-1.1, 	0.8,
+-0.0,   -1.1, 	0.8,
+0.2,  	-1.1, 	0.8
 } ;
 
 void grabpc(camera_helpers::OpenNICaptureAll *grabber)
@@ -247,7 +247,7 @@ void grabpc(camera_helpers::OpenNICaptureAll *grabber)
     cv::Mat trInv = tr.inv() ;
 
      string outFolder = getenv("HOME") ;
-     outFolder += "/.ros/clopema_calibration/handeye/xtion3/calib.txt" ;
+     outFolder += "/.ros/clopema_calibration/xtion3/handeye_rgb.calib" ;
 
      ofstream fout(outFolder.c_str());
 
