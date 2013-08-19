@@ -121,7 +121,7 @@ bool solveHandEyeNonLinear(const vector<Affine3d> &A, const vector<Affine3d> &B,
     Matrix3d Rx = X.rotation() ;
     Vector3d Tx = X.translation() ;
 
-    double fnorm = lm.fvec.blueNorm();
+   // double fnorm = lm.fvec.blueNorm();
 
     X = Translation3d(Tx) * Rx ;
 
@@ -205,7 +205,7 @@ bool solveHandEyeLinearDualQuaternion(const vector<Affine3d> &A, const vector<Af
 
     const double singValThresh = 1.0e-1 ;
 
-    if ( S[6] > singValThresh || S[7] > singValThresh ) return false ;
+  //  if ( S[6] > singValThresh || S[7] > singValThresh ) return false ;
 
     // obtain right eigen-vectors spanning the solution space
 
@@ -398,7 +398,7 @@ void saveMotionsToFile(const vector<Affine3d> &motions, const string &fileName)
 {
     ofstream strm(fileName.c_str()) ;
 
-    for( int i=0 ; i<motions.size() ; i++ )
+    for( uint i=0 ; i<motions.size() ; i++ )
     {
         Matrix4d m = motions[i].matrix() ;
 
@@ -410,16 +410,70 @@ void saveMotionsToFile(const vector<Affine3d> &motions, const string &fileName)
 
 }
 
+void sortStationMovements(vector<Affine3d> &gripper_to_base, vector<Affine3d> &target_to_sensor)
+{
+    int nFrames = gripper_to_base.size() ;
+
+    vector<Affine3d> gripper_to_base_, target_to_sensor_ ;
+
+    double dist ;
+
+    int i=0 ;
+
+    set<int> checked ;
+
+    while ( 1 )
+    {
+        checked.insert(i) ;
+        gripper_to_base_.push_back(gripper_to_base[i]) ;
+        target_to_sensor_.push_back(target_to_sensor[i]) ;
+
+        double maxAngle = 0.0 ;
+        int bestj = -1 ;
+
+        for( int j = 0 ; j<gripper_to_base.size() ; j++ )
+        {
+            if ( checked.count(j) == 0 )
+            {
+                Quaterniond qi(gripper_to_base[i].rotation()) ;
+                Quaterniond qj(gripper_to_base[j].rotation()) ;
+
+                double angle = qi.angularDistance(qj) ;
+
+                if ( angle > maxAngle )
+                {
+                    maxAngle = angle ;
+                    bestj = j ;
+                }
+
+            }
+        }
+
+        if ( bestj < 0 ) break ;
+
+        i = bestj ;
+    }
+
+
+    gripper_to_base = gripper_to_base_ ;
+    target_to_sensor = target_to_sensor_ ;
+
+}
+
 bool solveHandEye(const vector<Affine3d> &gripper_to_base, const vector<Affine3d> &target_to_sensor,
                   HandEyeMethod method, bool refine,
                   Affine3d &sensor_to_base )
 {
     vector<Affine3d> A, B ;
 
-    for(int i=0 ; i<target_to_sensor.size()-1 ; i++)
+    vector<Affine3d> gripper_to_base_(gripper_to_base), target_to_sensor_(target_to_sensor) ;
+
+    sortStationMovements(gripper_to_base_, target_to_sensor_) ;
+
+    for( uint i=0 ; i<target_to_sensor_.size()-1 ; i++)
     {
-        A.push_back(gripper_to_base[i+1] * gripper_to_base[i].inverse() ) ;
-        B.push_back(target_to_sensor[i+1] * target_to_sensor[i].inverse() ) ;
+        A.push_back(gripper_to_base_[i+1] * gripper_to_base_[i].inverse() ) ;
+        B.push_back(target_to_sensor_[i+1] * target_to_sensor_[i].inverse() ) ;
     }
 
 //    saveMotionsToFile(A, "/tmp/target_to_sensor.txt") ;
@@ -452,7 +506,7 @@ int main( int argc, char* argv[] )
     vector<Affine3d> gripper_to_base, target_to_sensor ;
     Affine3d sensor_to_base ;
 
-    find_target_motions("grab_",  "/home/malasiot/images/clothes/calibration/", cv::Size(3, 5), 0.04, gripper_to_base, target_to_sensor) ;
+    find_target_motions("grab_",  "/home/malasiot/images/clothes/calibration/", cv::Size(3, 5), 0.04, true, gripper_to_base, target_to_sensor) ;
 
     solveHandEye(gripper_to_base, target_to_sensor, Tsai, true, sensor_to_base) ;
 
