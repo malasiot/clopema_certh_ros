@@ -14,6 +14,8 @@
   <depend package="nodelet"/>
 
   <depend package="RH_cameras"/>
+  <depend package="robot_helpers"/>
+  <depend package="certh_libs"/>
   
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lcamera_helpers"/>

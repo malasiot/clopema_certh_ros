@@ -111,7 +111,7 @@ bool solveHandEyeNonLinear(const vector<Affine3d> &A, const vector<Affine3d> &B,
     do {
         status = lm.minimizeOneStep(Y);
         double fnorm = lm.fvec.blueNorm();
-          cout << fnorm << endl ;
+
     } while ( status == LevenbergMarquardtSpace::Running );
 
     for(int i=0, k=0 ; i<3 ; i++)
@@ -476,9 +476,6 @@ bool solveHandEye(const vector<Affine3d> &gripper_to_base, const vector<Affine3d
         B.push_back(target_to_sensor_[i+1] * target_to_sensor_[i].inverse() ) ;
     }
 
-//    saveMotionsToFile(A, "/tmp/target_to_sensor.txt") ;
-//    saveMotionsToFile(B, "/tmp/gripper_to_base.txt") ;
-
     bool res ;
 
     if ( method == Horaud )
@@ -498,7 +495,7 @@ bool solveHandEye(const vector<Affine3d> &gripper_to_base, const vector<Affine3d
     return true ;
 
 }
-
+/*
 
 int main( int argc, char* argv[] )
 {
@@ -514,3 +511,4 @@ int main( int argc, char* argv[] )
 
     return 0;
 }
+*/

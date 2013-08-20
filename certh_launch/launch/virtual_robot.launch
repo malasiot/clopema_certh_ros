@@ -1,4 +1,45 @@
 <launch> 
-	<include file="$(find clopema_launch)/launch/virtual_robot.launch"/>
+	<!-- Override the standard configuration -->
+    <arg name="override" value="0" />
+    <include file="$(find clopema_config)/launch/clopema.launch"/>
+
+    <param name="robot_description" command="$(find xacro)/xacro.py $(find clopema_description)/robots/clopema_$(optenv CLOPEMA_PARTNER default).urdf.xacro" />
+
+    <arg name="use_collision_map" default="false"/>
+    <arg name="run_grippers" default="true"/>
+    <arg name="run_planning_actions" default="true"/>
+    <arg name="run_matlab" default="false"/>
+
+    <node pkg="clopema_motoros" type="virtual_robot" name="virutal_robot"/>
+    <node pkg="clopema_motoros" type="joint_trajectory_action" name="joint_trajectory_action" output="screen"/>
+
+    <include file="$(find clopema_arm_navigation)/launch/clopema_planning_environment.launch" />
+	
+    <include file="$(find planning_environment)/launch/environment_server.launch">
+        <arg name="use_monitor" value="true" />
+        <arg name="use_collision_map" value="$(arg use_collision_map)" />
+    </include>
+    <arg name="run_rviz" default="true"/>
+    <group if="$(arg run_rviz)">
+        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find clopema_description)/config/ctu_set.vcg" />
+    </group>
+    <include file="$(find clopema_arm_navigation)/launch/ompl_planning.launch"/>
+    <include file="$(find clopema_arm_navigation)/launch/trajectory_filter_server.launch" />
+    <node pkg="clopema_arm_navigation" type="clopema_planner" name="clopema_planner" output="screen"/>
+
+    <group if="$(arg run_matlab)">
+        <include file="$(find clopema_launch)/launch/start_matlab.launch" />
+    </group>
+    <include file="$(find clopema_arm_navigation)/launch/constraint_aware_kinematics_fast.launch" />
+
+    <!-- Gripper interface -->
+    <include if="$(arg run_grippers)" file="$(find clopema_launch)/launch/grippers_interface.launch">
+        <arg name="r1_virtual" value="true"/>
+        <arg name="r2_virtual" value="true"/>
+    </include>
+
+    <include if="$(arg run_planning_actions)" file="$(find clopema_planning_actions)/launch/start_all.launch"/>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" respawn="true"/>
+
 	<node name="virtual_robot_head" pkg="camera_helpers" type="robot_head_virtual" />
 </launch> 

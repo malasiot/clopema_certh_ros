@@ -74,7 +74,7 @@ void planSingle(KinematicsModel &kmodel)
     double roll, pitch, yaw ;
     robot_helpers::rpyFromQuat(q, roll, pitch, yaw) ;
 
-    PlanningContextSingle pctx("r1_arm", &kmodel, &solver_r1, "r1_ee" ) ;
+    PlanningContextPtr pctx(new PlanningContextSingle("r1_arm", &kmodel, &solver_r1, "r1_ee" ) );
 
     BoxShapedRegion region(Vector3d(0.2, -0.8, 1.4), Vector3d(0.01, 0.01, 0.01), Vector3d() ) ;
 
@@ -84,7 +84,7 @@ void planSingle(KinematicsModel &kmodel)
     region.pitch_min = -M_PI/4 ;
     region.pitch_max = M_PI/4 ;
 
-    JointSpacePlanner planner(&pctx) ;
+    JointSpacePlanner planner(pctx) ;
 
     JointTrajectory traj ;
 
@@ -100,6 +100,48 @@ void planSingle(KinematicsModel &kmodel)
 
 }
 
+void planSingleTaskSpace(KinematicsModel &kmodel)
+{
+
+    MA1400_R1_IKSolver solver_r1 ;
+    solver_r1.setKinematicModel(&kmodel);
+
+    Quaterniond q = lookAt(Eigen::Vector3d(1, 0, 0), M_PI/6) ;
+
+    double roll, pitch, yaw ;
+    robot_helpers::rpyFromQuat(q, roll, pitch, yaw) ;
+
+    PlanningContextPtr pctx(new PlanningContextSingle("r1_arm", &kmodel, &solver_r1, "r1_ee" ) );
+
+    BoxShapedRegion region(Vector3d(0.2, -1.2, 1.4), Vector3d(0.01, 0.01, 0.01), Vector3d() ) ;
+
+    region.roll_min = -M_PI/6 ;
+    region.roll_max = M_PI/6;
+
+    region.pitch_min = -M_PI/6 ;
+    region.pitch_max = M_PI/6 ;
+
+    RPY_XYZ_TaskSpace ts ;
+
+    TaskSpacePlanner planner(pctx) ;
+
+    JointTrajectory traj ;
+
+    bool rplan = planner.solve(region, ts, traj) ;
+
+  // ros::Duration(10).sleep() ;
+
+    traj.completeTrajectory(kmodel.getJointState()) ;
+
+    trajectory_msgs::JointTrajectory msg = traj.toMsg(10) ;
+
+    MoveRobot mv ;
+
+    mv.execTrajectory(msg) ;
+
+}
+
+
 void planDual(KinematicsModel &kmodel)
 {
 
@@ -109,14 +151,14 @@ void planDual(KinematicsModel &kmodel)
     MA1400_R2_IKSolver solver_r2 ;
     solver_r2.setKinematicModel(&kmodel);
 
-    PlanningContextDual pctx("arms", &kmodel, &solver_r1, "r1_ee", &solver_r2, "r2_ee" ) ;
+    boost::shared_ptr<PlanningContext> pctx(new PlanningContextDual("arms", &kmodel, &solver_r1, "r1_ee", &solver_r2, "r2_ee" ) ) ;
 
     BoxShapedRegion region1(Vector3d(0.2, -0.8, 1.4), Vector3d(0.05, 0.05, 0.05), Vector3d() ) ;
     BoxShapedRegion region2(Vector3d(0.3, -0.5, 1.4), Vector3d(0.05, 0.05, 0.05), Vector3d() ) ;
 
     GoalDualCompositeRegion rg(&region1, &region2) ;
 
-    JointSpacePlanner planner(&pctx) ;
+    JointSpacePlanner planner(pctx) ;
 
     JointTrajectory traj ;
 
@@ -145,7 +187,7 @@ int main(int argc, char *argv[])
     KinematicsModel kmodel ;
     kmodel.init() ;
 
-    planDual(kmodel) ;
+    planSingleTaskSpace(kmodel) ;
 
     ros::spin() ;
     Quaterniond q = lookAt(Eigen::Vector3d(1, 0, 0), M_PI/6) ;

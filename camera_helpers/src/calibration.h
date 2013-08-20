@@ -33,7 +33,8 @@ bool solveHandEyeNonLinear(const std::vector<Eigen::Affine3d> &A, const std::vec
 
 // use calibration images and robot poses to determine the transformations between gripper and base and between calibration target and sensor
 
-void find_target_motions(const std::string &filePrefix, const std::string &dataFolder, const cv::Size boardSize, const double squareSize, bool useDepth,
+void find_target_motions(const std::string &filePrefix, const std::string &dataFolder, const cv::Size boardSize, const double squareSize,
+                         cv::Mat &cameraMatrix, bool useDepth,
                            std::vector<Eigen::Affine3d> &gripper_to_base, std::vector<Eigen::Affine3d> &target_to_sensor ) ;
 
 #endif

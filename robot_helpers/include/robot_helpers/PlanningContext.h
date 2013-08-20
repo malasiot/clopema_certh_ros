@@ -30,6 +30,8 @@ protected:
     std::string group_ ;
 };
 
+typedef boost::shared_ptr<PlanningContext> PlanningContextPtr ;
+
 // Planning context for single arm
 
 class PlanningContextSingle: public PlanningContext {
@@ -43,7 +45,8 @@ public:
     std::string getEndEffector(int manip) const { return ee_ ; }
 
     bool solve(const std::vector<Eigen::Affine3d> &pose, const JointState &cur, JointState &solution) const {
-        return solver_->solveIK(ee_, pose[0].translation(), Eigen::Quaterniond(pose[0].rotation()), cur, solution) ;
+        bool res = solver_->solveIK(ee_, pose[0].translation(), Eigen::Quaterniond(pose[0].rotation()), cur, solution) ;
+        return res ;
     }
 
 protected:

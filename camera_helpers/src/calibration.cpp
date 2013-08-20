@@ -340,7 +340,7 @@ bool bilinearDepth(const cv::Mat &dim, float x, float y, float &z)
 
 
 
-void find_target_motions(const string &filePrefix, const string &dataFolder, const cv::Size boardSize, const double squareSize, bool useDepth,
+void find_target_motions(const string &filePrefix, const string &dataFolder, const cv::Size boardSize, const double squareSize, cv::Mat &cameraMatrix, bool useDepth,
                            vector<Affine3d> &gripper_to_base, vector<Affine3d> &target_to_sensor )
 {
     string fileSuffix = "_c.*" ;
@@ -444,14 +444,7 @@ void find_target_motions(const string &filePrefix, const string &dataFolder, con
 
     }
 
-    cv::Mat cameraMatrix ;
 
-    cameraMatrix = Mat::eye(3, 3, CV_64F);
-
-    cameraMatrix.at<double>(0, 0) = 525 ;
-    cameraMatrix.at<double>(1, 1) = 525 ;
-    cameraMatrix.at<double>(0, 2) = 640/2 - 0.5 ;
-    cameraMatrix.at<double>(1, 2) = 480/2 - 0.5 ;
 
 
     if ( useDepth )

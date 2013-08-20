@@ -39,4 +39,8 @@ rosbuild_add_library(certh_libs_imageproc
 	src/image/cvHelpers.cpp
 )
 
+rosbuild_add_library(certh_libs_misc 
+	src/misc/FileSystemHelpers.cpp
+)
+
 

@@ -27,8 +27,9 @@ rosbuild_add_executable(virtual_cam src/virtual_cam_publisher.cpp )
 target_link_libraries(virtual_cam "log4cxx")
 rosbuild_link_boost(virtual_cam system regex filesystem)
 
-rosbuild_add_executable(handeye src/handeye.cpp src/calibration.cpp)
-rosbuild_link_boost(handeye system regex filesystem)
+rosbuild_add_executable(handeye_calibration src/handeye_calibration.cpp src/handeye.cpp src/calibration.cpp)
+rosbuild_link_boost(handeye_calibration system regex filesystem)
+target_link_libraries(handeye_calibration camera_helpers)
 
 
 ### testers

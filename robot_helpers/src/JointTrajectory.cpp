@@ -1,5 +1,7 @@
 #include <robot_helpers/JointTrajectory.h>
 
+using namespace std ;
+
 namespace robot_helpers {
 
 

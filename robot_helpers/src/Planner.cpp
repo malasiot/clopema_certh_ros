@@ -25,6 +25,8 @@
 #include <ompl/geometric/planners/sbl/SBL.h>
 #include <ompl/geometric/planners/sbl/pSBL.h>
 
+#include <boost/thread/mutex.hpp>
+
 
 using namespace std ;
 using namespace Eigen ;
@@ -307,13 +309,13 @@ class OmplJointGoalSampler {
     OmplJointGoalSampler(const ompl::base::SpaceInformationPtr &space_information,
                    const ompl::base::ProblemDefinitionPtr &pd,
                    GoalRegion *goal,
-                   const PlanningContext *manip) ;
+                   const PlanningContextPtr &manip) ;
 
     bool sampleGoal(const ompl::base::GoalLazySamples *gls, ompl::base::State *state) ;
     bool randomSample(JointState &sample) ;
 
     int sampleNum ;
-    const PlanningContext *manip ;
+    const PlanningContextPtr manip ;
     GoalRegion *goal ;
     vector<string> joints ;
     JointState cs ;
@@ -329,7 +331,7 @@ class OmplJointGoalSampler {
 OmplJointGoalSampler::OmplJointGoalSampler(const ompl::base::SpaceInformationPtr &space_information_,
                            const ompl::base::ProblemDefinitionPtr &pd_,
                            GoalRegion *goal_,
-                           const PlanningContext *manip_): manip(manip_), goal(goal_),
+                           const PlanningContextPtr &manip_): manip(manip_), goal(goal_),
     si(space_information_), sampleNum(0), max_sample_count_(100), pd(pd_) {
 
     joints = manip->getJoints() ;
@@ -395,7 +397,7 @@ class OmplValidityChecker: public ompl::base::StateValidityChecker
 public:
 
     OmplValidityChecker(const ompl::base::SpaceInformationPtr &si,
-                        PlanningContext *manip_): StateValidityChecker(si), manip(manip_),
+                        const PlanningContextPtr manip_): StateValidityChecker(si), manip(manip_),
         ompl_state_space(si->getStateSpace())
     {
 
@@ -406,7 +408,7 @@ public:
 private:
 
     const ompl::base::StateSpacePtr &ompl_state_space ;
-    PlanningContext *manip ;
+    PlanningContextPtr manip ;
 };
 
 bool OmplValidityChecker::isValid(const ompl::base::State *state) const
@@ -434,7 +436,7 @@ bool JointSpacePlanner::solve(GoalRegion &goal_,
 {
     using namespace ompl::base ;
 
-    StateSpacePtr ompl_state_space = createOmplStateSpace(pctx) ;
+    StateSpacePtr ompl_state_space = createOmplStateSpace(pctx.get()) ;
 
     // create a simple setup and set start and goal state
     ompl::geometric::SimpleSetupPtr ompl_planner_setup ;
@@ -510,6 +512,8 @@ bool JointSpacePlanner::solve(GoalRegion &goal_,
     // solve problem
 
     PlannerStatus res = ompl_planner_setup->solve(time_out);
+
+
 
     if ( res  )
     {
@@ -611,7 +615,7 @@ class OmplTaskValidityChecker: public ompl::base::StateValidityChecker
 public:
 
     OmplTaskValidityChecker(const ompl::base::SpaceInformationPtr &si,
-                            PlanningContext *manip_, const TaskSpace *ts_): StateValidityChecker(si), manip(manip_), ts(ts_),
+                            const PlanningContextPtr &manip_, const TaskSpace *ts_): StateValidityChecker(si), manip(manip_), ts(ts_),
         ompl_state_space(si->getStateSpace())
     {
 
@@ -622,8 +626,9 @@ public:
 private:
 
     const ompl::base::StateSpacePtr &ompl_state_space ;
-    PlanningContext *manip ;
+    PlanningContextPtr manip ;
     const TaskSpace *ts ;
+    mutable boost::mutex mtx ;
 };
 
 bool OmplTaskValidityChecker::isValid(const ompl::base::State *state) const
@@ -644,7 +649,13 @@ bool OmplTaskValidityChecker::isValid(const ompl::base::State *state) const
 
     JointState ik_solution ;
 
-    return  manip->solve(pose, model->getJointState(), ik_solution ) ;
+
+        boost::lock_guard<boost::mutex> lock(mtx);
+
+    bool res = manip->solve(pose, model->getJointState(), ik_solution ) ;
+
+
+    return res ;
 
 }
 
@@ -656,15 +667,16 @@ class OmplTaskGoalSampler {
                    const ompl::base::ProblemDefinitionPtr &pd,
                    GoalRegion *goal,
                    const TaskSpace *ts,
-                   const PlanningContext *manip) ;
+                   const PlanningContextPtr &manip) ;
 
     bool sampleGoal(const ompl::base::GoalLazySamples *gls, ompl::base::State *state) ;
     void randomSample(std::vector<double> &sample) ;
 
     int sampleNum ;
-    const PlanningContext *manip ;
+    PlanningContextPtr manip ;
     const TaskSpace *ts ;
     GoalRegion *goal ;
+
 
     const ompl::base::SpaceInformationPtr &si ;
     const ompl::base::ProblemDefinitionPtr &pd ;
@@ -678,8 +690,8 @@ OmplTaskGoalSampler::OmplTaskGoalSampler(const ompl::base::SpaceInformationPtr &
                            const ompl::base::ProblemDefinitionPtr &pd_,
                            GoalRegion *goal_,
                            const TaskSpace *ts_,
-                           const PlanningContext *manip_): manip(manip_), goal(goal_),
-    ts(ts_), si(space_information_), sampleNum(0), max_sample_count_(100), pd(pd_) { }
+                           const PlanningContextPtr &manip_): manip(manip_), goal(goal_),
+    ts(ts_), si(space_information_), sampleNum(0), max_sample_count_(10000), pd(pd_) { }
 
 void OmplTaskGoalSampler::randomSample(std::vector<double> &sample)
 {
@@ -730,17 +742,17 @@ bool OmplTaskGoalSampler::sampleGoal(const ompl::base::GoalLazySamples *gls, omp
         else break ;
 
    }
-    cout << sampleNum << endl ;
-    return sampleNum < max_sample_count_ && !pd->hasSolution();
-    return false ;
+
+    return sampleNum < max_sample_count_ /*&& !pd->hasSolution() */;
+
 
 }
 
-bool TaskSpacePlanner::solve(GoalRegion &goal_, const TaskSpace *ts, JointTrajectory &traj)
+bool TaskSpacePlanner::solve(GoalRegion &goal_, const TaskSpace &ts, JointTrajectory &traj)
 {
     using namespace ompl::base ;
 
-    StateSpacePtr ompl_state_space = createOmplTaskStateSpace(ts) ;
+    StateSpacePtr ompl_state_space = createOmplTaskStateSpace(&ts) ;
 
     // create a simple setup and set start and goal state
     ompl::geometric::SimpleSetupPtr ompl_planner_setup ;
@@ -749,7 +761,7 @@ bool TaskSpacePlanner::solve(GoalRegion &goal_, const TaskSpace *ts, JointTrajec
 
     SpaceInformationPtr si = ompl_planner_setup->getSpaceInformation() ;
 
-    si->setStateValidityChecker(StateValidityCheckerPtr(new OmplTaskValidityChecker(si, pctx, ts)));
+    si->setStateValidityChecker(StateValidityCheckerPtr(new OmplTaskValidityChecker(si, pctx, &ts)));
 
     // use the current joint state of the manipulator as the start state
 
@@ -765,14 +777,14 @@ bool TaskSpacePlanner::solve(GoalRegion &goal_, const TaskSpace *ts, JointTrajec
     }
 
     std::vector<double> start_state_vec ;
-    ts->poseToTaskSpace(pose, start_state_vec) ;
+    ts.poseToTaskSpace(pose, start_state_vec) ;
 
     setOmplTaskState(ompl_state_space, start_state, start_state_vec) ;
 
     // set the goal region
     ompl::base::GoalPtr goal;
 
-    OmplTaskGoalSampler goal_sampler(si, ompl_planner_setup->getProblemDefinition(), &goal_, ts, pctx) ;
+    OmplTaskGoalSampler goal_sampler(si, ompl_planner_setup->getProblemDefinition(), &goal_, &ts, pctx) ;
 
     goal.reset(new ompl::base::GoalLazySamples(si, boost::bind(&OmplTaskGoalSampler::sampleGoal, &goal_sampler,_1,_2)));
 
@@ -838,7 +850,7 @@ bool TaskSpacePlanner::solve(GoalRegion &goal_, const TaskSpace *ts, JointTrajec
         // simplify path
         pathSimplifier->simplifyMax(path);
 
-        return getOmplTaskTrajectory(path, ompl_state_space, ts, pctx, traj) ;
+        return getOmplTaskTrajectory(path, ompl_state_space, &ts, pctx.get(), traj) ;
     }
 
     return false ;

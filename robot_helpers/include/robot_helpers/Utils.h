@@ -2,7 +2,6 @@
 #define __ROBOT_HELPERS_UTILS_H__
 
 #include "robot_helpers/Robot.h"
-#include "robot_helpers/Unfold.h"
 #include <Eigen/Geometry>
 
 namespace robot_helpers {
