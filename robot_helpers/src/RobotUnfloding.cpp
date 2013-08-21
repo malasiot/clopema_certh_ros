@@ -871,7 +871,7 @@ int Unfold::graspLowestPoint(bool lastMove){
         st= getTranformation(holdingArm + "_ee");
 
        // grasp lowest point
-        addConeToCollisionModel(holdingArm, st.getOrigin().z() - desPose.position.z-0.1 , 0.2 );
+        addConeToCollisionModel(holdingArm, st.getOrigin().z() - desPose.position.z-0.2 , 0.2 );
 
         if (firstTime){
         rotateGripper(-findBias(targetN), holdingArm);
@@ -910,96 +910,7 @@ int Unfold::graspLowestPoint(bool lastMove){
     if( !flipCloth() )
         cout << "CANT FLIP CLOTH"<< endl;
 
-//    //MOVING SIDEWAYS
-
-//    geometry_msgs::Pose desPos1, desPos2;
-//    float radious=getArmsDistance();
-
-//    desPos1 = getArmPose("r1");
-//    desPos2 = getArmPose("r2");
-
-//    if(holdingArm == "r1"){
-//        desPos2.position.x-=radious/2.0;
-//        desPos1.position.x-=radious/2.0;
-//    }
-//    else{
-//        desPos1.position.x+=radious/2.0;
-//        desPos2.position.x+=radious/2.0;
-//    }
-
-//    ros::Duration(0.3).sleep();
-
-//    for (unsigned int i =0 ; i < 4 ;  i++){
-//        if (moveArmsNoTearing(desPos1, desPos2) == -1 ){
-//            cout << "cant move sideways ..." << endl;
-//            if (i == 3){
-//                cout<< "ABORDING ..." << endl;
-//                return -1;
-//            }
-//        }
-//        else
-//            break;
-
-//    }
-//     //MOVING UP
-
-//    desPose.orientation = rotationMatrix3ToQuaternion(diagonalDown());
-//    ros::Duration(0.3).sleep();
-//    for (unsigned int i =0 ; i < 4 ;  i++){
-//        if (moveArmBetweenSpheres(movingArm, true,  desPose) == -1) {
-//            cout << "cant move up ..." << endl;
-//            if (i == 3){
-//                cout<< "ABORDING ..." << endl;
-//                return -1;
-//            }
-//        }
-//        else
-//            break;
-//    }
-
-//    if ( lastMove == true )
-//        return -1;
-
-
-//    desPos1 = getArmPose(holdingArm);
-//    desPos2 = getArmPose(movingArm);
-
-//    //MOVING DOWN
-
-
-
-//    if(holdingArm == "r1"){
-//        desPos2.position.x-=radious/2.0f;
-
-//        desPos2.orientation = rotationMatrix3ToQuaternion(diagonalDown());
-//    }
-//    else{
-//        desPos2.position.x+=radious/2.0f;
-
-//        desPos2.orientation = rotationMatrix3ToQuaternion(diagonalDown());
-//    }
-//        desPos1.position.z-=0.7*radious;
-
-//    ros::Duration(0.3).sleep();
-
-//    for (unsigned int i =0 ; i < 4 ;  i++){
-//        if (moveArmsNoTearing(desPos2,desPos1, movingArm, holdingArm) == -1) {
-//            cout << "cant move down ..." << endl;
-//            if (i == 3){
-//                cout<< "ABORDING ..." << endl;
-//                setGripperStates(holdingArm, true);
-//            }
-//        }
-//        else
-//            break;
-//    }
-
-
-
     setGripperStates(movingArm, true);
-
-//    switchArms();
-
     moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
 return 0;
@@ -1139,130 +1050,271 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
     setGripperStates(movingArm , false);
 
-    geometry_msgs::Pose desPos1, desPos2;
+    if( !flipCloth() )
+        cout << "CANT FLIP CLOTH"<< endl;
 
-   float radious=getArmsDistance();
-
-    desPos1 = getArmPose("r1");
-    desPos2 = getArmPose("r2");
-
-    if(holdingArm == "r1"){
-        desPos2.position.x-=radious/2.0;
-        desPos1.position.x-=radious/2.0;
-    }
-    else{
-        desPos1.position.x+=radious/2.0;
-        desPos2.position.x+=radious/2.0;
-    }
-
-    ros::Duration(0.3).sleep();
-
- // MOVING SIDEWAYS
-
-    for (unsigned int i =0 ; i < 4 ;  i++){
-        if (moveArmsNoTearing(desPos1, desPos2) == -1 ){
-            cout << "cant move sideways ..." << endl;
-            if (i == 3){
-                cout<< "ABORDING ..." << endl;
-                moveArms(desPos1, desPos2 );
-            }
-        }
-        else
-            break;
-
-    }
-
-    // MOVING UP
-
-    desPose.orientation = rotationMatrix3ToQuaternion(diagonalDown());
-    for (unsigned int i =0 ; i < 4 ;  i++){
-        if(moveArmBetweenSpheres(movingArm, true ,desPose) == -1){
-            cout<< "Cant move up .. " << i << "TIMES" <<endl;
-            if (i == 3){
-                cout<< "ABORDING ..." << endl;
-                return -1;
-            }
-        }else
-            break;
-    }
-    if ( lastMove == true )
-        return -1;
-
-    radious=getArmsDistance();
-
-    desPos1 = getArmPose("r1");
-    desPos2 = getArmPose("r2");
-
-    if(holdingArm == "r1"){
-        desPos2.position.x-=radious/2.0f;
-
-        desPos2.orientation = rotationMatrix3ToQuaternion(diagonalDown());
-    }
-    else{
-        desPos2.position.x+=radious/2.0f;
-
-        desPos2.orientation = rotationMatrix3ToQuaternion(diagonalDown());
-    }
-        desPos1.position.z-=0.7*radious;
-
-    ros::Duration(0.3).sleep();
-    // MOVING DOWN
-
-    for (unsigned int i =0 ; i < 4 ;  i++){
-        if (moveArmsNoTearing(desPos2,desPos1, movingArm, holdingArm) == -1) {
-            cout << "cant move down ..." << endl;
-            if (i == 3){
-                cout<< "ABORDING ..." << endl;
-                 setGripperStates(holdingArm, true);
-            }
-        }
-        else
-            break;
-    }
-
-//    desPose.orientation = rotationMatrix3ToQuaternion(horizontal());
+    setGripperStates(movingArm, true);
+    moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
 
+}
+
+//int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove, bool orientLeft, bool orientUp  ){
+
+
+//    Eigen::Vector3d n;
+//    pcl::PointXYZ val = pc.at(x, y) ;
+//    Eigen::Vector3d p(val.x, val.y, val.z);
+//    geometry_msgs::Pose desPose;
+//    vector <geometry_msgs::Pose> poses;
+//    Eigen::Matrix4d rotMat;
+//    Eigen::Vector4d targetP;
+//    tf::Transform ts;
+//    setGripperStates(movingArm , true);
+//    int ox , oy;
+//   findMeanShiftPoint(pc, x, y, ox, oy, 0.05) ;
+//    n = computeNormal(pc, ox, oy) ;
+//    x= ox;
+//    y= oy;
+//    Eigen::Matrix4d calib = getTranformationMatrix("xtion3_rgb_optical_frame");
+
+//    publishLowestPointMarker(marker_pub,p ,n );
+
+//    Eigen::Vector4d tar(p.x(), p.y(), p.z(), 1);
+//    targetP = calib * tar;
+//    publishPointMarker(marker_pub, targetP, 1);
+//    Eigen::Vector4d norm (n.x(), n.y(), n.z(), 0);
+//    Eigen::Vector4d targetN;
+//    targetN = calib * norm.normalized();
+//    targetN.normalized();
+
+//    rotMat = findGraspingPointOrientation(targetN, orientUp);
+//    ts = getTranformation(holdingArm + "_ee" );
+
+//    if ((orientLeft && (holdingArm == "r2")) || (!orientLeft && (holdingArm == "r1"))){
+//        Eigen::Vector2d vect;
+//        vect << targetP.x() - ts.getOrigin().x(),  targetP.y() - ts.getOrigin().y();
+//        double theta = acos(-targetN.y() / sqrt((targetN.x()*targetN.x() + targetN.y()*targetN.y())));
+//        if(targetN.x() < 0)
+//            theta = -theta;
+//        Eigen::Matrix2d rot;
+//        rot << cos(theta) , sin(theta), -sin(theta), cos(theta);
+//        vect = rot * vect;
+//        targetP << ts.getOrigin().x() + vect.x(), ts.getOrigin().y() + vect.y(), targetP.z(), 1;
+
+//        Eigen::Matrix3d orient;
+//        if(orientUp)
+//            orient = diagonalUp();
+//        else
+//            orient = horizontal();
+
+//        desPose.orientation = rotationMatrix3ToQuaternion(orient);
+
+//        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * 0.04;
+//        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * 0.04;
+//        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * 0.04;
+//        poses.push_back(desPose);
+
+//        desPose.position.x = targetP.x() + orient(0, 2) * 0.03 + orient(0, 0) * 0.02;
+//        desPose.position.y = targetP.y() + orient(1, 2) * 0.03 + orient(1, 0) * 0.02;
+//        desPose.position.z = targetP.z() + orient(2, 2) * 0.03 + orient(2, 0) * 0.02;
+//        poses.push_back(desPose);
+//        rotateHoldingGripper(theta);
+//        ros::Duration(2).sleep();
+
+//    }else{
+
+//        desPose.orientation = rotationMatrix4ToQuaternion(rotMat);
+
+//        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.02 - rotMat(0, 2) * 0.04;
+//        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.02 - rotMat(1, 2) * 0.04;
+//        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.02 - rotMat(2, 2) * 0.04;
+//        poses.push_back(desPose);
+
+//        desPose.position.x = targetP.x() + rotMat(0, 2) * 0.03 + rotMat(0, 0) * 0.02;
+//        desPose.position.y = targetP.y() + rotMat(1, 2) * 0.03 + rotMat(1, 0) * 0.02;
+//        desPose.position.z = targetP.z() + rotMat(2, 2) * 0.03 + rotMat(2, 0) * 0.02;
+//        poses.push_back(desPose);
+//    }
+
+//    if(moveArmThrough(poses, movingArm) == -1){
+
+//        poses.clear();
+//       // cout << "fixing rotation...." << endl;
+//        //float theta = findBias(targetN);
+//        double theta = acos(targetN.y() / sqrt((targetN.x()*targetN.x() + targetN.y()*targetN.y())));
+//        if(targetN.x() > 0)
+//            theta = -theta;
+//     //   cout<< " theta = " << theta/M_PI *180<<endl;
+
+//        rotateHoldingGripper(theta);
+//        ros::Duration(2).sleep();
+//        Eigen::Vector2d vect;
+//        vect << targetP.x() - ts.getOrigin().x(),  targetP.y() - ts.getOrigin().y();
+//        Eigen::Matrix2d rot;
+//        rot << cos(theta) , sin(theta), -sin(theta), cos(theta);
+//        vect = rot * vect;
+//        targetP << ts.getOrigin().x() + vect.x(), ts.getOrigin().y() + vect.y(), targetP.z(), 1;
+//        publishPointMarker(marker_pub, targetP, 2);
+//       // cout<< targetP << endl;
+
+//        Eigen::Matrix3d orient;
+//        if(orientUp)
+//            orient = diagonalUp();
+//        else
+//            orient = horizontal();
+
+//        desPose.orientation = rotationMatrix3ToQuaternion(orient);
+
+//        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * 0.04;
+//        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * 0.04;
+//        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * 0.04;
+//        poses.push_back(desPose);
+
+//        desPose.position.x = targetP.x() + orient(0, 2) * 0.03 + orient(0, 0) * 0.02;
+//        desPose.position.y = targetP.y() + orient(1, 2) * 0.03 + orient(1, 0) * 0.02;
+//        desPose.position.z = targetP.z() + orient(2, 2) * 0.03 + orient(2, 0) * 0.02;
+//        poses.push_back(desPose);
+
+//         // GRASPING POINT
+//        for (unsigned int i =0 ; i < 4 ;  i++){
+//            if(moveArmThrough(poses, movingArm) == -1){
+//                cout<< "Cant grasp Point .. " << i << "TIMES" <<endl;
+//                if (i == 3){
+//                    cout<< "ABORDING ..." << endl;
+//                    return -1;
+//                }
+//            }else
+//                break;
+//        }
+
+//    }
+
+//    setGripperStates(movingArm , false);
+
+//    geometry_msgs::Pose desPos1, desPos2;
+
+//   float radious=getArmsDistance();
 
 //    desPos1 = getArmPose("r1");
 //    desPos2 = getArmPose("r2");
 
-
-//    cout<< "holding arm is = " << holdingArm << endl;
-
 //    if(holdingArm == "r1"){
-//        desPos2.position.x-=radious/3.0f;
-//        desPos1.position.z-=2.23606 *radious/3.f;
+//        desPos2.position.x-=radious/2.0;
+//        desPos1.position.x-=radious/2.0;
 //    }
 //    else{
-//        desPos1.position.x+=radious/3.0f;
-//        desPos2.position.z-=2.23606 *radious/3.f;;
+//        desPos1.position.x+=radious/2.0;
+//        desPos2.position.x+=radious/2.0;
 //    }
 
-//    desPos1.orientation = rotationMatrix3ToQuaternion(horizontal());
+//    ros::Duration(0.3).sleep();
 
+// // MOVING SIDEWAYS
 
 //    for (unsigned int i =0 ; i < 4 ;  i++){
-//        if (moveArmsNoTearing(desPos1, desPos2, movingArm, holdingArm) == -1) {
-//            cout << "cant move up ..." << endl;
+//        if (moveArmsNoTearing(desPos1, desPos2) == -1 ){
+//            cout << "cant move sideways ..." << endl;
+//            if (i == 3){
+//                cout<< "ABORDING ..." << endl;
+//                moveArms(desPos1, desPos2 );
+//            }
+//        }
+//        else
+//            break;
+
+//    }
+
+//    // MOVING UP
+
+//    desPose.orientation = rotationMatrix3ToQuaternion(diagonalDown());
+//    for (unsigned int i =0 ; i < 4 ;  i++){
+//        if(moveArmBetweenSpheres(movingArm, true ,desPose) == -1){
+//            cout<< "Cant move up .. " << i << "TIMES" <<endl;
 //            if (i == 3){
 //                cout<< "ABORDING ..." << endl;
 //                return -1;
+//            }
+//        }else
+//            break;
+//    }
+//    if ( lastMove == true )
+//        return -1;
+
+//    radious=getArmsDistance();
+
+//    desPos1 = getArmPose("r1");
+//    desPos2 = getArmPose("r2");
+
+//    if(holdingArm == "r1"){
+//        desPos2.position.x-=radious/2.0f;
+
+//        desPos2.orientation = rotationMatrix3ToQuaternion(diagonalDown());
+//    }
+//    else{
+//        desPos2.position.x+=radious/2.0f;
+
+//        desPos2.orientation = rotationMatrix3ToQuaternion(diagonalDown());
+//    }
+//        desPos1.position.z-=0.7*radious;
+
+//    ros::Duration(0.3).sleep();
+//    // MOVING DOWN
+
+//    for (unsigned int i =0 ; i < 4 ;  i++){
+//        if (moveArmsNoTearing(desPos2,desPos1, movingArm, holdingArm) == -1) {
+//            cout << "cant move down ..." << endl;
+//            if (i == 3){
+//                cout<< "ABORDING ..." << endl;
+//                 setGripperStates(holdingArm, true);
 //            }
 //        }
 //        else
 //            break;
 //    }
 
-    setGripperStates(holdingArm, true);
-
-    switchArms();
-
-    moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
+////    desPose.orientation = rotationMatrix3ToQuaternion(horizontal());
 
 
-}
 
+////    desPos1 = getArmPose("r1");
+////    desPos2 = getArmPose("r2");
+
+
+////    cout<< "holding arm is = " << holdingArm << endl;
+
+////    if(holdingArm == "r1"){
+////        desPos2.position.x-=radious/3.0f;
+////        desPos1.position.z-=2.23606 *radious/3.f;
+////    }
+////    else{
+////        desPos1.position.x+=radious/3.0f;
+////        desPos2.position.z-=2.23606 *radious/3.f;;
+////    }
+
+////    desPos1.orientation = rotationMatrix3ToQuaternion(horizontal());
+
+
+////    for (unsigned int i =0 ; i < 4 ;  i++){
+////        if (moveArmsNoTearing(desPos1, desPos2, movingArm, holdingArm) == -1) {
+////            cout << "cant move up ..." << endl;
+////            if (i == 3){
+////                cout<< "ABORDING ..." << endl;
+////                return -1;
+////            }
+////        }
+////        else
+////            break;
+////    }
+
+//    setGripperStates(holdingArm, true);
+
+//    switchArms();
+
+//    moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
+
+
+//}
 
 bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, cv::Rect & r ){
 
@@ -1291,9 +1343,8 @@ bool Unfold::flipCloth(){
     float radious = getArmsDistance();
     Eigen::Matrix3d orient;
     desPoseDown = getArmPose(movingArm);
-    desPoseDown.position.z += 0.05;
-    moveArm(desPoseDown, movingArm);
-
+    desPoseDown.position.z += 0.15;
+    moveArmConstrains(desPoseDown, movingArm, radious+0.02 );
     //getting the orientation
     if(holdingArm == "r2")
         orient << 0, 0, -1, 1, 0, 0, 0, -1,0;
@@ -1307,11 +1358,143 @@ bool Unfold::flipCloth(){
     desPoseUp.position = holdingArmPose().position;
     desPoseDown.position = desPoseUp.position;
     desPoseDown.position.z -= getArmsDistance();
-    if (moveArmsNoTearing(desPoseUp, desPoseDown, holdingArm, movingArm,  radious ) == -1)
-        return false;
+    if( radious > 0.5){
+           addSphereToCollisionModel(movingArm, 0.2);
+            cout<< "Collision Sphere added" << endl;
+
+        if ( moveArmsFlipCloth( marker_pub, radious + 0.1, desPoseUp, desPoseDown, holdingArm, movingArm) == -1){
+            resetCollisionModel();
+            return false;
+        }
+    }else{
+        cout<< "just dropping the cloth" << endl;
+        setGripperStates(movingArm, true);
+    }
+    resetCollisionModel();
     return true;
 
 }
 
+int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, const string &arm1Name, const string &arm2Name){
+
+    MoveRobot cmove;
+    cmove.setServoMode(false);
+     //Create plan
+    clopema_arm_navigation::ClopemaMotionPlan mp;
+    mp.request.motion_plan_req.group_name = "arms";
+    mp.request.motion_plan_req.allowed_planning_time = ros::Duration(10.0);
+
+    //Set start state
+    if (!getRobotState(mp.request.motion_plan_req.start_state))
+        return -1;
+
+    arm_navigation_msgs::SimplePoseConstraint desired_pose;
+    desired_pose.header.frame_id = "base_link";
+    desired_pose.header.stamp = ros::Time::now();
+    desired_pose.link_name = arm2Name + "_ee";
+    desired_pose.pose=pose2;
+
+    desired_pose.absolute_position_tolerance.x = 0.02;
+    desired_pose.absolute_position_tolerance.y = 0.02;
+    desired_pose.absolute_position_tolerance.z = 0.02;
+    desired_pose.absolute_roll_tolerance = 0.04;
+    desired_pose.absolute_pitch_tolerance = 0.04;
+    desired_pose.absolute_yaw_tolerance = 0.04;
+
+    geometry_msgs::Point p1 = getArmPose(arm1Name).position;
+
+    mp.request.motion_plan_req.path_constraints.position_constraints.resize(2);
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].header.frame_id = arm1Name + "_ee";
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].header.stamp = ros::Time::now();
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].link_name = arm2Name + "_ee";
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].position.x = 0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].position.y = 0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].position.z = 0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.type = arm_navigation_msgs::Shape::SPHERE;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious); //radius
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious);
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_shape.dimensions.push_back(radious);
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.x = 0.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.y = 0.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.z = 0.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.w = 1.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[0].weight = 1.0;
+
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].header.frame_id = "base_link";
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].header.stamp = ros::Time::now();
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].link_name = arm1Name +"_ee";
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].position.x = p1.x;
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].position.y = p1.y;
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].position.z = p1.z;
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_shape.type = arm_navigation_msgs::Shape::BOX;
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_shape.dimensions.push_back(2.0);
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_shape.dimensions.push_back(0.6);
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_shape.dimensions.push_back(2.0);
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_orientation.x = 0.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_orientation.y = 0.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_orientation.z = 0.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_orientation.w = 1.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].weight = 1.0;
+
+
+ // PUBLISH MARKERS
+
+
+    visualization_msgs::Marker marker1;
+    marker1.header.frame_id = "base_link";
+    marker1.header.stamp = ros::Time::now();
+    marker1.ns = "BOX";
+    marker1.id = 0;
+    marker1.type = visualization_msgs::Marker::CUBE;
+    marker1.action = visualization_msgs::Marker::ADD;
+    marker1.pose.position.x = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).position.x;
+    marker1.pose.position.y = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).position.y;
+    marker1.pose.position.z = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).position.z;
+    marker1.pose.orientation.x = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_orientation.x;
+    marker1.pose.orientation.y = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_orientation.y;
+    marker1.pose.orientation.z = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_orientation.z;
+    marker1.pose.orientation.w = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_orientation.w;
+    marker1.scale.x = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_shape.dimensions.at(0);
+    marker1.scale.y = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_shape.dimensions.at(1);
+    marker1.scale.z = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_shape.dimensions.at(2);
+
+    marker1.color.r = 0.0f;
+    marker1.color.g = 1.0f;
+    marker1.color.b = 0.0f;
+    marker1.color.a = 0.5;
+
+    marker1.lifetime = ros::Duration(5);
+
+    ros::Duration(0.3).sleep();
+    vis_pub.publish(marker1);
+    ros::Duration(0.3).sleep();
+
+
+    //////END
+    arm_navigation_msgs::PositionConstraint position_constraint;
+    arm_navigation_msgs::OrientationConstraint orientation_constraint;
+    arm_navigation_msgs::poseConstraintToPositionOrientationConstraints(desired_pose, position_constraint, orientation_constraint);
+    mp.request.motion_plan_req.goal_constraints.orientation_constraints.push_back(orientation_constraint);
+    mp.request.motion_plan_req.goal_constraints.position_constraints.push_back(position_constraint);
+
+    //add r1 goal constraints
+    desired_pose.link_name = arm1Name + "_ee";
+    desired_pose.pose=pose1;
+    arm_navigation_msgs::poseConstraintToPositionOrientationConstraints(desired_pose, position_constraint, orientation_constraint);
+    mp.request.motion_plan_req.goal_constraints.orientation_constraints.push_back(orientation_constraint);
+    mp.request.motion_plan_req.goal_constraints.position_constraints.push_back(position_constraint);
+
+    ROS_INFO("Planning");
+    if (!plan(mp))
+        return -1;
+
+    ROS_INFO("Executing");
+    control_msgs::FollowJointTrajectoryGoal goal;
+    goal.trajectory = mp.response.joint_trajectory;
+    cmove.doGoal(goal);
+
+    return 0;
 }
 
+
+}
