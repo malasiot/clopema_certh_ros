@@ -31,6 +31,7 @@ protected:
     PlanningContextPtr pctx ;
 };
 
+typedef boost::function<bool (const JointState &)> JointStateValidityChecker ;
 
 class JointSpacePlanner: public PlannerBase {
 
@@ -38,8 +39,20 @@ public:
 
     JointSpacePlanner(const PlanningContextPtr &ctx): PlannerBase(ctx) {}
 
+    // add a function to be called for checking the validity of a state beyond collision detection
+
+    void addStateValidityChecker(const JointStateValidityChecker &func) {
+        checkers.push_back(func) ;
+    }
+
     // find a trajectory that brings the end-effector in one of the specified poses
     bool solve(GoalRegion &goal, JointTrajectory &traj) ;
+
+
+
+private:
+
+    std::vector<JointStateValidityChecker> checkers ;
 };
 
 

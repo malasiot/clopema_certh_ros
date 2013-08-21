@@ -397,8 +397,8 @@ class OmplValidityChecker: public ompl::base::StateValidityChecker
 public:
 
     OmplValidityChecker(const ompl::base::SpaceInformationPtr &si,
-                        const PlanningContextPtr manip_): StateValidityChecker(si), manip(manip_),
-        ompl_state_space(si->getStateSpace())
+                        const PlanningContextPtr manip_, const vector<JointStateValidityChecker> &checkers_): StateValidityChecker(si), manip(manip_),
+        ompl_state_space(si->getStateSpace()), checkers(checkers_)
     {
 
     }
@@ -409,6 +409,7 @@ private:
 
     const ompl::base::StateSpacePtr &ompl_state_space ;
     PlanningContextPtr manip ;
+    const vector<JointStateValidityChecker> &checkers ;
 };
 
 bool OmplValidityChecker::isValid(const ompl::base::State *state) const
@@ -421,10 +422,18 @@ bool OmplValidityChecker::isValid(const ompl::base::State *state) const
     JointState js ;
     getOmplState(ompl_state_space, ompl_state, js) ;
 
-
     KinematicsModel *model = manip->getModel() ;
 
-    return model->isStateValid(js) ;
+    bool res = model->isStateValid(js) ;
+
+    if ( !res ) return false ;
+
+    for( int i=0 ; i<checkers.size() ; i++ )
+    {
+        if ( !checkers[i](js) ) return false ;
+    }
+
+    return true ;
 
 }
 
@@ -445,7 +454,7 @@ bool JointSpacePlanner::solve(GoalRegion &goal_,
 
     SpaceInformationPtr si = ompl_planner_setup->getSpaceInformation() ;
 
-    si->setStateValidityChecker(StateValidityCheckerPtr(new OmplValidityChecker(si, pctx)));
+    si->setStateValidityChecker(StateValidityCheckerPtr(new OmplValidityChecker(si, pctx, checkers)));
 
     // use the current joint state of the manipulator as the start state
 

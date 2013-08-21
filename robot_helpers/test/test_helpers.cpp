@@ -90,13 +90,16 @@ void planSingle(KinematicsModel &kmodel)
 
     bool rplan = planner.solve(region, traj) ;
 
-    traj.completeTrajectory(kmodel.getJointState()) ;
+//    traj.completeTrajectory(kmodel.getJointState()) ;
 
-    trajectory_msgs::JointTrajectory msg = traj.toMsg(10) ;
+    trajectory_msgs::JointTrajectory msg = traj.toMsg(10), filtered ;
+
+    filterTrajectory("r1_arm", msg, filtered) ;
+
 
     MoveRobot mv ;
 
-    mv.execTrajectory(msg) ;
+    mv.execTrajectory(filtered) ;
 
 }
 
@@ -113,7 +116,7 @@ void planSingleTaskSpace(KinematicsModel &kmodel)
 
     PlanningContextPtr pctx(new PlanningContextSingle("r1_arm", &kmodel, &solver_r1, "r1_ee" ) );
 
-    BoxShapedRegion region(Vector3d(0.2, -1.2, 1.4), Vector3d(0.01, 0.01, 0.01), Vector3d() ) ;
+    BoxShapedRegion region(Vector3d(0.3, -1.2, 1.4), Vector3d(0.01, 0.01, 0.01), Vector3d() ) ;
 
     region.roll_min = -M_PI/6 ;
     region.roll_max = M_PI/6;
@@ -131,16 +134,34 @@ void planSingleTaskSpace(KinematicsModel &kmodel)
 
   // ros::Duration(10).sleep() ;
 
-    traj.completeTrajectory(kmodel.getJointState()) ;
+//    traj.completeTrajectory(kmodel.getJointState()) ;
 
-    trajectory_msgs::JointTrajectory msg = traj.toMsg(10) ;
+
+    trajectory_msgs::JointTrajectory msg = traj.toMsg(10), filtered ;
+
+    filterTrajectory("r1_arm", msg, filtered) ;
 
     MoveRobot mv ;
 
-    mv.execTrajectory(msg) ;
+    mv.execTrajectory(filtered) ;
 
 }
 
+bool distanceConstraint(const PlanningContextPtr &ctx, double dist, const JointState &js)
+{
+
+    KinematicsModel *model = ctx->getModel() ;
+
+    model->setJointState(js) ;
+
+    Affine3d p1 = model->getWorldTransform("r1_ee") ;
+    Affine3d p2 = model->getWorldTransform("r2_ee") ;
+
+    double d = (p1.translation() - p2.translation()).norm() ;
+
+
+    return d <= dist ;
+}
 
 void planDual(KinematicsModel &kmodel)
 {
@@ -153,25 +174,35 @@ void planDual(KinematicsModel &kmodel)
 
     boost::shared_ptr<PlanningContext> pctx(new PlanningContextDual("arms", &kmodel, &solver_r1, "r1_ee", &solver_r2, "r2_ee" ) ) ;
 
-    BoxShapedRegion region1(Vector3d(0.2, -0.8, 1.4), Vector3d(0.05, 0.05, 0.05), Vector3d() ) ;
-    BoxShapedRegion region2(Vector3d(0.3, -0.5, 1.4), Vector3d(0.05, 0.05, 0.05), Vector3d() ) ;
+    BoxShapedRegion region1(Vector3d(0.0, -0.8, 1.4), Vector3d(0.1, 0.1, 0.1), Vector3d() ) ;
+    BoxShapedRegion region2(Vector3d(0.1, -0.5, 1.4), Vector3d(0.1, 0.1, 0.1), Vector3d() ) ;
 
     GoalDualCompositeRegion rg(&region1, &region2) ;
 
     JointSpacePlanner planner(pctx) ;
 
+    planner.addStateValidityChecker(boost::bind(distanceConstraint, pctx, 0.4, _1));
+
     JointTrajectory traj ;
 
     bool rplan = planner.solve(rg, traj) ;
 
-    traj.completeTrajectory(kmodel.getJointState()) ;
+ //   traj.completeTrajectory(kmodel.getJointState()) ;
 
-    trajectory_msgs::JointTrajectory msg = traj.toMsg(10) ;
+    trajectory_msgs::JointTrajectory msg = traj.toMsg(10), filtered ;
+
+    filterTrajectory("arms", msg, filtered) ;
 
     MoveRobot mv ;
 
-    mv.execTrajectory(msg) ;
+    mv.execTrajectory(filtered) ;
 
+}
+
+
+
+namespace robot_helpers {
+extern void graspHangingPlanApproach(ros::Publisher &pub, const string &armName, const Vector3d &p, const Vector3d &perp_dir) ;
 }
 
 int main(int argc, char *argv[])
@@ -181,16 +212,31 @@ int main(int argc, char *argv[])
 
     ros::NodeHandle nh_ ;
 
-    ros::Publisher pub = nh_.advertise<visualization_msgs::MarkerArray>( "visualization_marker_array", 0 );
-    ros::Publisher pub2 = nh_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
-
     KinematicsModel kmodel ;
     kmodel.init() ;
 
-    planSingleTaskSpace(kmodel) ;
+    ros::AsyncSpinner spinner(4) ;
+    spinner.start() ;
+
+
+    ros::Publisher pub = nh_.advertise<visualization_msgs::MarkerArray>( "visualization_marker_array", 0 );
+    ros::Publisher pub2 = nh_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
+
+    MoveRobot mv ;
+    moveGripperPointingDown(mv, "r1", -0.2, -0.7, 1.6) ;
+
+    Vector3d pos(-0.1, -0.8, 1.0 ) ;
+    Vector3d dir(1, 0, 0) ;
+
+    robot_helpers::graspHangingPlanApproach(pub2, "r1", pos, dir) ;
+
+
+
+//    planDual(kmodel) ;
+
 
     ros::spin() ;
-    Quaterniond q = lookAt(Eigen::Vector3d(1, 0, 0), M_PI/6) ;
+
 
 
 

@@ -50,6 +50,10 @@ bool getIK(const std::string &armName, const Eigen::Vector3d pos, const Eigen::Q
 
 bool getIKXtion(const std::string &armName, const Eigen::Vector3d pos, const Eigen::Quaterniond &q, sensor_msgs::JointState &state) ;
 
+// filter trajectory
+
+bool filterTrajectory(const std::string &groupName, const trajectory_msgs::JointTrajectory &traj_in, trajectory_msgs::JointTrajectory &traj_out) ;
+
 ////////andreas
 
 

@@ -34,6 +34,12 @@ void rpyFromQuat(const Quaterniond &q, double &roll, double &pitch, double &yaw)
     yaw = euler.x() ;
     pitch = euler.y() ;
     roll = euler.z() ;
+
+ //   pitch = atan2( 2*(q.y()*q.z() + q.w()*q.x()), q.w()*q.w() - q.x() * q.x() - q.y() * q.y() + q.z() * q.z()) ;
+ //   yaw = asin(-2*(q.x()*q.z() - q.w()*q.y()) ) ;
+ //   roll = atan2(2*(q.x()*q.y() + q.w()*q.z()), q.w()*q.w() + q.x() * q.x() - q.y() * q.y() - q.z() * q.z()) ;
+
+
 }
 
 Quaterniond lookAt(const Eigen::Vector3d &dir, double roll)

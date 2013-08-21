@@ -12,6 +12,9 @@
 
 #include <highgui.h>
 
+#include <arm_navigation_msgs/CollisionObject.h>
+#include <arm_navigation_msgs/GetPlanningScene.h>
+
 using namespace std ;
 using namespace Eigen ;
 
@@ -29,6 +32,59 @@ double maxZ = 1.5 ;
 
 Vector3d orient(-1, 0, 0) ;
 
+bool addPlaneToCollisionModel(const std::string &armName, double sx, const Quaterniond &q)
+{
+    std::string arm2Name;
+    ros::NodeHandle nh("~") ;
+
+    ros::service::waitForService("/environment_server/set_planning_scene_diff");
+    ros::ServiceClient get_planning_scene_client =
+      nh.serviceClient<arm_navigation_msgs::GetPlanningScene>("/environment_server/set_planning_scene_diff");
+
+    arm_navigation_msgs::GetPlanningScene::Request planning_scene_req;
+    arm_navigation_msgs::GetPlanningScene::Response planning_scene_res;
+
+    arm_navigation_msgs::AttachedCollisionObject att_object;
+
+    att_object.link_name = armName + "_gripper";
+
+    att_object.object.id = "attached_plane";
+    att_object.object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
+
+    att_object.object.header.frame_id = armName + "_ee" ;
+    att_object.object.header.stamp = ros::Time::now();
+
+    arm_navigation_msgs::Shape object;
+
+    object.type = arm_navigation_msgs::Shape::BOX;
+    object.dimensions.resize(3);
+    object.dimensions[0] = sx;
+    object.dimensions[1] = sx;
+    object.dimensions[2] = 0.01;
+
+    geometry_msgs::Pose pose;
+    pose.position.x = 0 ;
+    pose.position.y = 0 ;
+    pose.position.z = sx/2 ;
+
+
+    pose.orientation.x = q.x();
+    pose.orientation.y = q.y();
+    pose.orientation.z = q.z();
+    pose.orientation.w = q.w();
+
+
+
+    att_object.object.shapes.push_back(object);
+    att_object.object.poses.push_back(pose);
+
+    planning_scene_req.planning_scene_diff.attached_collision_objects.push_back(att_object);
+
+    if(!get_planning_scene_client.call(planning_scene_req, planning_scene_res)) return false;
+
+
+    return true ;
+}
 
 int main(int argc, char **argv) {
 
@@ -158,7 +214,7 @@ int main(int argc, char **argv) {
 
     camera_helpers::OpenNICaptureRGBD grabber(camera_id) ;
 
-    if ( !grabber.connect(ros::Duration(5.0)) )
+    if ( !grabber.connect(ros::Duration(-1)) )
     {
         ROS_ERROR("Cannot connect to frame grabber: %s", camera_id.c_str()) ;
         return 0 ;
@@ -172,6 +228,8 @@ int main(int argc, char **argv) {
     mv.setServoMode(false);
 
     double cx, cy, fx, fy ;
+
+
 
     while ( c < nStations )
     {
@@ -191,6 +249,8 @@ int main(int argc, char **argv) {
 
         q = Quaterniond(q.x() + qx, q.y() + qy, q.z() + qz, q.w() + qw) ;
         q.normalize();
+
+        addPlaneToCollisionModel(armName, 0.3, q) ;
 
         if ( robot_helpers::moveGripper(mv, armName, Eigen::Vector3d(X, Y, Z), q) )
         {
@@ -225,7 +285,11 @@ int main(int argc, char **argv) {
 
         }
         else continue ;
+
+        robot_helpers::resetCollisionModel() ;
     }
+
+
 
     vector<Affine3d> gripper_to_base, target_to_sensor ;
     Affine3d sensor_to_base ;

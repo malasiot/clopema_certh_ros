@@ -103,11 +103,7 @@ bool OpenNICaptureImpl::connect(ros::Duration timeout)
 
     waitForConnection(timeout);
 
-    {
-         boost::unique_lock<boost::mutex> lock_ (image_lock) ;
-         if ( !connected ) disconnect() ;
-         return connected ;
-    }
+    return connected ;
 
 
 }

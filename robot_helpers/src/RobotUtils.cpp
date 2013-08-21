@@ -13,6 +13,8 @@
 #include <kinematics_msgs/GetConstraintAwarePositionIK.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
+#include <arm_navigation_msgs/FilterJointTrajectoryWithConstraints.h>
+
 
 using namespace std ;
 
@@ -246,6 +248,54 @@ bool planXtionToPose(const string &armName, const Eigen::Vector3d &pos, const Ei
     return planToJointGoal(armName, goal_state, traj) ;
 }
 
+
+
+bool filterTrajectory(const std::string &groupName, const trajectory_msgs::JointTrajectory &traj_in, trajectory_msgs::JointTrajectory &traj_out)
+{
+    ros::NodeHandle rh;
+
+    ros::service::waitForService("/trajectory_filter_server/filter_trajectory_with_constraints");
+
+    arm_navigation_msgs::FilterJointTrajectoryWithConstraints::Request req;
+    arm_navigation_msgs::FilterJointTrajectoryWithConstraints::Response res;
+
+    ros::ServiceClient filter_trajectory_client_ = rh.serviceClient<arm_navigation_msgs::FilterJointTrajectoryWithConstraints>("/trajectory_filter_server/filter_trajectory_with_constraints");
+
+    arm_navigation_msgs::RobotState rs ;
+
+    getRobotState(rs) ;
+
+    req.start_state = rs;
+    req.trajectory = traj_in ;
+    req.goal_constraints = arm_navigation_msgs::Constraints();
+    req.path_constraints = arm_navigation_msgs::Constraints();
+    req.group_name = groupName ;
+    req.allowed_time = ros::Duration(2.0);
+
+    if ( filter_trajectory_client_.call(req, res) )
+    {
+        if( res.error_code.val == res.error_code.SUCCESS )
+        {
+            traj_out = res.trajectory ;
+            return true ;
+        }
+        else
+        {
+            if ( res.error_code.val == 0 )
+                ROS_INFO("Invalid trajectory");
+            else
+                ROS_INFO("Requested trajectory was not filtered. Error code: %d", res.error_code.val);
+            return false ;
+        }
+    }
+    else
+    {
+        ROS_ERROR("Service call to filter trajectory failed %s",filter_trajectory_client_.getService().c_str());
+        return false ;
+    }
+
+
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
