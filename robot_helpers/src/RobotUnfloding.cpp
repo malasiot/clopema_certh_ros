@@ -1359,7 +1359,7 @@ bool Unfold::flipCloth(){
     desPoseDown.position = desPoseUp.position;
     desPoseDown.position.z -= getArmsDistance();
     if( radious > 0.5){
-           addSphereToCollisionModel(movingArm, 0.2);
+           addSphereToCollisionModel(movingArm, 0.3);
             cout<< "Collision Sphere added" << endl;
 
         if ( moveArmsFlipCloth( marker_pub, radious + 0.1, desPoseUp, desPoseDown, holdingArm, movingArm) == -1){
@@ -1371,6 +1371,10 @@ bool Unfold::flipCloth(){
         setGripperStates(movingArm, true);
     }
     resetCollisionModel();
+//    if (!releaseCloth( movingArm ))
+//        return false;
+
+
     return true;
 
 }
@@ -1402,8 +1406,11 @@ int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry
     desired_pose.absolute_yaw_tolerance = 0.04;
 
     geometry_msgs::Point p1 = getArmPose(arm1Name).position;
-
-    mp.request.motion_plan_req.path_constraints.position_constraints.resize(2);
+    geometry_msgs::Point p2 = getArmPose(arm2Name).position;
+    p1.x= (p1.x + p2.x)/2.0;
+    p1.y= (p1.y + p2.y)/2.0;
+    p1.z= (p1.z + p2.z)/2.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints.resize(3);
     mp.request.motion_plan_req.path_constraints.position_constraints[0].header.frame_id = arm1Name + "_ee";
     mp.request.motion_plan_req.path_constraints.position_constraints[0].header.stamp = ros::Time::now();
     mp.request.motion_plan_req.path_constraints.position_constraints[0].link_name = arm2Name + "_ee";
@@ -1427,15 +1434,30 @@ int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry
     mp.request.motion_plan_req.path_constraints.position_constraints[1].position.y = p1.y;
     mp.request.motion_plan_req.path_constraints.position_constraints[1].position.z = p1.z;
     mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_shape.type = arm_navigation_msgs::Shape::BOX;
-    mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_shape.dimensions.push_back(2.0);
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_shape.dimensions.push_back(1.5);
     mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_shape.dimensions.push_back(0.6);
-    mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_shape.dimensions.push_back(2.0);
+    mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_shape.dimensions.push_back(1.5);
     mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_orientation.x = 0.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_orientation.y = 0.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_orientation.z = 0.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_orientation.w = 1.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[1].weight = 1.0;
 
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].header.frame_id = "base_link";
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].header.stamp = ros::Time::now();
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].link_name = arm2Name +"_ee";
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].position.x = p1.x;
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].position.y = p1.y;
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].position.z = p1.z;
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].constraint_region_shape.type = arm_navigation_msgs::Shape::BOX;
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].constraint_region_shape.dimensions.push_back(1.5);
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].constraint_region_shape.dimensions.push_back(0.6);
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].constraint_region_shape.dimensions.push_back(1.5);
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].constraint_region_orientation.x = 0.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].constraint_region_orientation.y = 0.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].constraint_region_orientation.z = 0.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].constraint_region_orientation.w = 1.0;
+    mp.request.motion_plan_req.path_constraints.position_constraints[2].weight = 1.0;
 
  // PUBLISH MARKERS
 
@@ -1494,6 +1516,23 @@ int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry
     cmove.doGoal(goal);
 
     return 0;
+}
+
+bool Unfold::releaseCloth( const string &armName ){
+
+    geometry_msgs::Pose pose = getArmPose(armName);
+    setGripperState(armName , true);
+    float dx;
+    if (armName == "r1")
+        dx = -0.2;
+    else
+        dx = 0.2;
+    pose.position.x += dx;
+
+    if ( moveArm(pose,armName) == -1 )
+        return false;
+
+    return true;
 }
 
 

@@ -463,7 +463,7 @@ void HF::GetBoundingBox(cv::Mat& mat, cv::Rect& rect){
 }
 
 
-double HF::houghDetect(cv::Mat& dImg, cv::Mat& hImg, cv::Rect& hrect, double& stdx, double& stdy){									
+int HF::houghDetect(cv::Mat& dImg, cv::Mat& hImg, cv::Rect& hrect){									
 
 	cv::Rect rect;
 	GetBoundingBox(dImg, rect);
@@ -482,89 +482,62 @@ double HF::houghDetect(cv::Mat& dImg, cv::Mat& hImg, cv::Rect& hrect, double& st
 		result += leafs[i]->pfg / (double)ntrees;
 	}	
 
-	//if(results[0]>results[1])
 		
-		//return false;
+	hImg = cv::Mat::zeros(dImg.rows, dImg.cols, CV_32FC1);
+	double votes_weight_sum = 0;
+	double meanx=0, meany=0;
+	for(int i=0; i<leafs.size(); ++i){
+		for(int j=0; j<leafs[i]->graspPList.size(); ++j){
+			int x = int( leafs[i]->graspPList[j].x * (double)rect.width + rect.x );
+			int y = int( leafs[i]->graspPList[j].y * (double)rect.height + rect.y );
+			hImg.at<float>(y, x) += leafs[i]->pfg;
+			meanx += leafs[i]->pfg * x;
+			meany += leafs[i]->pfg * y;
+			votes_weight_sum += leafs[i]->pfg;
+		}		
+	}
+	meanx /= votes_weight_sum;
+	meany /= votes_weight_sum;
 
-//	else{		
-		hImg = cv::Mat::zeros(dImg.rows, dImg.cols, CV_32FC1);
-		double votes_weight_sum = 0;
-		double meanx=0, meany=0;
-		for(int i=0; i<leafs.size(); ++i){
-			for(int j=0; j<leafs[i]->graspPList.size(); ++j){
-				int x = int( leafs[i]->graspPList[j].x * (double)rect.width + rect.x );
-				int y = int( leafs[i]->graspPList[j].y * (double)rect.height + rect.y );
-                if(matOut.at<float>(y, x) != 0){
-                    hImg.at<float>(y, x) += leafs[i]->pfg;
-                    //meanx += leafs[i]->pfg * x;
-                    meanx += x;
-                    //meany += leafs[i]->pfg * y;
-                    meany += y;
-                    //votes_weight_sum += leafs[i]->pfg;
-                    votes_weight_sum += 1;
-                }
-			}		
-		}
-		meanx /= votes_weight_sum;
-		meany /= votes_weight_sum;
+	//stdx=0;
+	//stdy=0;
 
-		stdx=0;
-		stdy=0;
-
-		for(int i=0; i<leafs.size(); ++i){
-			for(int j=0; j<leafs[i]->graspPList.size(); ++j){
-				int x = int( leafs[i]->graspPList[j].x * (double)rect.width + rect.x );
-				int y = int( leafs[i]->graspPList[j].y * (double)rect.height + rect.y );
-                if(matOut.at<float>(y, x) != 0){
-                    stdx += leafs[i]->pfg * pow((x - meanx), 2);
-                    stdy += leafs[i]->pfg * pow((y - meany), 2);
-                }
-			}
-		}
-		stdx = sqrt(stdx/votes_weight_sum);
-		stdy = sqrt(stdy/votes_weight_sum);
-        if( (stdx>30)  && (result >= 0.35))
-            result = -1;
-
-		
-		double min,max;
-		cv::Point minp, maxp;	
-		cv::minMaxLoc(hImg, &min, &max, &minp, &maxp, cv::Mat());
-		hImg /= max;
-		hrect.x = maxp.x-10; hrect.y = maxp.y-10; hrect.width = 20; hrect.height = 20;
-		cv::TermCriteria criteria(1, 20, 0.001);
-		cv::meanShift(hImg, hrect, criteria);
-		
-        //bring point to edge
-//        int x = hrect.x + hrect.width/2 - rect.x;
-//        int y = hrect.y + hrect.height/2 - rect.y;
-//        int step = x < rect.width/2 ? -1:1;
-//        while( (x+step > 0) && (x+step < matIn.cols-1) && (matIn.at<float>(y, x+step) >0 ) && ( matIn.at<float>(y, x+step) - matIn.at<float>(y, x) < 12)){
-//            x += step;
-//        }
-//        x -= step;
-//        hrect.x = x + rect.x-10; hrect.y = y + rect.y -10; hrect.width = 20; hrect.height = 20;
-
-		return result;		
-
-	//}
-									
-	/*
-	float countIn = 0;
-	float countOut = 0;
-	for(int i=0; i<WIDTH; ++i){
-		for(int j=0; j<HEIGHT; ++j){
-			if( (i<rect1.x-extra_space) || (i>rect1.x+rect1.width+extra_space) || (j<rect1.y-extra_space) || (j>rect1.y+rect1.height+extra_space) )
-				countOut += hImg.at<float>(j,i);
-			else
-				countIn += hImg.at<float>(j,i);
+	for(int i=0; i<leafs.size(); ++i){
+		for(int j=0; j<leafs[i]->graspPList.size(); ++j){
+			int x = int( leafs[i]->graspPList[j].x * (double)rect.width + rect.x );
+			int y = int( leafs[i]->graspPList[j].y * (double)rect.height + rect.y );
+			//stdx += leafs[i]->pfg * pow((x - meanx), 2);
+			//stdy += leafs[i]->pfg * pow((y - meany), 2);
 		}
 	}
-	*/
-	
-	
+	//stdx = sqrt(stdx/votes_weight_sum);
+	//stdy = sqrt(stdy/votes_weight_sum);	
+
+	cv::Mat gImg = cv::Mat(hImg);
+	GaussianBlur( hImg, gImg, cv::Size( 7, 7 ), 0, 0 );
+
+	double min,max;
+	cv::Point minp, maxp;	
+	cv::minMaxLoc(gImg, &min, &max, &minp, &maxp, cv::Mat());
+	gImg /= max;
+	hrect.x = maxp.x-10; hrect.y = maxp.y-10; hrect.width = 20; hrect.height = 20;
 	//cv::TermCriteria criteria(1, 20, 0.001);
-	//cv::meanShift(hImg, rect1, criteria);
+	//cv::meanShift(hImg, hrect, criteria);
+		
+	hImg = gImg;
+
+	float nx = float(maxp.x-rect.x) / float(rect.width);
+	float ny = float(maxp.y-rect.y) / float(rect.height);
+	float xbar = floor(nx/0.125f);
+	float ybar = floor(ny/0.125f);
+	if(xbar > 7) xbar = 7;
+	if(ybar > 7) ybar = 7;
+	int cur_state = ybar * 8 + xbar;
+	int cur_bar = floor(result/0.2f);
+	if(cur_bar > 4) cur_bar = 4;
+	int cur_obs  = cur_state * 5 + cur_bar;
+
+	return cur_obs;													
 	
 }
 
@@ -737,7 +710,7 @@ void HF::loadNodeFromFile(treeNode *n, ifstream& f){
 
 void HF::loadForestFromFolder(string folder_name){
 		
-    ifstream conf((folder_name+"/"+"forest.txt").c_str());
+    ifstream conf( (folder_name+"/"+"forest.txt").c_str());
 	conf >> ntrees;
 	conf.close();
 	

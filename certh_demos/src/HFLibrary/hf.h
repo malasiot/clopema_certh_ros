@@ -7,22 +7,24 @@
 
 using namespace std;
 
+struct vec{
+	double x,y;
+};
+
+
+
+struct trainImage{
+	int fpos, w, h;
+	double xgrasp, ygrasp;
+	bool symmetric;	
+};
+
+typedef vector< vector<trainImage> > TrainSet;
+
 class HF{
 
 public:
-
-    struct vec{
-        double x,y;
-    };
-
-    struct trainImage{
-        int fpos, w, h;
-        double xgrasp, ygrasp;
-        bool symmetric;
-    };
-
-    typedef vector< vector<trainImage> > TrainSet;
-
+	
 	HF( int ntrees, int max_depth, int min_samples, int num_tests ) : ntrees(ntrees), max_depth(max_depth), min_samples(min_samples), num_tests(num_tests){
 		vTrees.resize(ntrees);
 		tmpbuffer = new float[640*480];
@@ -42,7 +44,7 @@ public:
 	}
 
 	void train(string s);	
-	double houghDetect(cv::Mat& dImg, cv::Mat& hImg, cv::Rect& hrect, double& stdx, double& stdy);		
+	int houghDetect(cv::Mat& dImg, cv::Mat& hImg, cv::Rect& hrect);		
 
 private:		
 	

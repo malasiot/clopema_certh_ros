@@ -155,6 +155,7 @@ public:
     int graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove = false, bool orientLeft = true, bool orientUp = false );
     bool flipCloth();
     int moveArmsFlipCloth( ros::Publisher &vis_pub, float radious , geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const std::string &arm1Name = "r1", const std::string &arm2Name = "r2" );
+    bool releaseCloth( const string &armName );
 
     geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
     geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
