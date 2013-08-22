@@ -1,5 +1,5 @@
 #include <certh_libs/cvHelpers.h>
-
+#include "psimpl.h"
 
 #if defined(_WIN32) && !defined(__CYGWIN32__)
 #include <io.h>
@@ -212,8 +212,235 @@ void computeGradientField(const cv::Mat &clr, cv::Mat &ogx, cv::Mat &ogy, double
 
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void simplifyContour(const std::vector<cv::Point2d> &in_pts, std::vector<cv::Point2d> &out_pts, double avgError)
+{
+    vector<double> srcData, dstData ;
+
+    for(uint j=0 ; j<in_pts.size() ; j++)
+    {
+        const cv::Point &p = in_pts[j] ;
+        srcData.push_back(p.x) ;
+        srcData.push_back(p.y) ;
+    }
+
+    psimpl::simplify_douglas_peucker <2> (srcData.begin(), srcData.end(), avgError,  std::back_inserter (dstData));
+
+    for(uint j=0 ; j<dstData.size() ; j+=2)
+    {
+        cv::Point2d p (dstData[j], dstData[j+1]) ;
+        out_pts.push_back(p) ;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+static void followContour(cv::Mat_<uchar> &bmap, int i, int j, vector<cv::Point> &c)
+{
+    int k, x, y, npts ;
+    int xx, yy ;
+    int w, h ;
+
+    w = bmap.cols ;
+    h = bmap.rows ;
+
+    stack<cv::Point> ptstack ;
+
+    ptstack.push(cv::Point(j, i)) ;
+
+    x = j ;
+    y = i ;
+
+    npts = 1 ;
+    uchar &val = bmap[y][x] ;
 
 
+    do
+    {
+        if ( val == 'E' || val == 'C' ) bmap[y][x] = 0 ;
+
+        int x1, y1 ;
+        bool isolated = true ;
+
+        xx = x-1 ; yy = y ;
+
+        for( k=0 ; k<8 ; k++ )
+        {
+            switch (k)
+            {
+                case 0:
+                    yy-- ; break ;
+                case 1:
+                    xx++ ; break ;
+                case 2:
+                    xx++ ; break ;
+                case 3:
+                    yy++ ; break ;
+                case 4:
+                    yy++ ; break ;
+                case 5:
+                    xx-- ; break ;
+                case 6:
+                    xx-- ; break ;
+                case 7:
+                    yy-- ; break ;
+            }
+
+            if ( xx<0 || yy<0 || xx>w-1 || yy>h-1 ) continue ;
+
+            val = bmap[yy][xx] ;
+
+            if ( val == 0 ) continue ;
+
+            x1 = xx ; y1 = yy ;	isolated = false ;
+
+            if ( val == 'J' )	break ;
+        }
+
+        if ( isolated ) break ;
+
+        x = x1 ; y = y1 ;
+        ptstack.push(cv::Point(x, y)) ;
+        npts ++ ;
+
+        val = bmap[y][x] ;
+
+    } while ( val && val != 'E' && val != 'J' ) ;
+
+    if ( val == 'E' ) bmap[y][x] = 0 ;
+
+    for( i=0 ; i<npts ; i++ )
+    {
+        cv::Point p = ptstack.top() ;
+
+        ptstack.pop() ;
+        c.push_back(p) ;
+    }
+}
+
+
+void edgeLinking(const cv::Mat_<uchar> &edges, vector< vector<cv::Point> > &clist)
+{
+    int i, j, k, w, h ;
+
+    w = edges.cols ;
+    h = edges.rows ;
+
+    cv::Mat_<uchar> map(h, w) ;
+
+    for( i=0 ; i<h ; i++ )
+        for( j=0 ; j<w ; j++ )
+        {
+            int nn = 0, oldk = -1, pp = 0  ;
+
+            map[i][j] = 0 ;
+
+            if ( !edges[i][j] ) continue ;
+
+            int x = j-1, y = i ;
+
+            for( k=0 ; k<9 ; k++ )
+            {
+                switch (k%8)
+                {
+                    case 0:
+                        y-- ; break ;
+                    case 1:
+                        x++ ; break ;
+                    case 2:
+                        x++ ; break ;
+                    case 3:
+                        y++ ; break ;
+                    case 4:
+                        y++ ; break ;
+                    case 5:
+                        x-- ; break ;
+                    case 6:
+                        x-- ; break ;
+                    case 7:
+                        y-- ; break ;
+                }
+
+                if ( x<0 || y<0 || x>w-1 || y>h-1 ) continue ;
+
+                if ( ! edges[y][x] ) continue ;
+
+                if ( oldk >= 0 && oldk + 1 == k ) pp ++ ;
+
+                if ( k < 8 ) nn++ ;
+                oldk = k ;
+            }
+
+            switch(nn)
+            {
+                case 0 :
+                    map[i][j] = 0 ;   /* isolated point */
+                    break ;
+                case 1 :
+                    map[i][j] = 'E' ; /* contour start - end point */
+                    break ;
+                case 2 :
+                    map[i][j] = 'C' ; /* internal contour point */
+                    break ;
+                case 3 :
+                    if ( pp ) map[i][j] = 'C' ;
+                    else map[i][j] = 'J' ;
+                    break ;
+                case 4 :
+                    if ( pp == 1 ) map[i][j] = 'J' ;
+                    else if ( pp == 2 ) map[i][j] = 'C' ;
+                    else map[i][j] = 'J' ; /* junction point */
+                    break ;
+                case 5 :
+                    map[i][j] = 'J' ;
+                    break ;
+            }
+        }
+
+    for( i=0 ; i<h ; i++ )
+        for( j=0 ; j<w ; j++ )
+        {
+            if ( map[i][j] == 0 || map[i][j] == 'C' ) continue ;
+
+            if ( map[i][j] == 'E' )
+            {
+                vector<cv::Point> cnt ;
+                followContour(map, i, j, cnt) ;
+
+                if ( cnt.size() > 1 ) clist.push_back(cnt) ;
+
+            }
+        }
+
+    for( i=0 ; i<h ; i++ )
+        for( j=0 ; j<w ; j++ )
+        {
+            if ( map[i][j] == 0 || map[i][j] == 'C' ) continue ;
+            else if ( map[i][j] == 'J' )
+            {
+                map[i][j] = 'E' ;
+
+                vector<cv::Point> cnt ;
+                followContour(map, i, j, cnt) ;
+                if ( cnt.size() > 1 ) clist.push_back(cnt) ;
+
+            }
+        }
+
+    for( i=0 ; i<h ; i++ )
+        for( j=0 ; j<w ; j++ )
+        {
+            if ( map[i][j] == 'C' )
+            {
+                vector<cv::Point> cnt ;
+                followContour(map, i, j, cnt) ;
+
+                //cnt->SetClosed() ;
+                if ( cnt.size() > 1 ) clist.push_back(cnt) ;
+
+            }
+        }
+}
 }

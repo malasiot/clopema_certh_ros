@@ -324,8 +324,8 @@ void triangulate(const Polygon2D &bpoly, const vector< vector<Point2D> > &plist,
     char triswitches[20] ;
     int i, k ;
 
-    if ( area > 0.0 ) sprintf(triswitches, "zpqQVa%f", area) ;
-    else sprintf(triswitches, "zpqQV") ;
+    if ( area > 0.0 ) sprintf(triswitches, "zpqQa%f", area) ;
+    else sprintf(triswitches, "zpqQ") ;
 
     struct triangulateio trsin, trsout ;
     int n = 0, nseg = 0, np ;

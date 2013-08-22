@@ -22,6 +22,7 @@ string armName = "r2", camera_id, outFolder, dataFolder = "/tmp/";
 int nStations = 20 ;
 cv::Size boardSize(3, 5) ;
 double cellSize = 0.04 ;
+bool fixedCam = false ;
 
 double minX = -0.25 ;
 double maxX = 0.25 ;
@@ -102,21 +103,18 @@ int main(int argc, char **argv) {
             if ( c + 1 < argc ) {
                 camera_id = argv[++c] ;
             }
-            ++c ;
         }
         else if ( strncmp(argv[c], "--out", 5) == 0 )
         {
             if ( c + 1 < argc ) {
                 outFolder = argv[++c] ;
             }
-            ++c ;
         }
         else if ( strncmp(argv[c], "--data", 6) == 0 )
         {
             if ( c + 1 < argc ) {
                 dataFolder = argv[++c] ;
             }
-            ++c ;
         }
         else if ( strncmp(argv[c], "--board", 7) == 0 )
         {
@@ -131,7 +129,6 @@ int main(int argc, char **argv) {
 
             if ( bx > 0 && by > 0 )
                 boardSize = cv::Size(bx, by) ;
-            ++c ;
         }
         else if ( strncmp(argv[c], "--cell", 7) == 0 )
         {
@@ -139,14 +136,12 @@ int main(int argc, char **argv) {
                 string cs = argv[++c] ;
                 cellSize = atof(cs.c_str()) ;;
             }
-            ++c ;
         }
         else if ( strncmp(argv[c], "--stations", 10) == 0 )
         {
             if ( c + 1 < argc ) {
                 nStations = atoi(argv[++c]) ;
             }
-            ++c ;
         }
         else if ( strncmp(argv[c], "--bbox", 6) == 0 )
         {
@@ -169,7 +164,6 @@ int main(int argc, char **argv) {
                 maxZ = atof(argv[++c]) ;
             }
 
-            ++c ;
         }
         else if ( strncmp(argv[c], "--orient", 8) == 0 )
         {
@@ -186,9 +180,14 @@ int main(int argc, char **argv) {
             }
 
             orient = Vector3d(ox, oy, oz) ;
-
-            ++c ;
         }
+        else if ( strncmp(argv[c], "--fixed", 7) == 0 )
+        {
+            fixedCam = true ;
+
+        }
+
+        ++c ;
     }
 
 
@@ -229,8 +228,6 @@ int main(int argc, char **argv) {
 
     double cx, cy, fx, fy ;
 
-
-
     while ( c < nStations )
     {
         // move the robot to the next position
@@ -250,7 +247,7 @@ int main(int argc, char **argv) {
         q = Quaterniond(q.x() + qx, q.y() + qy, q.z() + qz, q.w() + qw) ;
         q.normalize();
 
-        addPlaneToCollisionModel(armName, 0.3, q) ;
+        if ( fixedCam ) addPlaneToCollisionModel(armName, 0.3, q) ;
 
         if ( robot_helpers::moveGripper(mv, armName, Eigen::Vector3d(X, Y, Z), q) )
         {
@@ -286,7 +283,7 @@ int main(int argc, char **argv) {
         }
         else continue ;
 
-        robot_helpers::resetCollisionModel() ;
+        if ( fixedCam ) robot_helpers::resetCollisionModel() ;
     }
 
 
