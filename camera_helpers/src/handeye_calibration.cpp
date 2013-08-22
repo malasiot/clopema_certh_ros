@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
 
     camera_helpers::OpenNICaptureRGBD grabber(camera_id) ;
 
-    if ( !grabber.connect(ros::Duration(-1)) )
+    if ( !grabber.connect(ros::Duration(5)) )
     {
         ROS_ERROR("Cannot connect to frame grabber: %s", camera_id.c_str()) ;
         return 0 ;
