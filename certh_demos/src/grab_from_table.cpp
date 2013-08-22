@@ -18,7 +18,7 @@ boost::mutex captureMutex ;
 boost::condition_variable finished ;
 int counter = 0;
 
-void grabpc(camera_helpers::OpenNICaptureAll *grabber)
+bool grabpc(camera_helpers::OpenNICaptureAll *grabber)
 {
     while(counter < 10){
         cv::Mat rgb, depth ;
@@ -41,6 +41,7 @@ void grabpc(camera_helpers::OpenNICaptureAll *grabber)
     }
     grabber->disconnect() ;
 
+    return true;
 }
 
 int main(int argc, char **argv) {
