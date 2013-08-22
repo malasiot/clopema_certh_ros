@@ -52,10 +52,13 @@ rosbuild_link_boost(xtion3Calibration signals)
 rosbuild_add_executable(rotate_and_grab src/rotate_and_grab.cpp)
 rosbuild_link_boost(rotate_and_grab signals)
 
+rosbuild_add_executable(grab_from_table src/grab_from_table.cpp)
+rosbuild_link_boost(grab_from_table signals)
+
 rosbuild_add_executable(plan_avoiding_cloth src/plan_avoiding_cloth.cpp)
 
-rosbuild_add_executable(calibrate_fixed_xtion src/calibrate_fixed_xtion.cpp)
-rosbuild_link_boost(calibrate_fixed_xtion signals)
+#rosbuild_add_executable(calibrate_fixed_xtion src/calibrate_fixed_xtion.cpp)
+#rosbuild_link_boost(calibrate_fixed_xtion signals)
 
 rosbuild_add_executable(find_lowest src/find_lowest.cpp src/lowestPoint2.cpp)
 
