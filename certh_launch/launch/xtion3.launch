@@ -12,11 +12,12 @@ Modified:   November 20, 2012 15:44
 
     <!-- Arguments -->
     <arg name="publish_tf"  default="true" />
-    <arg name="device_id"   default="2@12" />
+  
     <arg name="workspace"   default="false" />
     <arg name="start_robot" default="false" />
     <arg name="debug"       default="false" />
    
+
     <!-- Include common CloPeMa configuration. -->
     <include file="$(find clopema_config)/launch/clopema.launch"/>
 
