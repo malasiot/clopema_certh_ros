@@ -1050,12 +1050,16 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
     setGripperStates(movingArm , false);
 
+//    if(lastMove == true){
+//        showUnfolding();
+//        return 0;
+//    }
+
     if( !flipCloth() )
         cout << "CANT FLIP CLOTH"<< endl;
 
     setGripperStates(movingArm, true);
     moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
-
 
 }
 
@@ -1359,7 +1363,11 @@ bool Unfold::flipCloth(){
     desPoseDown.position = desPoseUp.position;
     desPoseDown.position.z -= getArmsDistance();
     if( radious > 0.5){
-           addSphereToCollisionModel(movingArm, 0.3);
+        if(radious < 0.65)
+           addSphereToCollisionModel(movingArm, 0.2);
+        else
+            addSphereToCollisionModel(movingArm, 0.3);
+
             cout<< "Collision Sphere added" << endl;
 
         if ( moveArmsFlipCloth( marker_pub, radious + 0.1, desPoseUp, desPoseDown, holdingArm, movingArm) == -1){
@@ -1371,8 +1379,8 @@ bool Unfold::flipCloth(){
         setGripperStates(movingArm, true);
     }
     resetCollisionModel();
-//    if (!releaseCloth( movingArm ))
-//        return false;
+    if (!releaseCloth( movingArm ))
+        return false;
 
 
     return true;
@@ -1529,11 +1537,48 @@ bool Unfold::releaseCloth( const string &armName ){
         dx = 0.2;
     pose.position.x += dx;
 
-    if ( moveArm(pose,armName) == -1 )
+    if ( moveArmConstrains(pose, armName, getArmsDistance()+abs(dx)+0.02) )
         return false;
 
     return true;
 }
 
+
+bool Unfold::showUnfolding(){
+
+    geometry_msgs::Pose poseH, poseM;
+    float radious =  getArmsDistance();
+
+    if (holdingArm == "r1"){
+        poseH.position.x = 0;
+        poseH.position.y = -1.1;
+        poseH.position.z = 1.4;
+
+        poseM.position = poseH.position;
+        poseM.position.x = radious;
+    }else{
+        poseM.position.x = 0;
+        poseM.position.y = -1.1;
+        poseM.position.z = 1.4;
+
+        poseH.position = poseM.position;
+        poseH.position.x = -radious;
+    }
+
+
+    poseM.orientation = rotationMatrix3ToQuaternion(vertical());
+    poseH.orientation = rotationMatrix3ToQuaternion(vertical());
+
+   moveArm(poseM, holdingArm);
+   moveArm(poseH, movingArm);
+
+//    poseM.orientation = rotationMatrix3ToQuaternion(diagonalDown());
+//    poseH.orientation = getArmPose(holdingArm).orientation;
+
+//    if(moveArms(poseH, poseM, holdingArm, movingArm) == -1)
+//        return false;
+    return true;
+
+}
 
 }

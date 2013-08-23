@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
     ros::Publisher marker_pub;
     marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
-    robot_helpers::Unfold rb("r1",marker_pub );
+    robot_helpers::Unfold rb("r2",marker_pub );
 
 
 
@@ -268,10 +268,18 @@ int main(int argc, char **argv) {
 				belief_new[i] = hf_obsprob[i][res] * sum;
                 denom += belief_new[i];
 			}
-			for(int i=0; i<hf_num_states; ++i)
-                hf_belief[i] = belief_new[i]/denom;
+            for(int i=0; i<hf_num_states; ++i){
+                if(denom!=0)
+                    hf_belief[i] = belief_new[i]/denom;
+                else{
+                    if(i!=64)
+                        hf_belief[i] = 0;
+                    else
+                        hf_belief[i] = 1;
+                }
+            }
 				
-			double max = -10000000000;
+            double max = -10000000000000;
 			int max_vector = -1;
 			for(int i=0; i<hf_num_vectors; ++i){
 				double v = 0;
@@ -286,8 +294,8 @@ int main(int argc, char **argv) {
             hf_action = hf_actions[max_vector];            
             cout << "Action: " << hf_action << endl;
             if(hf_action==64){
-                rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);                
-                rot_angle += 15;                
+                rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
+                rot_angle += 10;
             }
         }
         if(hf_action==64)
@@ -335,7 +343,7 @@ int main(int argc, char **argv) {
         //Loading probability files
 
         cout << "Loading obsprob... ";
-        fin.open((shf.str() + "/obsprob.txt").c_str());
+        fin.open((shf2.str() + "/obsprob.txt").c_str());
         fin >> hf_num_states >> hf_num_obs;
         vector< vector<double> > hf2_obsprob;
         hf2_obsprob.resize(hf_num_states);
@@ -348,7 +356,7 @@ int main(int argc, char **argv) {
         cout << "DONE" << endl;
 
         cout << "Loading transprob... ";
-        fin.open((shf.str() + "/transprob.txt").c_str());
+        fin.open((shf2.str() + "/transprob.txt").c_str());
         vector< vector<double> > hf2_transprob;
         hf2_transprob.resize(hf_num_states);
         for(int i=0; i<hf_num_states; ++i){
@@ -360,7 +368,7 @@ int main(int argc, char **argv) {
         cout << "DONE" << endl;
 
         cout << "Loading policy file... ";
-        fin.open((shf.str() + "/out.policy").c_str());        
+        fin.open((shf2.str() + "/out.policy").c_str());
         fin >> hf_num_vectors;
         vector< vector<double> > hf2_vectors;
         vector<int> hf2_actions(hf_num_vectors);
@@ -378,7 +386,7 @@ int main(int argc, char **argv) {
         cout << "DONE" << endl;
 
         cout << "Loading initial probabilities... ";
-        fin.open((shf.str() + "/initprob.txt").c_str());
+        fin.open((shf2.str() + "/initprob.txt").c_str());
         vector<double> hf2_initprob(hf_num_states, 0);
         for(int i=0; i<hf_num_states; ++i)
             fin >> hf2_initprob[i];
@@ -427,10 +435,18 @@ int main(int argc, char **argv) {
                 belief_new[i] = hf2_obsprob[i][res] * sum;
                 denom += belief_new[i];
             }
-            for(int i=0; i<hf_num_states; ++i)
-                hf2_belief[i] = belief_new[i]/denom;
+            for(int i=0; i<hf_num_states; ++i){
+                if(denom!=0)
+                    hf2_belief[i] = belief_new[i]/denom;
+                else{
+                    if(i!=64)
+                        hf2_belief[i] = 0;
+                    else
+                        hf2_belief[i] = 1;
+                }
+            }
 
-            double max = -10000000000;
+            double max = -10000000000000;
             int max_vector = -1;
             for(int i=0; i<hf_num_vectors; ++i){
                 double v = 0;
@@ -445,8 +461,8 @@ int main(int argc, char **argv) {
             hf_action = hf2_actions[max_vector];
             cout << "Action: " << hf_action << endl;
             if(hf_action==64){
-                rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);
-                rot_angle += 15;
+                rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
+                rot_angle += 10;
             }
         }
         if(hf_action == 64)

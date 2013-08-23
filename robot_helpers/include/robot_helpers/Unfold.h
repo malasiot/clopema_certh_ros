@@ -156,6 +156,7 @@ public:
     bool flipCloth();
     int moveArmsFlipCloth( ros::Publisher &vis_pub, float radious , geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const std::string &arm1Name = "r1", const std::string &arm2Name = "r2" );
     bool releaseCloth( const string &armName );
+    bool showUnfolding();
 
     geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
     geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
