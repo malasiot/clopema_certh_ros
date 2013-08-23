@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
 
     camera_helpers::OpenNICaptureRGBD grabber(camera_id) ;
 
-    if ( !grabber.connect(ros::Duration(5)) )
+    if ( !grabber.connect() )
     {
         ROS_ERROR("Cannot connect to frame grabber: %s", camera_id.c_str()) ;
         return 0 ;
@@ -286,7 +286,9 @@ int main(int argc, char **argv) {
         if ( fixedCam ) robot_helpers::resetCollisionModel() ;
     }
 
+    robot_helpers::setServoPowerOff() ;
 
+    exit(1) ;
 
     vector<Affine3d> gripper_to_base, target_to_sensor ;
     Affine3d sensor_to_base ;
