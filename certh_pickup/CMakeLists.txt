@@ -24,6 +24,7 @@ add_subdirectory(src/cvblob)
 
 rosbuild_add_executable(segment_from_table
 	src/segment.cpp
+	src/segments.cpp
 	src/graph.cpp
 	src/ObjectOnPlaneDetector.cpp
 	src/ObjectOnPlaneDetector.h)

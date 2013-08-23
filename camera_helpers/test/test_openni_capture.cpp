@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
 {
     ros::init(argc, argv, "openni_capture_example");
 
-    camera_helpers::OpenNICapturePointCloud grabber2("xtion3") ;
+ //   camera_helpers::OpenNICapturePointCloud grabber2("xtion3") ;
 
-    grabber2.connect(boost::bind( &grabpc, &grabber2 )) ;
+    //grabber2.connect(boost::bind( &grabpc, &grabber2 )) ;
 
     camera_helpers::OpenNICaptureRGBD grabber("xtion3") ;
     image_geometry::PinholeCameraModel camera ;

@@ -51,7 +51,7 @@ Quaterniond lookAt(const Eigen::Vector3d &dir, double roll)
 
      if ( q < 1.0e-4 )
      {
-         na = Vector3d(0, 1, 0) ;
+         na = Vector3d(1, 0, 0) ;
          nb = nz.cross(na) ;
      }
      else {
