@@ -528,7 +528,9 @@ int HF::houghDetect(cv::Mat& dImg, cv::Mat& hImg, cv::Rect& hrect){
 
 	float nx = float(maxp.x-rect.x) / float(rect.width);
 	float ny = float(maxp.y-rect.y) / float(rect.height);
-	float xbar = floor(nx/0.125f);
+    if(nx<0) nx = 0; if(nx>1) nx = 1;
+    if(ny<0) ny = 0; if(ny>1) ny = 1;
+    float xbar = floor(nx/0.125f);
 	float ybar = floor(ny/0.125f);
 	if(xbar > 7) xbar = 7;
 	if(ybar > 7) ybar = 7;

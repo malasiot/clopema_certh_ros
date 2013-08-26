@@ -1050,10 +1050,10 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
     setGripperStates(movingArm , false);
 
-//    if(lastMove == true){
-//        showUnfolding();
-//        return 0;
-//    }
+    if(lastMove == true){
+        showUnfolding();
+        return 0;
+    }
 
     if( !flipCloth() )
         cout << "CANT FLIP CLOTH"<< endl;
@@ -1345,11 +1345,26 @@ bool Unfold::flipCloth(){
 
     geometry_msgs::Pose desPoseDown, desPoseUp;
     float radious = getArmsDistance();
-    Eigen::Matrix3d orient;
+    Eigen::Matrix3d orient, orient2;
     desPoseDown = getArmPose(movingArm);
+    desPoseUp = getArmPose(holdingArm);
     desPoseDown.position.z += 0.15;
-    moveArmConstrains(desPoseDown, movingArm, radious+0.02 );
+    if(holdingArm == "r2"){
+        desPoseDown.position.x -=0.15;
+        orient2 <<  0,0,-1,-1,0,0,0,1,0;
+    }
+    else{
+        desPoseDown.position.x += 0.15;
+        orient2 <<  0,0,1,1,0,0,0,1,0;
+    }
+    desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
+    desPoseUp.orientation = rotationMatrix3ToQuaternion(orient2);
+
+    moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm);
+//    moveArmConstrains(desPoseDown, movingArm, radious+0.02 );
+//    moveArmConstrains(desPoseUp, holdingArm, radious+0.02 );
     //getting the orientation
+
     if(holdingArm == "r2")
         orient << 0, 0, -1, 1, 0, 0, 0, -1,0;
     else
@@ -1547,36 +1562,32 @@ bool Unfold::releaseCloth( const string &armName ){
 bool Unfold::showUnfolding(){
 
     geometry_msgs::Pose poseH, poseM;
-    float radious =  getArmsDistance();
+    float radious = getArmsDistance()-0.03;
 
     if (holdingArm == "r1"){
-        poseH.position.x = 0;
+        poseH.position.x = -radious/2.0;
         poseH.position.y = -1.1;
         poseH.position.z = 1.4;
 
         poseM.position = poseH.position;
-        poseM.position.x = radious;
+        poseM.position.x = radious/2.0;
     }else{
-        poseM.position.x = 0;
+        poseM.position.x = -radious/2.0;
         poseM.position.y = -1.1;
         poseM.position.z = 1.4;
 
         poseH.position = poseM.position;
-        poseH.position.x = -radious;
+        poseH.position.x = radious/2.0;
     }
 
 
-    poseM.orientation = rotationMatrix3ToQuaternion(vertical());
+    poseM.orientation = rotationMatrix3ToQuaternion(diagonalDown());
     poseH.orientation = rotationMatrix3ToQuaternion(vertical());
 
-   moveArm(poseM, holdingArm);
-   moveArm(poseH, movingArm);
 
-//    poseM.orientation = rotationMatrix3ToQuaternion(diagonalDown());
-//    poseH.orientation = getArmPose(holdingArm).orientation;
+    if(moveArmsNoTearing(poseH, poseM, holdingArm, movingArm ) == -1)
+        return false;
 
-//    if(moveArms(poseH, poseM, holdingArm, movingArm) == -1)
-//        return false;
     return true;
 
 }
