@@ -283,8 +283,8 @@ int main(int argc, char **argv) {
                 tf::StampedTransform transform;
 
                 try {
-                        listener.waitForTransform(armName + "_xtion", "base_link", ts, ros::Duration(1) );
-                        listener.lookupTransform(armName + "_xtion", "base_link", ts, transform);
+                        listener.waitForTransform(armName + "_link_6", "base_link", ts, ros::Duration(1) );
+                        listener.lookupTransform(armName + "_link_6", "base_link", ts, transform);
 
                         tf::TransformTFToEigen(transform, pose_);
 
@@ -340,8 +340,16 @@ int main(int argc, char **argv) {
 
     ofstream ostrm(outFolder.c_str()) ;
 
-  //  ostrm << sensor_to_base.inverse().matrix() ;
-    cout << sensor_to_base.inverse().matrix() ;
+    if ( fixedCam )
+    {
+        ostrm << sensor_to_base.inverse().matrix() ;
+        cout << sensor_to_base.inverse().matrix() ;
+    }
+    else
+    {
+        ostrm << sensor_to_gripper.inverse().matrix() ;
+        cout << sensor_to_gripper.inverse().matrix() << endl ;
+    }
 
     return 1;
 }
