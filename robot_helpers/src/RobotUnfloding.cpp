@@ -1351,24 +1351,23 @@ bool Unfold::flipCloth(){
     desPoseDown.position.z += 0.15;
     if(holdingArm == "r2"){
         desPoseDown.position.x -=0.15;
-        orient2 <<  0,0,-1,1,0,0,0,-1,0;
+      //  orient2 <<  0,0,-1,1,0,0,0,-1,0;
     }
     else{
         desPoseDown.position.x += 0.15;
-        orient2 <<  0,0,1,-1,0,0,0,-1,0;
+       // orient2 <<  0,0,1,-1,0,0,0,-1,0;
     }
     desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
-    desPoseUp.orientation = rotationMatrix3ToQuaternion(orient2);
+   // desPoseUp.orientation = rotationMatrix3ToQuaternion(orient2);
 
-    moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm);
-//    moveArmConstrains(desPoseDown, movingArm, radious+0.02 );
+    moveArmConstrains(desPoseDown, movingArm, radious+0.02 );
 //    moveArmConstrains(desPoseUp, holdingArm, radious+0.02 );
     //getting the orientation
 
     if(holdingArm == "r2")
-        orient << 0, 0, -1, 1, 0, 0, 0, -1,0;
+        orient << 0, 0, -1, -1, 0, 0, 0, 1,0;
     else
-        orient << 0, 0, 1, -1, 0, 0, 0, -1, 0;
+        orient << 0, 0, 1, 1, 0, 0, 0, 1, 0;
 
     desPoseDown.orientation = rotationMatrix3ToQuaternion(orient);
     desPoseUp.orientation = holdingArmPose().orientation;
