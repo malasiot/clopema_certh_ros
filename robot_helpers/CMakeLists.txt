@@ -37,6 +37,7 @@ rosbuild_add_library(robot_helpers
 	src/ikfast_ma1400_plugin.cpp
 	src/ikfast_xtion_plugin.cpp
 	src/GraspHanging.cpp
+	src/SensorPlanning.cpp
 )
 
 target_link_libraries(robot_helpers ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OMPL_LIBRARIES})

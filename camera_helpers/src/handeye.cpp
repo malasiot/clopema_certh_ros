@@ -460,7 +460,7 @@ void sortStationMovements(vector<Affine3d> &gripper_to_base, vector<Affine3d> &t
 
 }
 
-bool solveHandEye(const vector<Affine3d> &gripper_to_base, const vector<Affine3d> &target_to_sensor,
+bool solveHandEyeFixed(const vector<Affine3d> &gripper_to_base, const vector<Affine3d> &target_to_sensor,
                   HandEyeMethod method, bool refine,
                   Affine3d &sensor_to_base )
 {
@@ -495,6 +495,41 @@ bool solveHandEye(const vector<Affine3d> &gripper_to_base, const vector<Affine3d
     return true ;
 
 }
+
+bool solveHandEyeMoving(const vector<Affine3d> &gripper_to_base, const vector<Affine3d> &target_to_sensor,
+                  HandEyeMethod method, bool refine,
+                  Affine3d &sensor_to_gripper )
+{
+    vector<Affine3d> A, B ;
+
+    vector<Affine3d> gripper_to_base_(gripper_to_base), target_to_sensor_(target_to_sensor) ;
+
+    sortStationMovements(gripper_to_base_, target_to_sensor_) ;
+
+    for( uint i=0 ; i<target_to_sensor_.size()-1 ; i++)
+    {
+        A.push_back(gripper_to_base_[i+1].inverse() * gripper_to_base_[i] ) ;
+        B.push_back(target_to_sensor_[i+1] * target_to_sensor_[i].inverse() ) ;
+    }
+
+    bool res ;
+
+    if ( method == Horaud )
+        res = solveHandEyeLinearHD(A, B, sensor_to_gripper) ;
+    else if ( method == Tsai )
+        res = solveHandEyeLinearTsai(A, B, sensor_to_gripper) ;
+    else
+        res = solveHandEyeLinearDualQuaternion(A, B, sensor_to_gripper) ;
+
+    if ( !res ) return false ;
+
+    if ( refine )
+        res = solveHandEyeNonLinear(A, B, sensor_to_gripper) ;
+
+    return true ;
+
+}
+
 /*
 
 int main( int argc, char* argv[] )

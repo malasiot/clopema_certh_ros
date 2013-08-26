@@ -11,8 +11,11 @@
 
 enum HandEyeMethod { Horaud, Tsai, DualQuat } ;
 
-bool solveHandEye(const std::vector<Eigen::Affine3d> &gripper_to_base, const std::vector<Eigen::Affine3d> &target_to_sensor,
+bool solveHandEyeFixed(const std::vector<Eigen::Affine3d> &gripper_to_base, const std::vector<Eigen::Affine3d> &target_to_sensor,
                   HandEyeMethod method, bool refine, Eigen::Affine3d &sensor_to_base ) ;
+
+bool solveHandEyeMoving(const std::vector<Eigen::Affine3d> &gripper_to_base, const std::vector<Eigen::Affine3d> &target_to_sensor,
+                  HandEyeMethod method, bool refine, Eigen::Affine3d &sensor_to_gripper ) ;
 
 // Method by Horaud and Dornaika
 

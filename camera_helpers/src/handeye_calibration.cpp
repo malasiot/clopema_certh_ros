@@ -15,12 +15,15 @@
 #include <arm_navigation_msgs/CollisionObject.h>
 #include <arm_navigation_msgs/GetPlanningScene.h>
 
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
+
 using namespace std ;
 using namespace Eigen ;
 
 string armName = "r2", camera_id, outFolder, dataFolder = "/tmp/";
 int nStations = 20 ;
-cv::Size boardSize(3, 5) ;
+cv::Size boardSize(5, 3) ; // 7x5 for xtion2
 double cellSize = 0.04 ;
 bool fixedCam = false ;
 
@@ -226,6 +229,8 @@ int main(int argc, char **argv) {
     robot_helpers::MoveRobot mv ;
     mv.setServoMode(false);
 
+    tf::TransformListener listener(ros::Duration(1.0));
+
     double cx, cy, fx, fy ;
 
     while ( c < nStations )
@@ -270,7 +275,26 @@ int main(int argc, char **argv) {
             cv::imwrite(filenamePrefix + "_c.png", clr) ;
             cv::imwrite(filenamePrefix + "_d.png", depth) ;
 
-            Eigen::Affine3d pose_ = robot_helpers::getPose(armName) ;
+            Eigen::Affine3d pose_ ;
+
+            if ( fixedCam ) pose_ = robot_helpers::getPose(armName) ;
+            else
+            {
+                tf::StampedTransform transform;
+
+                try {
+                        listener.waitForTransform(armName + "_xtion", "base_link", ts, ros::Duration(1) );
+                        listener.lookupTransform(armName + "_xtion", "base_link", ts, transform);
+
+                        tf::TransformTFToEigen(transform, pose_);
+
+                    } catch (tf::TransformException ex) {
+                        ROS_ERROR("%s",ex.what());
+                        continue ;
+                    }
+
+
+            }
 
             {
                 ofstream strm((filenamePrefix + "_pose.txt").c_str()) ;
@@ -288,10 +312,10 @@ int main(int argc, char **argv) {
 
     robot_helpers::setServoPowerOff() ;
 
-    exit(1) ;
+//    exit(1) ;
 
     vector<Affine3d> gripper_to_base, target_to_sensor ;
-    Affine3d sensor_to_base ;
+    Affine3d sensor_to_base, sensor_to_gripper ;
 
     cv::Mat cameraMatrix ;
 
@@ -302,17 +326,22 @@ int main(int argc, char **argv) {
     cameraMatrix.at<double>(0, 2) = cx ;
     cameraMatrix.at<double>(1, 2) = cy ;
 
-    find_target_motions("grab_",  "/home/malasiot/images/clothes/calibration/", boardSize, cellSize, cameraMatrix, true, gripper_to_base, target_to_sensor) ;
+    find_target_motions("grab_",  "/home/malasiot/images/clothes/calibration/calib_xtion2/", boardSize, cellSize, cameraMatrix, true, gripper_to_base, target_to_sensor) ;
 
   //  find_target_motions("grab_",  dataFolder, boardSize, cellSize, true, gripper_to_base, target_to_sensor) ;
 
-    solveHandEye(gripper_to_base, target_to_sensor, Tsai, true, sensor_to_base) ;
+    if ( fixedCam )
+        solveHandEyeFixed(gripper_to_base, target_to_sensor, Tsai, true, sensor_to_base) ;
+    else
+        solveHandEyeMoving(gripper_to_base, target_to_sensor, Tsai, true, sensor_to_gripper) ;
+
 
     certh_libs::createDir(boost::filesystem::path(outFolder).parent_path().string(), true) ;
 
     ofstream ostrm(outFolder.c_str()) ;
 
-    ostrm << sensor_to_base.inverse().matrix() ;
+  //  ostrm << sensor_to_base.inverse().matrix() ;
+    cout << sensor_to_base.inverse().matrix() ;
 
     return 1;
 }
