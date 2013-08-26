@@ -1351,11 +1351,11 @@ bool Unfold::flipCloth(){
     desPoseDown.position.z += 0.15;
     if(holdingArm == "r2"){
         desPoseDown.position.x -=0.15;
-        orient2 <<  0,0,-1,-1,0,0,0,1,0;
+        orient2 <<  0,0,-1,1,0,0,0,-1,0;
     }
     else{
         desPoseDown.position.x += 0.15;
-        orient2 <<  0,0,1,1,0,0,0,1,0;
+        orient2 <<  0,0,1,-1,0,0,0,-1,0;
     }
     desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
     desPoseUp.orientation = rotationMatrix3ToQuaternion(orient2);
