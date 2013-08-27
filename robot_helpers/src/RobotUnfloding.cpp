@@ -1375,6 +1375,29 @@ bool Unfold::flipCloth(){
     desPoseUp.position = holdingArmPose().position;
     desPoseDown.position = desPoseUp.position;
     desPoseDown.position.z -= getArmsDistance();
+
+//    switch (clothType)
+//    {
+//    case (0 || 2 || 3):
+//        ;
+//       k;
+//    case 1: cout << "1";
+//        break;
+//    case 2: cout << "2";
+//        break;
+//    case 3: cout << "3";
+//        break;
+//    case 4: cout << "4";
+//        break;
+//    case 5: cout << "5";
+
+//    default: cout << "6";
+//        break;
+//    }
+
+
+
+
     if( radious > 0.5){
         if(radious < 0.65)
            addSphereToCollisionModel(movingArm, 0.2);
