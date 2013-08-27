@@ -14,7 +14,6 @@
   <depend package="nodelet"/>
 
   <depend package="RH_cameras"/>
-  <depend package="robot_helpers"/>
   <depend package="certh_libs"/>
   
   <export>
