@@ -504,7 +504,7 @@ bool solveHandEyeMoving(const vector<Affine3d> &gripper_to_base, const vector<Af
 
     vector<Affine3d> gripper_to_base_(gripper_to_base), target_to_sensor_(target_to_sensor) ;
 
-    sortStationMovements(gripper_to_base_, target_to_sensor_) ;
+    sortStationMovements(target_to_sensor_, gripper_to_base_) ;
 
     for( uint i=0 ; i<target_to_sensor_.size()-1 ; i++)
     {

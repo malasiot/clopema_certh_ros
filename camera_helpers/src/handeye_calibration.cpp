@@ -310,6 +310,9 @@ int main(int argc, char **argv) {
         if ( fixedCam ) robot_helpers::resetCollisionModel() ;
     }
 
+    grabber.disconnect();
+
+
     robot_helpers::setServoPowerOff() ;
 
 //    exit(1) ;
@@ -326,6 +329,8 @@ int main(int argc, char **argv) {
     cameraMatrix.at<double>(0, 2) = cx ;
     cameraMatrix.at<double>(1, 2) = cy ;
 
+
+
     find_target_motions("grab_",  "/home/malasiot/images/clothes/calibration/calib_xtion2/", boardSize, cellSize, cameraMatrix, true, gripper_to_base, target_to_sensor) ;
 
   //  find_target_motions("grab_",  dataFolder, boardSize, cellSize, true, gripper_to_base, target_to_sensor) ;
@@ -333,7 +338,7 @@ int main(int argc, char **argv) {
     if ( fixedCam )
         solveHandEyeFixed(gripper_to_base, target_to_sensor, Tsai, true, sensor_to_base) ;
     else
-        solveHandEyeMoving(gripper_to_base, target_to_sensor, Tsai, true, sensor_to_gripper) ;
+        solveHandEyeMoving(gripper_to_base, target_to_sensor, Horaud, false, sensor_to_gripper) ;
 
 
     certh_libs::createDir(boost::filesystem::path(outFolder).parent_path().string(), true) ;
@@ -343,12 +348,16 @@ int main(int argc, char **argv) {
     if ( fixedCam )
     {
         ostrm << sensor_to_base.inverse().matrix() ;
-        cout << sensor_to_base.inverse().matrix() ;
+//        cout << sensor_to_base.inverse().matrix() ;
     }
     else
     {
         ostrm << sensor_to_gripper.inverse().matrix() ;
-        cout << sensor_to_gripper.inverse().matrix() << endl ;
+       cout << sensor_to_gripper.inverse().matrix() << endl ;
+/*
+       for(int i=0 ; i<gripper_to_base.size() ; i++)
+           cout << (gripper_to_base[i] * sensor_to_gripper * target_to_sensor[i]).matrix() << endl ;
+           */
     }
 
     return 1;

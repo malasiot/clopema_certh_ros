@@ -29,7 +29,7 @@ public:
 
     bool connect(ros::Duration timeout) ;
     void connect(boost::function<void ()> cb, ros::Duration timeout) ;
-    void disconnect() ;
+    virtual void disconnect() ;
     bool isConnected() const {
         boost::unique_lock<boost::mutex> lock_ (image_lock) ;
         return connected ;
@@ -206,7 +206,7 @@ private:
         camera_sub.subscribe(nh, "/" + prefix + "/depth_registered/camera_info", 1);
     }
 
-    void shutdown()
+    virtual void shutdown()
     {
         rgb_sub.unsubscribe();
         depth_sub.unsubscribe();

@@ -1,4 +1,37 @@
 <?xml version="1.0"?>
+<!--
+This launch file starts opnni drivers for Assus Xtion on the 2. robot hand of
+the CloPeMa robot.
+
+Author:     Libor Wagner
+Modified:   May 30, 2013
+-->
 <launch>
-    <include file="$(find clopema_perception_launch)/launch/xtion2.launch"/>
+
+    <arg name="override" default="0"/>
+
+    <!-- Arguments -->
+    <arg name="publish_tf"  default="true" />
+    <arg name="device_id"   default="2@0" />
+    <arg name="debug"       default="false" />
+
+    <!-- Include common CloPeMa configuration. -->
+    <include file="$(find clopema_config)/launch/clopema.launch"/>
+
+    <!-- Include CloPeMa openni launch file for kinect on the first arm. -->
+    <group>
+        <include file="$(find clopema_perception_launch)/launch/openni.launch">
+            <arg name="override"              value="$(arg override)"/>
+            <arg name="machine"               value="kinect1"/>
+            <arg name="camera"                value="xtion2"/>
+            <arg name="device_id"             value="$(arg device_id)" if="$(arg override)"/>
+            <arg name="link"                  value="r2_link_6" />
+            <arg name="rgb_camera_info_url"   value="file://${ROS_HOME}/clopema_calibration/xtion2/camera_rgb.yaml"/>
+            <arg name="depth_camera_info_url" value="file://${ROS_HOME}/clopema_calibration/xtion2/camera_ir.yaml"/>
+            <arg name="publish_tf"            value="$(arg publish_tf)" />
+            <arg name="debug"                 value="$(arg debug)"/>
+			<arg name="depth_registration"    value="true" />
+        </include>
+    </group>
+
 </launch>
