@@ -49,6 +49,7 @@ private:
 
     string holdingArm;
     string movingArm;
+    int clothType; //0 shirt ,1 trousers, 2 shorts1, 3 shorts2, 4 T-shirt1, 5 T-shirt2
     ros::Publisher marker_pub;
     camera_helpers::OpenNICaptureAll *grabber;
 

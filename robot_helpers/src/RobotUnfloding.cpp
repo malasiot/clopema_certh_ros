@@ -25,17 +25,18 @@ Unfold::Unfold(const string &armName, ros::Publisher markerPub){
 Unfold::~Unfold() {
 }
 
-
+//Returns the name of the holding arm;
 string Unfold::getHoldingArm(){
 
     return holdingArm;
 }
-
+//Returns the name of the moving arm
 string Unfold::getMovingArm(){
 
     return movingArm;
 }
 
+//Opens or closes a gripper
 int Unfold::setGripperStates(const string &armName  , bool open){    
     ros::service::waitForService("/" + armName + "_gripper/set_open");
     clopema_motoros::SetGripperState sopen;
@@ -45,6 +46,7 @@ int Unfold::setGripperStates(const string &armName  , bool open){
     return 0;
 }
 
+//Opens or closes the grippers
 int Unfold::setGrippersStates( bool open){
 
     ros::service::waitForService("/r1_gripper/set_open");
@@ -57,8 +59,7 @@ int Unfold::setGrippersStates( bool open){
     return 0;
 }
 
-
-
+//Calculates the quaternion of a 4d rotatation matrix
 geometry_msgs::Quaternion Unfold::rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix){
 
     float roll , pitch, yaw;
@@ -69,6 +70,7 @@ geometry_msgs::Quaternion Unfold::rotationMatrix4ToQuaternion(Eigen::Matrix4d ma
     return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
 }
 
+//Calculates the quaternion of a 3d rotatation matrix
 geometry_msgs::Quaternion Unfold::rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix){
 
     float roll , pitch, yaw;
@@ -80,6 +82,7 @@ geometry_msgs::Quaternion Unfold::rotationMatrix3ToQuaternion(Eigen::Matrix3d ma
 }
 
 
+//Rotates the holding gripper to a given angle
 
 void Unfold::rotateHoldingGripper(float angle){
 
@@ -126,6 +129,7 @@ void Unfold::rotateHoldingGripper(float angle){
 
 }
 
+// Switch the name of the holding and moving arm
 void Unfold::switchArms(){
 
     string tmp=holdingArm;
@@ -135,6 +139,7 @@ void Unfold::switchArms(){
 
 }
 
+// Set the name of the holding arm
 void Unfold::setHoldingArm(const string &armName){
 
     holdingArm = armName;
@@ -146,6 +151,7 @@ void Unfold::setHoldingArm(const string &armName){
 }
 
 
+//finds the orientation (rotation matrix) of the lowest point of the hanging cloth
 Eigen::Matrix4d Unfold::findLowestPointOrientation(Eigen::Vector4d vector ){
 
 
@@ -181,15 +187,10 @@ Eigen::Matrix4d Unfold::findLowestPointOrientation(Eigen::Vector4d vector ){
     rotMat(1, 2)=-B.y();
     rotMat(2, 2)=-B.z();
 
-
-//    diagonalDown <<  0, -0.5, sqrt(3.0)/2.f,
-//                    1, 0, 0,
-//            0, sqrt(3.0)/2.f,  0.5;
-
-
-return rotMat;
+    return rotMat;
 }
 
+// find the orientation (rotation matrix) of a given point of the hanging cloth
 Eigen::Matrix4d Unfold::findGraspingPointOrientation(Eigen::Vector4d vector, bool orientUp ){
 
     Eigen::Matrix4d rotMat;
@@ -234,10 +235,10 @@ Eigen::Matrix4d Unfold::findGraspingPointOrientation(Eigen::Vector4d vector, boo
     rotMat(2, 2)=-B.z();
 
 
-
-return rotMat;
+    return rotMat;
 }
 
+// Finds the orientation bias of a given point from the Y axis
 float Unfold::findBias(Eigen::Vector4d vector){
 
     float theta=atan2f(vector.x(),abs(vector.y()));
@@ -352,6 +353,7 @@ void Unfold::robustPlane3DFit(vector<Eigen::Vector3d> &x, Eigen::Vector3d  &c, E
     delete res ;
 }
 
+//Computes the normal vector of a given point in a point cloud
  Eigen::Vector3d Unfold::computeNormal(const pcl::PointCloud<pcl::PointXYZ> &pc, int x, int y)
 {
     const int nrmMaskSize = 6 ;
@@ -382,7 +384,7 @@ void Unfold::robustPlane3DFit(vector<Eigen::Vector3d> &x, Eigen::Vector3d  &c, E
 
 }
 
-
+//Calculates whether or not a point is inside a given cone
  bool Unfold::pointInsideCone(const Eigen::Vector3d &x, const Eigen::Vector3d &apex, const Eigen::Vector3d &base, float aperture)
 {
     // This is for our convenience
@@ -412,6 +414,7 @@ void Unfold::robustPlane3DFit(vector<Eigen::Vector3d> &x, Eigen::Vector3d  &c, E
 
     return isUnderRoundCap;
 }
+
 
 void Unfold::findMeanShiftPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, int x0, int y0, int &x1, int &y1, double radius, double variance, int maxIter)
 {
@@ -482,7 +485,7 @@ void Unfold::findMeanShiftPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, int
     }
 }
 
-
+//Finds the lowest point of the hanging clothe , returns the coords and the normal vector (point and orientation)
 bool Unfold::findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3d &orig, const Eigen::Vector3d &base, float apperture, Eigen::Vector3d &p, Eigen::Vector3d &n)
 {
 
@@ -598,8 +601,7 @@ bool Unfold::findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const 
 //}
 
 
-
-
+//Prints the coords of a given pose
 void printPose(geometry_msgs::Pose p){
 
     cout << "pose = (" << p.position.x << ", "<< p.position.y << ", "<< p.position.z << " )" <<endl;
@@ -805,7 +807,7 @@ void printPose(geometry_msgs::Pose p){
 
 //}
 
-
+//Finds and grasps the lowest point of a hanging cloth, flips the cloth and releases the moving arm
 int Unfold::graspLowestPoint(bool lastMove){
 
 
@@ -917,6 +919,7 @@ return 0;
 
 }
 
+//Finds and grasps the given point of a hanging cloth, flips it and releases the moving arm
 int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove, bool orientLeft, bool orientUp  ){
 
 
@@ -998,12 +1001,10 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
     if(moveArmThrough(poses, movingArm) == -1){
 
         poses.clear();
-       // cout << "fixing rotation...." << endl;
-        //float theta = findBias(targetN);
+
         double theta = acos(targetN.y() / sqrt((targetN.x()*targetN.x() + targetN.y()*targetN.y())));
         if(targetN.x() > 0)
             theta = -theta;
-     //   cout<< " theta = " << theta/M_PI *180<<endl;
 
         rotateHoldingGripper(theta);
         ros::Duration(2).sleep();
@@ -1014,7 +1015,6 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
         vect = rot * vect;
         targetP << ts.getOrigin().x() + vect.x(), ts.getOrigin().y() + vect.y(), targetP.z(), 1;
         publishPointMarker(marker_pub, targetP, 2);
-       // cout<< targetP << endl;        
 
         Eigen::Matrix3d orient;
         if(orientUp)
@@ -1320,6 +1320,7 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
 //}
 
+//Grabs the rgb , depth map and point cloud from xtion, returning a rectangular depending on the holding arm
 bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, cv::Rect & r ){
 
 
@@ -1341,6 +1342,7 @@ bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::Po
     return true;
 }
 
+//Flips the cloth
 bool Unfold::flipCloth(){
 
     geometry_msgs::Pose desPoseDown, desPoseUp;
@@ -1351,19 +1353,15 @@ bool Unfold::flipCloth(){
     desPoseDown.position.z += 0.15;
     if(holdingArm == "r2"){
         desPoseDown.position.x -=0.15;
-      //  orient2 <<  0,0,-1,1,0,0,0,-1,0;
     }
     else{
         desPoseDown.position.x += 0.15;
-       // orient2 <<  0,0,1,-1,0,0,0,-1,0;
     }
     desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
-   // desPoseUp.orientation = rotationMatrix3ToQuaternion(orient2);
 
     moveArmConstrains(desPoseDown, movingArm, radious+0.02 );
-//    moveArmConstrains(desPoseUp, holdingArm, radious+0.02 );
-    //getting the orientation
 
+    //getting the orientation
     if(holdingArm == "r2")
         orient << 0, 0, -1, -1, 0, 0, 0, 1,0;
     else
@@ -1371,6 +1369,7 @@ bool Unfold::flipCloth(){
 
     desPoseDown.orientation = rotationMatrix3ToQuaternion(orient);
     desPoseUp.orientation = holdingArmPose().orientation;
+
     //getting the positions
     switchArms();
     desPoseUp.position = holdingArmPose().position;
@@ -1391,6 +1390,7 @@ bool Unfold::flipCloth(){
     }else{
         cout<< "just dropping the cloth" << endl;
         setGripperStates(movingArm, true);
+        return true;
     }
     resetCollisionModel();
     if (!releaseCloth( movingArm ))
@@ -1401,6 +1401,7 @@ bool Unfold::flipCloth(){
 
 }
 
+//Sets the constrains in order to flip the cloth and then moving the arms
 int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, const string &arm1Name, const string &arm2Name){
 
     MoveRobot cmove;
@@ -1432,6 +1433,8 @@ int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry
     p1.x= (p1.x + p2.x)/2.0;
     p1.y= (p1.y + p2.y)/2.0;
     p1.z= (p1.z + p2.z)/2.0;
+
+    //adding a sphere constrain in order not to tear the cloth
     mp.request.motion_plan_req.path_constraints.position_constraints.resize(3);
     mp.request.motion_plan_req.path_constraints.position_constraints[0].header.frame_id = arm1Name + "_ee";
     mp.request.motion_plan_req.path_constraints.position_constraints[0].header.stamp = ros::Time::now();
@@ -1449,6 +1452,7 @@ int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry
     mp.request.motion_plan_req.path_constraints.position_constraints[0].constraint_region_orientation.w = 1.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[0].weight = 1.0;
 
+    //adding a box constrain for 1st arm in order not to twist the cloth
     mp.request.motion_plan_req.path_constraints.position_constraints[1].header.frame_id = "base_link";
     mp.request.motion_plan_req.path_constraints.position_constraints[1].header.stamp = ros::Time::now();
     mp.request.motion_plan_req.path_constraints.position_constraints[1].link_name = arm1Name +"_ee";
@@ -1465,6 +1469,7 @@ int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry
     mp.request.motion_plan_req.path_constraints.position_constraints[1].constraint_region_orientation.w = 1.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[1].weight = 1.0;
 
+    //adding a box constrain for 2nd arm in order not to twist the cloth
     mp.request.motion_plan_req.path_constraints.position_constraints[2].header.frame_id = "base_link";
     mp.request.motion_plan_req.path_constraints.position_constraints[2].header.stamp = ros::Time::now();
     mp.request.motion_plan_req.path_constraints.position_constraints[2].link_name = arm2Name +"_ee";
@@ -1481,9 +1486,8 @@ int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry
     mp.request.motion_plan_req.path_constraints.position_constraints[2].constraint_region_orientation.w = 1.0;
     mp.request.motion_plan_req.path_constraints.position_constraints[2].weight = 1.0;
 
- // PUBLISH MARKERS
 
-
+    // PUBLISH MARKERS
     visualization_msgs::Marker marker1;
     marker1.header.frame_id = "base_link";
     marker1.header.stamp = ros::Time::now();
@@ -1512,9 +1516,8 @@ int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry
     ros::Duration(0.3).sleep();
     vis_pub.publish(marker1);
     ros::Duration(0.3).sleep();
+    //////END PUBLISHING
 
-
-    //////END
     arm_navigation_msgs::PositionConstraint position_constraint;
     arm_navigation_msgs::OrientationConstraint orientation_constraint;
     arm_navigation_msgs::poseConstraintToPositionOrientationConstraints(desired_pose, position_constraint, orientation_constraint);
@@ -1540,6 +1543,7 @@ int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry
     return 0;
 }
 
+//Releasing the cloth in order not to hook with the cloth
 bool Unfold::releaseCloth( const string &armName ){
 
     geometry_msgs::Pose pose = getArmPose(armName);
@@ -1557,7 +1561,7 @@ bool Unfold::releaseCloth( const string &armName ){
     return true;
 }
 
-
+//Gets the final position showing the unfolding outcome
 bool Unfold::showUnfolding(){
 
     geometry_msgs::Pose poseH, poseM;
