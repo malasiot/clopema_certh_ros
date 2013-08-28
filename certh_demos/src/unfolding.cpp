@@ -4,6 +4,7 @@
 #include "HFLibrary/hf.cpp"
 #include "robot_helpers/Unfold.h"
 #include <sstream>
+#include <ctime>
 
 using namespace std;
 
@@ -33,7 +34,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
     ros::Publisher marker_pub;
     marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
-    robot_helpers::Unfold rb("r2",marker_pub );
+    robot_helpers::Unfold rb("r1",marker_pub );
 
 
 
@@ -98,6 +99,10 @@ int main(int argc, char **argv) {
     cv::moveWindow("hough", 340, 0);
     cv::namedWindow("rgb");
     cv::moveWindow("rgb", 680, 0);
+
+
+    unsigned int start;
+    start = std::clock();
 
 
     //-------------- Planning -----------------//
@@ -484,6 +489,8 @@ int main(int argc, char **argv) {
 
         cloth_unfolded = true;
     }
+
+    cout<< "time =  " << ( std::clock() - start )/1000.0 ;
 
 
     //Set servo power off

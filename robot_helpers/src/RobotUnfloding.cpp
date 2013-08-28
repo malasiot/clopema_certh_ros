@@ -873,9 +873,9 @@ int Unfold::graspLowestPoint(bool lastMove){
 
 
         desPose.orientation = rotationMatrix4ToQuaternion(rotMat);
-        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.02 - rotMat(0, 2) * 0.4;
-        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.02 - rotMat(1, 2) * 0.4;
-        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.02 - rotMat(2, 2) * 0.4;
+        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.02 - rotMat(0, 2) * 0.04;
+        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.02 - rotMat(1, 2) * 0.04;
+        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.02 - rotMat(2, 2) * 0.04;
 
         st= getTranformation(holdingArm + "_ee");
 
@@ -999,9 +999,9 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
         desPose.position.z = targetP.z() + rotMat(2, 0) * 0.02 - rotMat(2, 2) * 0.1;
         poses.push_back(desPose);
 
-        desPose.position.x = targetP.x() + rotMat(0, 2) * 0.03 + rotMat(0, 0) * 0.1;
-        desPose.position.y = targetP.y() + rotMat(1, 2) * 0.03 + rotMat(1, 0) * 0.1;
-        desPose.position.z = targetP.z() + rotMat(2, 2) * 0.03 + rotMat(2, 0) * 0.1;
+        desPose.position.x = targetP.x() + rotMat(0, 2) * 0.03 + rotMat(0, 0) * 0.02;
+        desPose.position.y = targetP.y() + rotMat(1, 2) * 0.03 + rotMat(1, 0) * 0.02;
+        desPose.position.z = targetP.z() + rotMat(2, 2) * 0.03 + rotMat(2, 0) * 0.02;
         poses.push_back(desPose);
     }
 
@@ -1361,7 +1361,7 @@ bool Unfold::flipCloth(){
 
 ////////////////////NEW///////////////////
 
-    if( (clothType == 0) || (clothType == 2) || (clothType == 3)) {
+    if( (clothType == 0) || (clothType == 2) || (clothType == 3) || (clothType == 1)) {
 
         desPoseDown.position.z += 2.0*radious/3.0;
         if(holdingArm == "r2"){
@@ -1371,8 +1371,9 @@ bool Unfold::flipCloth(){
             desPoseDown.position.x += 2.0*radious/3.0;
         }
         desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
-
-        moveArmConstrains(desPoseDown, movingArm, radious+0.02 );
+        desPoseUp = getArmPose(holdingArm);
+        desPoseUp.position.z -= radious/3.0;
+        moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm,radious+0.02);//(desPoseDown, movingArm, radious+0.02 );
         setGripperState(holdingArm, true);
         switchArms();
         return true;
@@ -1645,7 +1646,7 @@ bool Unfold::showUnfolding(){
 
     geometry_msgs::Pose poseH, poseM;
     float radious = getArmsDistance()-0.03;
-
+    Eigen::Matrix3d orient;
     if (holdingArm == "r1"){
         poseH.position.x = -radious/2.0;
         poseH.position.y = -1.1;
@@ -1653,6 +1654,8 @@ bool Unfold::showUnfolding(){
 
         poseM.position = poseH.position;
         poseM.position.x = radious/2.0;
+
+        orient << 0, -1, 1, -1, 0,0,0,-1,-1;
     }else{
         poseM.position.x = -radious/2.0;
         poseM.position.y = -1.1;
@@ -1660,11 +1663,12 @@ bool Unfold::showUnfolding(){
 
         poseH.position = poseM.position;
         poseH.position.x = radious/2.0;
+        orient << 0, 1, -1, 1, 0,0,0,-1,-1;
     }
 
 
     poseM.orientation = rotationMatrix3ToQuaternion(diagonalDown());
-    poseH.orientation = rotationMatrix3ToQuaternion(vertical());
+    poseH.orientation = rotationMatrix3ToQuaternion(orient);
 
 
     if(moveArmsNoTearing(poseH, poseM, holdingArm, movingArm ) == -1)
