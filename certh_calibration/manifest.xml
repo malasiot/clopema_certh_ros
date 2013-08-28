@@ -1,0 +1,16 @@
+<package>
+  <license>LGPL</license>
+  <review status="unreviewed" notes=""/>
+
+  <rosdep name="boost"/>
+  <rosdep name="opencv2"/>
+   
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="cv_bridge"/>
+
+  <depend package="robot_helpers"/>  
+  <depend package="camera_helpers"/>
+
+ 
+</package>
