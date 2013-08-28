@@ -119,6 +119,12 @@ int main(int argc, char **argv) {
                 dataFolder = argv[++c] ;
             }
         }
+        else if ( strncmp(argv[c], "--arm", 5) == 0 )
+        {
+            if ( c + 1 < argc ) {
+                armName = argv[++c] ;
+            }
+        }
         else if ( strncmp(argv[c], "--board", 7) == 0 )
         {
             int bx = -1, by = -1 ;
@@ -252,62 +258,75 @@ int main(int argc, char **argv) {
         q = Quaterniond(q.x() + qx, q.y() + qy, q.z() + qz, q.w() + qw) ;
         q.normalize();
 
-        if ( fixedCam ) addPlaneToCollisionModel(armName, 0.3, q) ;
+        if ( fixedCam ) {
 
-        if ( robot_helpers::moveGripper(mv, armName, Eigen::Vector3d(X, Y, Z), q) )
+            addPlaneToCollisionModel(armName, 0.3, q) ;
+            if ( !robot_helpers::moveGripper(mv, armName, Eigen::Vector3d(X, Y, Z), q) ) continue ;
+            robot_helpers::resetCollisionModel() ;
+        }
+        else
         {
-            image_geometry::PinholeCameraModel cm ;
-            cv::Mat clr, depth ;
+            // for an Xtion on arm the bounding box indicates the target position and the orient the lookAt direction
+            // so move back the sensor far enough so that the target is visible. This is currently hardcoded.
 
-            ros::Time ts ;
+            Vector3d dir = q*Vector3d(0, 0, 1) ;
+            Vector3d c = Vector3d(X, Y, Z) - 0.7*dir ;
 
-            grabber.grab(clr, depth, ts, cm) ;
+            trajectory_msgs::JointTrajectory traj ;
+            if ( !robot_helpers::planXtionToPose(armName, c, q, traj) ) continue ;
 
-            // camera intrinsics. we assume a rectfied and calibrated frame
-
-            cx = cm.cx() ;
-            cy = cm.cy() ;
-            fx = cm.fx() ;
-            fy = cm.fy() ;
-
-            string filenamePrefix = dataFolder + str(boost::format("/grab_%06d") % c) ;
-
-            cv::imwrite(filenamePrefix + "_c.png", clr) ;
-            cv::imwrite(filenamePrefix + "_d.png", depth) ;
-
-            Eigen::Affine3d pose_ ;
-
-            if ( fixedCam ) pose_ = robot_helpers::getPose(armName) ;
-            else
-            {
-                tf::StampedTransform transform;
-
-                try {
-                        listener.waitForTransform(armName + "_link_6", "base_link", ts, ros::Duration(1) );
-                        listener.lookupTransform(armName + "_link_6", "base_link", ts, transform);
-
-                        tf::TransformTFToEigen(transform, pose_);
-
-                    } catch (tf::TransformException ex) {
-                        ROS_ERROR("%s",ex.what());
-                        continue ;
-                    }
-
-
-            }
-
-            {
-                ofstream strm((filenamePrefix + "_pose.txt").c_str()) ;
-
-                strm << pose_.rotation() << endl << pose_.translation() ;
-            }
-
-            ++c ;
+            mv.execTrajectory(traj) ;
 
         }
-        else continue ;
 
-        if ( fixedCam ) robot_helpers::resetCollisionModel() ;
+        image_geometry::PinholeCameraModel cm ;
+        cv::Mat clr, depth ;
+
+        ros::Time ts ;
+
+        grabber.grab(clr, depth, ts, cm) ;
+
+        // camera intrinsics. we assume a rectfied and calibrated frame
+
+        cx = cm.cx() ;
+        cy = cm.cy() ;
+        fx = cm.fx() ;
+        fy = cm.fy() ;
+
+        string filenamePrefix = dataFolder + str(boost::format("/grab_%06d") % c) ;
+
+        cv::imwrite(filenamePrefix + "_c.png", clr) ;
+        cv::imwrite(filenamePrefix + "_d.png", depth) ;
+
+        Eigen::Affine3d pose_ ;
+
+        if ( fixedCam ) pose_ = robot_helpers::getPose(armName) ;
+        else
+        {
+            tf::StampedTransform transform;
+
+            try {
+                listener.waitForTransform(armName + "_link_6", "base_link", ts, ros::Duration(1) );
+                listener.lookupTransform(armName + "_link_6", "base_link", ts, transform);
+
+                tf::TransformTFToEigen(transform, pose_);
+
+                } catch (tf::TransformException ex) {
+                    ROS_ERROR("%s",ex.what());
+                    continue ;
+            }
+        }
+
+
+
+        {
+            ofstream strm((filenamePrefix + "_pose.txt").c_str()) ;
+
+            strm << pose_.rotation() << endl << pose_.translation() ;
+        }
+
+         ++c ;
+
     }
 
     grabber.disconnect();
@@ -353,7 +372,7 @@ int main(int argc, char **argv) {
     else
     {
         ostrm << sensor_to_gripper.inverse().matrix() ;
-       cout << sensor_to_gripper.inverse().matrix() << endl ;
+      // cout << sensor_to_gripper.inverse().matrix() << endl ;
 /*
        for(int i=0 ; i<gripper_to_base.size() ; i++)
            cout << (gripper_to_base[i] * sensor_to_gripper * target_to_sensor[i]).matrix() << endl ;

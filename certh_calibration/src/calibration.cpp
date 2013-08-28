@@ -245,7 +245,7 @@ void estimateTargetToSensorRigid(const vector<vector<Point3f> > &img_corners, co
                         res(2, 0), res(2, 1), res(2, 2), res(2, 3),
                         res(3, 0), res(3, 1), res(3, 2), res(3, 3);
 
-        cout << tr.matrix() << endl ;
+
         target_to_sensor.push_back(tr) ;
 
     }
