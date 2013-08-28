@@ -19,12 +19,19 @@ Unfold::Unfold(const string &armName, ros::Publisher markerPub){
    marker_pub  = markerPub;
    grabber=new camera_helpers::OpenNICaptureAll ("xtion3");
    grabber->connect();
+   clothType = -1;
 
 }
 
 Unfold::~Unfold() {
 }
 
+//Sets the cloth type
+void Unfold::setClothType(int type){
+
+    clothType = type;
+    return;
+}
 //Returns the name of the holding arm;
 string Unfold::getHoldingArm(){
 
@@ -866,9 +873,9 @@ int Unfold::graspLowestPoint(bool lastMove){
 
 
         desPose.orientation = rotationMatrix4ToQuaternion(rotMat);
-        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.02 - rotMat(0, 2) * 0.04;
-        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.02 - rotMat(1, 2) * 0.04;
-        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.02 - rotMat(2, 2) * 0.04;
+        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.02 - rotMat(0, 2) * 0.4;
+        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.02 - rotMat(1, 2) * 0.4;
+        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.02 - rotMat(2, 2) * 0.4;
 
         st= getTranformation(holdingArm + "_ee");
 
@@ -971,9 +978,9 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
         desPose.orientation = rotationMatrix3ToQuaternion(orient);
 
-        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * 0.04;
-        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * 0.04;
-        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * 0.04;
+        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * 0.1;
+        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * 0.1;
+        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * 0.1;
         poses.push_back(desPose);
 
         desPose.position.x = targetP.x() + orient(0, 2) * 0.03 + orient(0, 0) * 0.02;
@@ -987,14 +994,14 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
         desPose.orientation = rotationMatrix4ToQuaternion(rotMat);
 
-        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.02 - rotMat(0, 2) * 0.04;
-        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.02 - rotMat(1, 2) * 0.04;
-        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.02 - rotMat(2, 2) * 0.04;
+        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.02 - rotMat(0, 2) * 0.1;
+        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.02 - rotMat(1, 2) * 0.1;
+        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.02 - rotMat(2, 2) * 0.1;
         poses.push_back(desPose);
 
-        desPose.position.x = targetP.x() + rotMat(0, 2) * 0.03 + rotMat(0, 0) * 0.02;
-        desPose.position.y = targetP.y() + rotMat(1, 2) * 0.03 + rotMat(1, 0) * 0.02;
-        desPose.position.z = targetP.z() + rotMat(2, 2) * 0.03 + rotMat(2, 0) * 0.02;
+        desPose.position.x = targetP.x() + rotMat(0, 2) * 0.03 + rotMat(0, 0) * 0.1;
+        desPose.position.y = targetP.y() + rotMat(1, 2) * 0.03 + rotMat(1, 0) * 0.1;
+        desPose.position.z = targetP.z() + rotMat(2, 2) * 0.03 + rotMat(2, 0) * 0.1;
         poses.push_back(desPose);
     }
 
@@ -1024,9 +1031,9 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
         desPose.orientation = rotationMatrix3ToQuaternion(orient);
 
-        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * 0.04;
-        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * 0.04;
-        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * 0.04;
+        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * 0.1;
+        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * 0.1;
+        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * 0.1;
         poses.push_back(desPose);
 
         desPose.position.x = targetP.x() + orient(0, 2) * 0.03 + orient(0, 0) * 0.02;
@@ -1347,80 +1354,129 @@ bool Unfold::flipCloth(){
 
     geometry_msgs::Pose desPoseDown, desPoseUp;
     float radious = getArmsDistance();
-    Eigen::Matrix3d orient, orient2;
+    Eigen::Matrix3d orient;
     desPoseDown = getArmPose(movingArm);
     desPoseUp = getArmPose(holdingArm);
-    desPoseDown.position.z += 0.15;
-    if(holdingArm == "r2"){
-        desPoseDown.position.x -=0.15;
-    }
-    else{
-        desPoseDown.position.x += 0.15;
-    }
-    desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
-
-    moveArmConstrains(desPoseDown, movingArm, radious+0.02 );
-
-    //getting the orientation
-    if(holdingArm == "r2")
-        orient << 0, 0, -1, -1, 0, 0, 0, 1,0;
-    else
-        orient << 0, 0, 1, 1, 0, 0, 0, 1, 0;
-
-    desPoseDown.orientation = rotationMatrix3ToQuaternion(orient);
-    desPoseUp.orientation = holdingArmPose().orientation;
-
-    //getting the positions
-    switchArms();
-    desPoseUp.position = holdingArmPose().position;
-    desPoseDown.position = desPoseUp.position;
-    desPoseDown.position.z -= getArmsDistance();
-
-//    switch (clothType)
-//    {
-//    case (0 || 2 || 3):
-//        ;
-//       k;
-//    case 1: cout << "1";
-//        break;
-//    case 2: cout << "2";
-//        break;
-//    case 3: cout << "3";
-//        break;
-//    case 4: cout << "4";
-//        break;
-//    case 5: cout << "5";
-
-//    default: cout << "6";
-//        break;
-//    }
 
 
+////////////////////NEW///////////////////
 
+    if( (clothType == 0) || (clothType == 2) || (clothType == 3)) {
 
-    if( radious > 0.5){
-        if(radious < 0.65)
-           addSphereToCollisionModel(movingArm, 0.2);
-        else
-            addSphereToCollisionModel(movingArm, 0.3);
-
-            cout<< "Collision Sphere added" << endl;
-
-        if ( moveArmsFlipCloth( marker_pub, radious + 0.1, desPoseUp, desPoseDown, holdingArm, movingArm) == -1){
-            resetCollisionModel();
-            return false;
+        desPoseDown.position.z += 2.0*radious/3.0;
+        if(holdingArm == "r2"){
+            desPoseDown.position.x -=2.0*radious/3.0;
         }
-    }else{
-        cout<< "just dropping the cloth" << endl;
-        setGripperStates(movingArm, true);
+        else{
+            desPoseDown.position.x += 2.0*radious/3.0;
+        }
+        desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
+
+        moveArmConstrains(desPoseDown, movingArm, radious+0.02 );
+        setGripperState(holdingArm, true);
+        switchArms();
         return true;
     }
-    resetCollisionModel();
-    if (!releaseCloth( movingArm ))
+    else{
+        desPoseDown.position.z += 0.15;
+        if(holdingArm == "r2"){
+            desPoseDown.position.x -=0.15;
+        }
+        else{
+            desPoseDown.position.x += 0.15;
+        }
+        desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
+
+        moveArmConstrains(desPoseDown, movingArm, radious+0.02 );
+
+        //getting the orientation
+        if(holdingArm == "r2")
+            orient << 0, 0, -1, -1, 0, 0, 0, 1,0;
+        else
+            orient << 0, 0, 1, 1, 0, 0, 0, 1, 0;
+
+        desPoseDown.orientation = rotationMatrix3ToQuaternion(orient);
+        desPoseUp.orientation = holdingArmPose().orientation;
+
+        //getting the positions
+        switchArms();
+        desPoseUp.position = holdingArmPose().position;
+        desPoseDown.position = desPoseUp.position;
+        desPoseDown.position.z -= getArmsDistance();
+
+        if( radious > 0.5){
+            if(radious < 0.65)
+               addSphereToCollisionModel(movingArm, 0.2);
+            else
+                addSphereToCollisionModel(movingArm, 0.3);
+
+                cout<< "Collision Sphere added" << endl;
+
+            if ( moveArmsFlipCloth( marker_pub, radious + 0.1, desPoseUp, desPoseDown, holdingArm, movingArm) == -1){
+                resetCollisionModel();
+                return false;
+            }
+        }else{
+            cout<< "just dropping the cloth" << endl;
+            setGripperStates(movingArm, true);
+            return true;
+        }
+        resetCollisionModel();
+        if (!releaseCloth( movingArm ))
+            return false;
         return false;
+    }
+
+/////////////////////////////END///////////////////
+//    desPoseDown.position.z += 0.15;
+//    if(holdingArm == "r2"){
+//        desPoseDown.position.x -=0.15;
+//    }
+//    else{
+//        desPoseDown.position.x += 0.15;
+//    }
+//    desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
+
+//    moveArmConstrains(desPoseDown, movingArm, radious+0.02 );
+
+//    //getting the orientation
+//    if(holdingArm == "r2")
+//        orient << 0, 0, -1, -1, 0, 0, 0, 1,0;
+//    else
+//        orient << 0, 0, 1, 1, 0, 0, 0, 1, 0;
+
+//    desPoseDown.orientation = rotationMatrix3ToQuaternion(orient);
+//    desPoseUp.orientation = holdingArmPose().orientation;
+
+//    //getting the positions
+//    switchArms();
+//    desPoseUp.position = holdingArmPose().position;
+//    desPoseDown.position = desPoseUp.position;
+//    desPoseDown.position.z -= getArmsDistance();
+
+//    if( radious > 0.5){
+//        if(radious < 0.65)
+//           addSphereToCollisionModel(movingArm, 0.2);
+//        else
+//            addSphereToCollisionModel(movingArm, 0.3);
+
+//            cout<< "Collision Sphere added" << endl;
+
+//        if ( moveArmsFlipCloth( marker_pub, radious + 0.1, desPoseUp, desPoseDown, holdingArm, movingArm) == -1){
+//            resetCollisionModel();
+//            return false;
+//        }
+//    }else{
+//        cout<< "just dropping the cloth" << endl;
+//        setGripperStates(movingArm, true);
+//        return true;
+//    }
+//    resetCollisionModel();
+//    if (!releaseCloth( movingArm ))
+//        return false;
 
 
-    return true;
+//    return true;
 
 }
 
@@ -1571,13 +1627,13 @@ bool Unfold::releaseCloth( const string &armName ){
 
     geometry_msgs::Pose pose = getArmPose(armName);
     setGripperState(armName , true);
-    float dx;
+    float dx, dz=0.1;
     if (armName == "r1")
-        dx = -0.2;
+        dx = -0.3;
     else
-        dx = 0.2;
+        dx = 0.3;
     pose.position.x += dx;
-
+    pose.position.z -= dz;
     if ( moveArmConstrains(pose, armName, getArmsDistance()+abs(dx)+0.02) )
         return false;
 

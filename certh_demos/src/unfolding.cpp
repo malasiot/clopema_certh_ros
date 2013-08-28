@@ -107,6 +107,7 @@ int main(int argc, char **argv) {
     cv::Rect r;
     pcl::PointCloud<pcl::PointXYZ> pc2;    
     while(!cloth_unfolded){
+        rb.setClothType(-1);
         rb.graspLowestPoint();
         for(int i=0; i<rf_num_states; ++i)
             rf_belief[i] = rf_initprob[i];
@@ -164,7 +165,7 @@ int main(int argc, char **argv) {
                 rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);                
             }
         }
-
+        rb.setClothType(rf_action);
         //------------------1st Grasping Point-----------------//
         stringstream shf;
         shf << "../forests/hf" << rf_action;
