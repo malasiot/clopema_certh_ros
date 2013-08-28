@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
 
     MoveRobot cmove ;
-    moveGripperPointingDown(cmove, "r2", 0, -0.9, 1.1 );
+    moveGripperPointingDown(cmove, "r2", 0, -0.9, 1.4 );
     camera_helpers::OpenNICaptureAll grabber2("xtion2") ;
     grabber2.connect() ;
     grabpc(&grabber2) ;
