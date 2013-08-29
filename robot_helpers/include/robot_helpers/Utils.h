@@ -39,6 +39,7 @@ bool rotateGripper(MoveRobot &cmove, const std::string &armName, double theta) ;
 
 bool addConeToCollisionModel(const std::string &armName, double length, double radius) ;
 bool addSphereToCollisionModel(const std::string &armName, double radius);
+//bool addBoxToCollisionModel(const std::string &armName, double x, double y, double z );
 
 bool resetCollisionModel() ;
 
@@ -56,6 +57,7 @@ bool filterTrajectory(const std::string &groupName, const trajectory_msgs::Joint
 
 ////////andreas
 
+float getArmsDistance(std::string frameName = "_ee");
 
 int moveArmConstrains(geometry_msgs::Pose pose, const std::string &armName, float radious);
 
@@ -69,15 +71,13 @@ int moveArm(geometry_msgs::Pose pose, const std::string &armName);
 
 int moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const std::string &arm1Name = "r1", const std::string &arm2Name = "r2");
 
-int moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const std::string &arm1Name = "r1", const std::string &arm2Name = "r2");
+int moveArmsNoTearing( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const std::string &arm1Name = "r1", const std::string &arm2Name = "r2", float radious = getArmsDistance()+0.03 );
 
 bool moveHomeArm(const std::string &armName);
 
 int moveArmThrough(std::vector <geometry_msgs::Pose> poses , const std::string &armName);
 
 //void grabFromXtion(cv::Mat rgb, cv::Mat depth, pcl::PointCloud<pcl::PointXYZ> pc);
-
-float getArmsDistance();
 
 geometry_msgs::Pose getArmPose( const std::string &armName, const std::string &frameName = "base_link");
 

@@ -49,11 +49,16 @@ private:
 
     string holdingArm;
     string movingArm;
+    int clothType; //0 shirt ,1 trousers, 2 shorts1, 3 shorts2, 4 T-shirt1, 5 T-shirt2
     ros::Publisher marker_pub;
     camera_helpers::OpenNICaptureAll *grabber;
 
 
 public:
+
+    void setClothType( int type);
+    string getHoldingArm();
+    string getMovingArm();
 
     inline Eigen::Matrix3d vertical(){
         Eigen::Matrix3d vertical;
@@ -86,6 +91,17 @@ public:
             diagonalDown <<  0, 1, 1, 1, 0, 0, 0, 1, -1 ;
         }
         return diagonalDown;
+    }
+
+    inline Eigen::Matrix3d diagonalUp(){
+        Eigen::Matrix3d diagonalUp;
+        if(holdingArm == "r1"){
+            diagonalUp << 0, 0.5f, -sqrt(3)/2.0f, -1, 0, 0, 0, sqrt(3)/2.0f, 0.5f ;
+        }
+        else{
+            diagonalUp <<  0, -0.5f, sqrt(3)/2.0f, 1, 0, 0, 0, sqrt(3)/2.0f, 0.5f ;
+        }
+        return diagonalUp;
     }
 
     inline geometry_msgs::Pose holdingArmPose(){
@@ -128,7 +144,7 @@ public:
     void rotateHoldingGripper(float angle );
 
     Eigen::Matrix4d findLowestPointOrientation(Eigen::Vector4d vector );
-    Eigen::Matrix4d findGraspingPointOrientation(Eigen::Vector4d vector );
+    Eigen::Matrix4d findGraspingPointOrientation(Eigen::Vector4d vector, bool orientUp = false);
 
     float findBias(Eigen::Vector4d vector);
     bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3d &orig, const Eigen::Vector3d &base, float apperture, Eigen::Vector3d &p, Eigen::Vector3d &n);
@@ -139,7 +155,11 @@ public:
     void robustPlane3DFit(vector<Eigen::Vector3d> &x, Eigen::Vector3d  &c, Eigen::Vector3d &u);
 
     int graspLowestPoint(bool lastMove = false );
-    int graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove = false, bool orientLeft = true );
+    int graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove = false, bool orientLeft = true, bool orientUp = false );
+    bool flipCloth();
+    int moveArmsFlipCloth( ros::Publisher &vis_pub, float radious , geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const std::string &arm1Name = "r1", const std::string &arm2Name = "r2" );
+    bool releaseCloth( const string &armName );
+    bool showUnfolding();
 
     geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
     geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
