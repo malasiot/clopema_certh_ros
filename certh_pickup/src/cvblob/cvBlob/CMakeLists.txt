@@ -32,7 +32,7 @@ set_source_files_properties(${cvBlob_SRC}
                             COMPILE_FLAGS "-O3"
 )
 
-add_library(cvblob STATIC ${cvBlob_CVBLOB})
+add_library(cvblob SHARED ${cvBlob_CVBLOB})
 
 target_link_libraries(cvblob ${OpenCV_LIBS})
 

@@ -77,3 +77,10 @@ public:
 
 
 };
+
+
+void SensorGoalRegion::sample(std::vector<double> &xyz_rpy)
+{
+
+
+}

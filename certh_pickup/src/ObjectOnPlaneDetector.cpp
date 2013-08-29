@@ -25,7 +25,7 @@ ObjectOnPlaneDetector::ObjectOnPlaneDetector(const CloudType &cloud): in_cloud_(
 ObjectOnPlaneDetector::ObjectOnPlaneDetector(const cv::Mat &clr_im, const cv::Mat &depth_im, double fx, double fy, double cx, double cy) {
     in_cloud_ = cvMatToCloud(clr_im, depth_im, fx, fy, cx, cy) ;
 
-    pcl::io::savePCDFileBinary("/tmp/cloud.pcd", in_cloud_) ;
+  //  pcl::io::savePCDFileBinary("/tmp/cloud.pcd", in_cloud_) ;
 }
 
 
@@ -206,7 +206,6 @@ cv::Mat ObjectOnPlaneDetector::findObjectMask(const Eigen::Vector3d &n, double d
             }
     }
 
-    cv::imwrite("/tmp/mask0.png", mask) ;
 
     cv::Mat fgMask = getForegroundMask(mask, hull, 100) ;
 
@@ -255,7 +254,7 @@ cv::Mat ObjectOnPlaneDetector::getForegroundMask(const cv::Mat &mask_ref, vector
                 planeMask.at<uchar>(y, x) = 255 ;
         }
 
-    cv::imwrite("/tmp/plane.png", planeMask) ;
+ //   cv::imwrite("/tmp/plane.png", planeMask) ;
 
     // get the polygon of the blob and create a mask with the internal points
 
@@ -283,6 +282,8 @@ cv::Mat ObjectOnPlaneDetector::getForegroundMask(const cv::Mat &mask_ref, vector
 */
     cvReleaseImage(&labelImg);
 
+    cv::imwrite("/tmp/planeMask.png", planeMask) ;
+
     return planeMask ;
 
 }
@@ -303,7 +304,7 @@ cv::Mat ObjectOnPlaneDetector::refineSegmentation(const cv::Mat &clr, const cv::
 
     cv::grabCut(clr, result, rectangle, bgModel, fgModel, 1, cv::GC_INIT_WITH_MASK);
 
-    cv::grabCut(clr, result, rectangle, bgModel, fgModel, 1, cv::GC_EVAL);
+//    cv::grabCut(clr, result, rectangle, bgModel, fgModel, 1, cv::GC_EVAL);
 
 
     // Get the pixels marked as likely foreground
@@ -315,7 +316,7 @@ cv::Mat ObjectOnPlaneDetector::refineSegmentation(const cv::Mat &clr, const cv::
     cv::Mat foreground(clr.size(),CV_8UC3,cv::Scalar(255,255,255));
     clr.copyTo(foreground, fgMask_); // bg pixels not copied
 
-    cv::imwrite("/tmp/seg.png", foreground) ;
+    cv::imwrite("/tmp/seg.png", result) ;
 
 
 

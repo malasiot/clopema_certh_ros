@@ -22,13 +22,15 @@ rosbuild_add_boost_directories()
 
 add_subdirectory(src/cvblob)
 
-rosbuild_add_executable(segment_from_table
-	src/segment.cpp
-	src/segments.cpp
-	src/graph.cpp
+rosbuild_add_library(pickup
+	src/RidgeDetector.cpp
+	src/RidgeDetector.h
 	src/ObjectOnPlaneDetector.cpp
 	src/ObjectOnPlaneDetector.h)
 
-target_link_libraries(segment_from_table ${OpenCV_LIBS} cvblob)
+target_link_libraries(pickup ${OpenCV_LIBS} cvblob)
+
+rosbuild_add_executable(test_pickup src/test_pickup.cpp)
+target_link_libraries(test_pickup pickup)
 
 
