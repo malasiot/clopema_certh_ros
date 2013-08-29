@@ -2,7 +2,7 @@
 #include "RFLibrary/rf.cpp"
 #include "HFLibrary/hf.h"
 #include "HFLibrary/hf.cpp"
-#include "robot_helpers/Unfold.h"
+#include "Unfold.h"
 #include <sstream>
 #include <ctime>
 
@@ -34,14 +34,14 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
     ros::Publisher marker_pub;
     marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
-    robot_helpers::Unfold rb("r1",marker_pub );
+    Unfold rb("r1",marker_pub );
 
 
 
     //-------------- Initialization -----------------//
     ifstream fin;
     cout << "Loading rf_obsprob... ";
-    fin.open("../forests/conf/obsprob.txt");
+    fin.open("../src/forests/conf/obsprob.txt");
     fin >> rf_num_states >> rf_num_obs;
     vector < vector < double > >  rf_obsprob;
     rf_obsprob.resize(rf_num_states);
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     cout << "DONE" << endl;
 
     cout << "Loading policy file... ";
-    fin.open("../forests/conf/out.policy");
+    fin.open("../src/forests/conf/out.policy");
     int n;
     fin >> n;
     vector < vector < double > >  rf_vectors;
@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
     cout << "DONE" << endl;
 
     cout << "Loading initial probabilities... ";
-    fin.open("../forests/conf/initprob.txt");
+    fin.open("../src/forests/conf/initprob.txt");
 	vector<double> rf_initprob(rf_num_states, 0);
 	for(int i=0; i<rf_num_states; ++i)
 		fin >> rf_initprob[i];
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
 	
 	
 	cout << "Loading forest... ";
-    rf = new RF( "../forests/rf_forest" );
+    rf = new RF( "../src/forests/rf_forest" );
     cout << " done." << endl;
 
     vector<double> rf_belief(rf_num_states, 0);
@@ -173,7 +173,7 @@ int main(int argc, char **argv) {
         rb.setClothType(rf_action);
         //------------------1st Grasping Point-----------------//
         stringstream shf;
-        shf << "../forests/hf" << rf_action;
+        shf << "../src/forests/hf" << rf_action;
         HF* hf = new HF( shf.str().c_str());
 				
 
@@ -334,7 +334,7 @@ int main(int argc, char **argv) {
 
         //---------------2nd Grasping Point----------------//
         stringstream shf2;
-        shf2 << "../forests/";
+        shf2 << "../src/forests/";
         if(rf_action==0)
             shf2 << "hf02";
         else if(rf_action==1)

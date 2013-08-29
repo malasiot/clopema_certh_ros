@@ -2,7 +2,7 @@
 #define __ROBOT_HELPERS_UNFOLDING_H__
 
 #include "robot_helpers/Utils.h"
-#include "Geometry.h"
+#include "robot_helpers/Geometry.h"
 #include <geometric_shapes/shape_operations.h>
 #include <planning_environment/util/construct_object.h>
 #include <geometry_msgs/Pose.h>
@@ -36,7 +36,7 @@
 
 using namespace std;
 
-namespace robot_helpers {
+
 
 
 class Unfold {
@@ -171,6 +171,6 @@ public:
 void printPose(geometry_msgs::Pose p);
 
 
-}
+
 
 #endif

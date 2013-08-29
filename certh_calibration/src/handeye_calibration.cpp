@@ -270,7 +270,7 @@ int main(int argc, char **argv) {
             // so move back the sensor far enough so that the target is visible. This is currently hardcoded.
 
             Vector3d dir = q*Vector3d(0, 0, 1) ;
-            Vector3d c = Vector3d(X, Y, Z) - 0.7*dir ;
+            Vector3d c = Vector3d(X, Y, Z) - 0.9*dir ;
 
             trajectory_msgs::JointTrajectory traj ;
             if ( !robot_helpers::planXtionToPose(armName, c, q, traj) ) continue ;
@@ -350,9 +350,10 @@ int main(int argc, char **argv) {
 
 
 
-    find_target_motions("grab_",  "/home/malasiot/images/clothes/calibration/calib_xtion2/", boardSize, cellSize, cameraMatrix, true, gripper_to_base, target_to_sensor) ;
+ //   find_target_motions("grab_",  "/home/malasiot/images/clothes/calibration/calib_xtion2/", boardSize, cellSize, cameraMatrix, true, gripper_to_base, target_to_sensor) ;
 
-  //  find_target_motions("grab_",  dataFolder, boardSize, cellSize, true, gripper_to_base, target_to_sensor) ;
+       find_target_motions("grab_",  dataFolder, boardSize, cellSize, cameraMatrix, true, gripper_to_base, target_to_sensor) ;
+
 
     if ( fixedCam )
         solveHandEyeFixed(gripper_to_base, target_to_sensor, Tsai, true, sensor_to_base) ;

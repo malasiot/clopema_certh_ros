@@ -1,4 +1,4 @@
-#include "robot_helpers/Unfold.h"
+#include "Unfold.h"
 #include <opencv2/highgui/highgui.hpp>
 
 #include <cv.h>
@@ -12,7 +12,7 @@
 #include <pcl/kdtree/kdtree_flann.h>
 
 using namespace std;
-namespace robot_helpers{
+using namespace robot_helpers;
 
 Unfold::Unfold(const string &armName, ros::Publisher markerPub){
     setHoldingArm(armName);
@@ -1361,7 +1361,7 @@ bool Unfold::flipCloth(){
 
 ////////////////////NEW///////////////////
 
-    if( (clothType == 0) || (clothType == 2) || (clothType == 3) || (clothType == 1)) {
+    if( (clothType == 0) || (clothType == 2) || (clothType == 3)  || (clothType == 4) ) {
 
         desPoseDown.position.z += 2.0*radious/3.0;
         if(holdingArm == "r2"){
@@ -1377,6 +1377,31 @@ bool Unfold::flipCloth(){
         setGripperState(holdingArm, true);
         switchArms();
         return true;
+    }
+    if (clothType == 5){
+
+        setGripperState(holdingArm, true);
+        switchArms();
+        return true;
+
+    }
+    if(clothType == 1){
+
+        desPoseDown.position.z += 2.0*radious/3.0;
+        if(holdingArm == "r2"){
+            desPoseDown.position.x -=radious/2.0;
+        }
+        else{
+            desPoseDown.position.x += radious/2.0;
+        }
+        desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
+        desPoseUp = getArmPose(holdingArm);
+        desPoseUp.position.z -= radious/3.0;
+        moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm,radious+0.02);//(desPoseDown, movingArm, radious+0.02 );
+        setGripperState(holdingArm, true);
+        switchArms();
+        return true;
+
     }
     else{
         desPoseDown.position.z += 0.15;
@@ -1678,4 +1703,3 @@ bool Unfold::showUnfolding(){
 
 }
 
-}
