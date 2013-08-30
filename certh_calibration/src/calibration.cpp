@@ -14,9 +14,12 @@
 
 #include <Eigen/Geometry>
 
+#include <certh_libs/cvHelpers.h>
+
 using namespace std ;
 using namespace cv ;
 using namespace Eigen ;
+using namespace certh_libs ;
 
 int counter = 0 ;
 static bool findCorners(const cv::Mat &im, const cv::Size &boardSize, vector<Point2f> &corners)
@@ -251,92 +254,6 @@ void estimateTargetToSensorRigid(const vector<vector<Point3f> > &img_corners, co
     }
 }
 
-class PtSorter
-{
-public:
-    PtSorter() {}
-
-    bool operator () (const Point &p1, const Point &p2) {
-        return p1.x * p1.x + p1.y * p1.y <  p2.x * p2.x + p2.y * p2.y ;
-    }
-};
-
-bool nearestNonZeroDepth(const cv::Mat &dim, int x, int y, ushort &z)
-{
-    assert ( dim.type() == CV_16UC1 ) ;
-
-    static vector<Point> dpts ;
-    const int ws = 3 ;
-
-    if ( dpts.empty() )
-    {
-        for(int i=-ws ; i<=ws ; i++ )
-            for(int j=-ws ; j<=ws ; j++ )
-                dpts.push_back(Point(j, i))  ;
-
-        PtSorter sorter ;
-        std::sort(dpts.begin(), dpts.end(), sorter) ;
-    }
-
-    bool found = true ;
-
-    for(int i=0 ; i<dpts.size() ; i++)
-    {
-        const Point &p = dpts[i] ;
-
-        int x_ = p.x + x ;
-        int y_ = p.y + y ;
-
-        if ( x_ < 0 || y_ < 0 || x_ >= dim.cols || y_ >= dim.rows ) continue ;
-        if ( ( z = dim.at<ushort>(y_, x_) ) == 0 ) continue ;
-
-        found = true ;
-    }
-
-    return found ;
-
-}
-
-bool bilinearDepth(const cv::Mat &dim, float x, float y, float &z)
-{
-    assert ( dim.type() == CV_16UC1 ) ;
-
-    int ix = x, iy = y ;
-    float hx = x - ix, hy = y - iy ;
-
-    if ( ( ix + 1 < 0 || ix + 1 >= dim.cols ) ||
-         ( iy + 1 < 0 || iy + 1 >= dim.rows ) ||
-         ( ix < 0 ) || ( iy < 0 ) )
-    {
-        ushort uz ;
-        bool res = nearestNonZeroDepth(dim, ix, iy, uz) ;
-        z = uz ;
-        return res ;
-    }
-
-    ushort z1 = dim.at<ushort>(iy, ix) ;
-    ushort z2 = dim.at<ushort>(iy, ix+1) ;
-    ushort z3 = dim.at<ushort>(iy+1, ix) ;
-    ushort z4 = dim.at<ushort>(iy+1, ix+1) ;
-
-    if ( z1 == 0 || z2 == 0 || z3 == 0 || z4 == 0 )
-    {
-        ushort uz ;
-        bool res = nearestNonZeroDepth(dim, ix, iy, uz) ;
-        z = uz ;
-        return res ;
-    }
-    else
-    {
-        float s1 = (1 - hx) * z1 + hx * z2 ;
-        float s2 = (1 - hx) * z3 + hx * z4 ;
-
-        z = ( 1 - hy ) * s1 + hy * s2 ;
-
-        return true ;
-    }
-}
-
 
 
 
@@ -424,7 +341,7 @@ void find_target_motions(const string &filePrefix, const string &dataFolder, con
                     {
                         float z ;
 
-                        if ( bilinearDepth(dim, ic[k].x, ic[k].y, z) )
+                        if ( sampleBilinearDepth(dim, ic[k].x, ic[k].y, z) )
                             img_corners3.back().push_back(Point3f(ic[k].x, ic[k].y, z)) ;
                         else
                             img_corners3.back().push_back(Point3f(ic[k].x, ic[k].y, 0.0)) ;

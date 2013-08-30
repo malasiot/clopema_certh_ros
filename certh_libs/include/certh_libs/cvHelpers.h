@@ -20,8 +20,12 @@ void simplifyContour(const std::vector<cv::Point2d> &in_pts, std::vector<cv::Poi
 // perform edge linking on a binary image (depicting thin edges)
 void edgeLinking(const cv::Mat_<uchar> &edges, std::vector< std::vector<cv::Point> > &clist) ;
 
-}
+// sample Z value from depth map with holes
 
+bool sampleNearestNonZeroDepth(const cv::Mat &dim, int x, int y, ushort &z) ;
+bool sampleBilinearDepth(const cv::Mat &dim, float x, float y, float &z) ;
+
+}
 
 #endif
 

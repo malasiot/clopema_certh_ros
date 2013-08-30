@@ -255,8 +255,8 @@ int main(int argc, char **argv) {
 
         Quaterniond q = robot_helpers::lookAt(orient, M_PI) ;
 
-        q = Quaterniond(q.x() + qx, q.y() + qy, q.z() + qz, q.w() + qw) ;
-        q.normalize();
+       q = Quaterniond(q.x() + qx, q.y() + qy, q.z() + qz, q.w() + qw) ;
+       q.normalize();
 
         if ( fixedCam ) {
 
