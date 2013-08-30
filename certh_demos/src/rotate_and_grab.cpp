@@ -28,6 +28,14 @@ void stopCapture()
     captureStoped = true ;
     finished.notify_all();
 
+    //Set servo power off
+    clopema_motoros::SetPowerOff soff;
+    soff.request.force = false;
+    ros::service::waitForService("/joint_trajectory_action/set_power_off");
+    if (!ros::service::call("/joint_trajectory_action/set_power_off", soff)) {
+        ROS_ERROR("Can't call service set_power_off");
+    }
+
 }
 
 void doCapture(camera_helpers::OpenNICaptureAll *grabber)
@@ -107,6 +115,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
 
     MoveRobot cmove ;
+    cmove.setServoMode(false);
 
   // moveHome() ;
     moveGripperPointingDown(cmove, "r1", 0, -0.7, 1.5) ;

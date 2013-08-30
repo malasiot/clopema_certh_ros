@@ -20,4 +20,5 @@ rosbuild_add_boost_directories()
 
 rosbuild_add_executable(unfolding src/unfolding.cpp src/utils.cpp)
 
+rosbuild_add_executable(grasp_from_floor src/grasp_from_floor.cpp src/utils.cpp)
 

@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
     ros::Publisher marker_pub;
     marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
-    Unfold rb("r1",marker_pub );
+    Unfold rb("r2",marker_pub );
 
 
 
@@ -101,8 +101,7 @@ int main(int argc, char **argv) {
     cv::moveWindow("rgb", 680, 0);
 
 
-    unsigned int start;
-    start = std::clock();
+    clock_t start = clock();
 
 
     //-------------- Planning -----------------//
@@ -490,7 +489,7 @@ int main(int argc, char **argv) {
         cloth_unfolded = true;
     }
 
-    cout<< "time =  " << ( std::clock() - start )/1000.0 ;
+    cout<< "time =  " << double(clock()) - double(start)/double(CLOCKS_PER_SEC) << endl;
 
 
     //Set servo power off
