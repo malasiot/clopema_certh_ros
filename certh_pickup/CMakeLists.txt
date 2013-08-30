@@ -26,9 +26,13 @@ rosbuild_add_library(pickup
 	src/RidgeDetector.cpp
 	src/RidgeDetector.h
 	src/ObjectOnPlaneDetector.cpp
-	src/ObjectOnPlaneDetector.h)
+	src/ObjectOnPlaneDetector.h
+)
 
 target_link_libraries(pickup ${OpenCV_LIBS} cvblob)
+
+rosbuild_add_executable(pickup_node	src/pickup.cpp)
+target_link_libraries(pickup_node pickup)
 
 rosbuild_add_executable(test_pickup src/test_pickup.cpp)
 target_link_libraries(test_pickup pickup)

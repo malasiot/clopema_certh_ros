@@ -47,7 +47,7 @@ bool resetCollisionModel() ;
 
 bool getIK(const std::string &armName, const Eigen::Vector3d pos, const Eigen::Quaterniond &q, sensor_msgs::JointState &state) ;
 
-// get inverse kinematics solution for the Xtion on the given arm
+// get inverse kinematics solution for the Xtion on the given arm (note that this will solve for direction of the viewing axis (the roll is undefined)
 
 bool getIKXtion(const std::string &armName, const Eigen::Vector3d pos, const Eigen::Quaterniond &q, sensor_msgs::JointState &state) ;
 

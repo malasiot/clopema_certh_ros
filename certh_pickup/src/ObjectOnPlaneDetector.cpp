@@ -22,32 +22,28 @@ ObjectOnPlaneDetector::ObjectOnPlaneDetector(const CloudType &cloud): in_cloud_(
 
 }
 
-ObjectOnPlaneDetector::ObjectOnPlaneDetector(const cv::Mat &clr_im, const cv::Mat &depth_im, double fx, double fy, double cx, double cy) {
-    in_cloud_ = cvMatToCloud(clr_im, depth_im, fx, fy, cx, cy) ;
-
-  //  pcl::io::savePCDFileBinary("/tmp/cloud.pcd", in_cloud_) ;
+ObjectOnPlaneDetector::ObjectOnPlaneDetector(const cv::Mat &depth_im, double fx, double fy, double cx, double cy) {
+    in_cloud_ = cvMatToCloud(depth_im, fx, fy, cx, cy) ;
 }
 
 
-CloudType ObjectOnPlaneDetector::cvMatToCloud(const cv::Mat &clr_im, const cv::Mat &depth_im, double fx, double fy, double center_x, double center_y)
+CloudType ObjectOnPlaneDetector::cvMatToCloud(const cv::Mat &depth_im, double fx, double fy, double center_x, double center_y)
 {
     float constant_x =  0.001/fx ;
     float constant_y =  0.001/fy ;
     float bad_point = std::numeric_limits<float>::quiet_NaN ();
 
-    int w = clr_im.cols, h = clr_im.rows ;
+    int w = depth_im.cols, h = depth_im.rows ;
 
     cv::Mat_<ushort> dim(depth_im) ;
-    cv::Mat_<cv::Vec3b> cim(clr_im) ;
 
     CloudType cloud(w, h) ;
 
     for( int i=0 ; i<h ; i++ )
         for(int j=0 ; j<w ; j++)
         {
-            pcl::PointXYZRGB& pt = cloud.at(j, i) ;
+            pcl::PointXYZ& pt = cloud.at(j, i) ;
             ushort depth = dim[i][j] ;
-            cv::Vec3b clr = cim[i][j] ;
 
             if ( depth == 0 ) {
                 pt.x = pt.y = pt.z = bad_point;
@@ -59,10 +55,6 @@ CloudType ObjectOnPlaneDetector::cvMatToCloud(const cv::Mat &clr_im, const cv::M
                 pt.z = depth/1000.0 ;
             }
 
-
-            pt.r = clr[0] ;
-            pt.g = clr[1] ;
-            pt.b = clr[2] ;
         }
 
 
@@ -116,7 +108,7 @@ bool ObjectOnPlaneDetector::findPlane(Eigen::Vector3d &n, double &d, cv::Mat &ma
 
     // Segmentation object and configuration
 
-    pcl::SACSegmentation<pcl::PointXYZRGB> seg;
+    pcl::SACSegmentation<pcl::PointXYZ> seg;
     seg.setOptimizeCoefficients (true);
     seg.setProbability(0.99);
     seg.setModelType (pcl::SACMODEL_PLANE);
@@ -142,32 +134,14 @@ bool ObjectOnPlaneDetector::findPlane(Eigen::Vector3d &n, double &d, cv::Mat &ma
     extract.setNegative (false);
     extract.filter (*cloud_plane);
 
-    Eigen::Vector4f center ;
-    pcl::compute3DCentroid (*cloud_in, *inliers_plane, center);
-    /*
-
-    pcl::PCA< PointType > pca;
-    CloudType proj;
-
-    pca.setInputCloud (cloud_plane);
-    pca.project (*cloud_plane, proj);
-
-    PointType proj_min;
-    PointType proj_max;
-    pcl::getMinMax3D (proj, proj_min, proj_max);
-
-    double area = (proj_max.x - proj_min.x)*(proj_max.y - proj_min.y) ;
-
-    Eigen::Vector4f center = pca.getMean() ;
-*/
     extract.setNegative (true);
     extract.filter (*cloud_rest);
 
-  //  p = Eigen::Vector3d(center.x(), center.y(), center.z()) ;
     n = Eigen::Vector3d(coeff->values[0], coeff->values[1], coeff->values[2]) ;
     d = coeff->values[3] ;
 
     mask = cv::Mat::zeros(h, w, CV_8UC1) ;
+
     for(int i=0 ; i<inliers_plane->indices.size() ; i++ )
     {
         int index_ = inliers_plane->indices[i] ;

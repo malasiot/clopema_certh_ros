@@ -8,7 +8,7 @@
 
 #include <cv.h>
 
-typedef pcl::PointXYZRGB PointType ;
+typedef pcl::PointXYZ PointType ;
 typedef pcl::PointCloud<PointType> CloudType ;
 
 class ObjectOnPlaneDetector {
@@ -16,7 +16,7 @@ class ObjectOnPlaneDetector {
 public:
 
     ObjectOnPlaneDetector(const CloudType &cloud) ;
-    ObjectOnPlaneDetector(const cv::Mat &clr_im, const cv::Mat &depth_im,
+    ObjectOnPlaneDetector(const cv::Mat &depth_im,
                            double fx, double fy, double cx, double cy)  ;
 
 
@@ -35,7 +35,7 @@ public:
 
 private:
 
-    CloudType cvMatToCloud(const cv::Mat &clr_im, const cv::Mat &depth_im, double fx, double fy, double ox, double oy) ;
+    CloudType cvMatToCloud(const cv::Mat &depth_im, double fx, double fy, double ox, double oy) ;
 
 private:
 

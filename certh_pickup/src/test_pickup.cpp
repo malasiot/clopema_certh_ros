@@ -14,10 +14,10 @@ using namespace std;
 int main(int argc, char *argv)
 {
 
-    cv::Mat clr = cv::imread("/home/malasiot/images/clothes/calibration/cap_4/cap_rgb_000001.png") ;
-    cv::Mat depth = cv::imread("/home/malasiot/images/clothes/calibration/cap_4/cap_depth_000001.png", -1) ;
+    cv::Mat clr = cv::imread("/home/malasiot/images/clothes/calibration/on_table/cap_3/cap_rgb_000009.png") ;
+    cv::Mat depth = cv::imread("/home/malasiot/images/clothes/calibration/on_table/cap_3/cap_depth_000009.png", -1) ;
 
-    ObjectOnPlaneDetector det(clr, depth, 525, 525, 640/2-0.5, 480/2-0.5) ;
+    ObjectOnPlaneDetector det(depth, 525, 525, 640/2-0.5, 480/2-0.5) ;
 
     Eigen::Vector3d n ;
     double d ;
@@ -32,9 +32,11 @@ int main(int argc, char *argv)
     cv::Mat ref = det.refineSegmentation(clr, mask, hull2) ;
 
     RidgeDetector rdg ;
-    cv::Mat ridges, alpha, sigma, gsp ;
+    vector<RidgeDetector::GraspCandidate> gsp ;
 
-    rdg.detect(dmap, alpha, sigma, ridges) ;
-    gsp = rdg.computeGraspability(dmap, ridges, alpha, sigma, 12.0, 8.0) ;
+    rdg.detect(dmap, gsp) ;
+    rdg.draw(clr, gsp) ;
+
+    cv::imwrite("/tmp/gsp.png", clr) ;
 
 }

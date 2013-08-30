@@ -29,7 +29,7 @@ static void nonMaximaSuppressionDirectional(const Mat& src, Mat& dst, const Mat 
             double sigma = sigma_.at<float>(i, j) ;
 
             double sa = cos(alpha) ;
-            double ca = sin(alpha) ;
+            double ca = -sin(alpha) ;
 
             int ppx = j + sigma *  ca + 0.5;
             int ppy = i + sigma *  sa + 0.5 ;
@@ -66,7 +66,7 @@ static double graspable(const cv::Mat &src, double x, double y, double alpha, do
     Vector2 p0(x, y) ;
 
     double sa = cos(alpha) ;
-    double ca = sin(alpha) ;
+    double ca = -sin(alpha) ;
 
     Vector2 d(ca, sa) ;
     Vector2 n(sa, -ca) ;
@@ -124,7 +124,7 @@ static double graspable(const cv::Mat &src, double x, double y, double alpha, do
 
 }
 
-void RidgeDetector::detect(const Mat &src, Mat &alpha, Mat &scale, Mat &ridges)
+Mat RidgeDetector::detect(const Mat &src, Mat &alpha, Mat &scale, Mat &ridges)
 {
     Mat gray ;
     src.convertTo(gray, CV_32FC1) ;
@@ -155,13 +155,22 @@ void RidgeDetector::detect(const Mat &src, Mat &alpha, Mat &scale, Mat &ridges)
         for( int i=0 ; i<h ; i++ )
             for( int j=0 ; j<w ; j++ )
             {
-                float gd = g2x.at<float>(i, j) - g2y.at<float>(i, j) ;
-                if ( fabs(gd) < 1.0e-5 ) continue ;
+                // find the orinetation of the ridge
 
-                double a = atan(2*gxy.at<float>(i, j)/gd)/2 ;
+                float gxy_ = gxy.at<float>(i, j) ;
+                float g2x_ = g2x.at<float>(i, j) ;
+                float g2y_ = g2y.at<float>(i, j) ;
+                float gx_ = gx.at<float>(i, j) ;
+                float gy_ = gy.at<float>(i, j) ;
+
+                float gd = g2x_ - g2y_ ;
+
+                if ( gx_ * gx_ + gy_ * gy_ < 5 * 5 ) continue ;
+
+                double a = atan2(2*gxy_, gd)/2 ;
 
                 double sa = cos(a) ;
-                double ca = sin(a) ;
+                double ca = -sin(a) ;
 
                 int ppx = j + sigma *  ca + 0.5;
                 int ppy = i + sigma *  sa + 0.5 ;
@@ -194,26 +203,122 @@ void RidgeDetector::detect(const Mat &src, Mat &alpha, Mat &scale, Mat &ridges)
     }
 
     nonMaximaSuppressionDirectional(resp, ridges, alpha, scale);
+
+    return resp ;
 }
 
-Mat RidgeDetector::computeGraspability(const Mat &src, const Mat &ridges, const Mat &alpha, const Mat &scale, double gripperOpenning, double gripperWidth)
+struct CandSorter {
+    bool operator() (const RidgeDetector::GraspCandidate &c1, const RidgeDetector::GraspCandidate &c2)
+    {
+        return c1.strength >= c2.strength ;
+    }
+};
+
+void RidgeDetector::findCandidates(const Mat &src, const Mat &resp, const Mat &ridges, const Mat &alpha, const Mat &scale, std::vector<GraspCandidate> &candList)
 {
     int w = src.cols, h = src.rows ;
 
     Mat gray ;
     src.convertTo(gray, CV_32FC1) ;
 
-    Mat gsp(h, w, CV_32FC1, Scalar(0.0)) ;
+    deque<GraspCandidate> cand ;
 
     for( int i=0 ; i<h ; i++ )
         for(int j=0 ; j<w ; j++ )
         {
             if ( ridges.at<uchar>(i, j) == 0 ) continue ;
 
-            float gsp_ = graspable(gray, j, i, alpha.at<float>(i, j), scale.at<float>(i, j), gripperOpenning, gripperWidth)  ;
+            GraspCandidate grp ;
+            grp.x = j ;
+            grp.y = i ;
+            grp.strength = resp.at<float>(i, j) ;
+            grp.width = scale.at<float>(i, j) ;
+            grp.alpha = alpha.at<float>(i, j) ;
 
-            gsp.at<float>(i, j) = gsp_ ;
+            cand.push_back(grp) ;
         }
 
-    return gsp ;
+    sort(cand.begin(), cand.end(), CandSorter()) ;
+
+    // remove neighbors of the best candidate that have similar orientations
+
+    const double radius = 8 ;
+
+    while ( !cand.empty() )
+    {
+        // insert best candidate in the list
+
+        GraspCandidate best = cand.front() ;
+        cand.pop_front() ;
+
+        candList.push_back(best) ;
+
+        double sa = -sin(best.alpha) ;
+        double ca = cos(best.alpha) ;
+        Vector2 d(sa, ca) ;
+
+        deque<GraspCandidate>::iterator it = cand.begin() ;
+
+        // check neighbors
+
+        while ( it != cand.end() )
+        {
+            const GraspCandidate &cnd = *it ;
+
+            if ( ( cnd.x - best.x ) * ( cnd.x - best.x ) + ( cnd.y - best.y ) * ( cnd.y - best.y ) > radius * radius) {
+                ++it ;
+                continue ;
+            }
+
+            if ( fabs(d.dot(Vector2(cnd.x - best.x, cnd.y - best.y ))) < best.width/2 &&
+                      fabs(best.alpha - cnd.alpha) < 0.05 )
+                it = cand.erase(it) ;
+            else
+                ++it ;
+        }
+    }
+
+
+    return ;
+
+
+}
+
+
+bool RidgeDetector::detect(const cv::Mat &src, std::vector<GraspCandidate> &cand)
+{
+    Mat scale, alpha, ridges, resp ;
+
+    resp = detect(src, alpha, scale, ridges) ;
+    findCandidates(src, resp, ridges, alpha, scale, cand) ;
+
+    return !cand.empty() ;
+
+}
+
+
+void RidgeDetector::draw(cv::Mat &clr, const std::vector<GraspCandidate> &cand)
+{
+    for(int i=0 ; i<cand.size() ; i++ )
+    {
+        const GraspCandidate &cnd = cand[i] ;
+
+        double sa = -sin(cnd.alpha) ;
+        double ca = cos(cnd.alpha) ;
+
+        Vector2 d(sa, ca) ;
+
+        Vector2 p1 =  d * cnd.width + Vector2(cnd.x, cnd.y) ;
+        Vector2 p2 = -d * cnd.width + Vector2(cnd.x, cnd.y) ;
+
+        if ( i==0 )
+            cv::line(clr, cv::Point(p1.x(), p1.y()), cv::Point(p2.x(), p2.y()), Scalar(0, 255, 0), 2 )  ;
+        else if ( i < 10 )
+            cv::line(clr, cv::Point(p1.x(), p1.y()), cv::Point(p2.x(), p2.y()), Scalar(255, 255, 0), 1 )  ;
+        else
+            cv::line(clr, cv::Point(p1.x(), p1.y()), cv::Point(p2.x(), p2.y()), Scalar(255, 255, 255), 1 )  ;
+
+
+
+    }
 }
