@@ -36,9 +36,9 @@ int main(int argc, char **argv) {
     ros::Publisher marker_pub;
     marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
 
-    graspFromFloor("r2");
+   // graspFromFloor("r2");
 
-    Unfold rb("r2",marker_pub );
+    Unfold rb("r1",marker_pub );
 
 
 

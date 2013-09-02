@@ -141,6 +141,8 @@ public:
 
     int setGripperStates(const string &armName  , bool open);
     int setGrippersStates( bool open);
+    int openG2();
+
     void rotateHoldingGripper(float angle );
 
     Eigen::Matrix4d findLowestPointOrientation(Eigen::Vector4d vector );

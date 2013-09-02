@@ -1,8 +1,8 @@
 #include "Unfold.h"
 #include <opencv2/highgui/highgui.hpp>
-
+#include "clopema_motoros/WriteIO.h"
 #include <cv.h>
-
+//#include <thread>
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues> // for cwise access
 
@@ -44,12 +44,13 @@ string Unfold::getMovingArm(){
 }
 
 //Opens or closes a gripper
-int Unfold::setGripperStates(const string &armName  , bool open){    
+int Unfold::setGripperStates(const string &armName  , bool open){
     ros::service::waitForService("/" + armName + "_gripper/set_open");
     clopema_motoros::SetGripperState sopen;
     sopen.request.open=open;
     ros::service::call("/" + armName + "_gripper/set_open", sopen);
-
+    if((armName == "r2") && (open == true))
+        openG2();
     return 0;
 }
 
@@ -63,7 +64,33 @@ int Unfold::setGrippersStates( bool open){
     ros::service::call("/r1_gripper/set_open", sopen);
     ros::service::call("/r2_gripper/set_open", sopen);
 
+
     return 0;
+}
+
+
+int Unfold::openG2(){
+
+    clopema_motoros::WriteIO openGripper;
+    openGripper.request.address = 10026;
+
+    for(unsigned int i = 0 ; i < 4 ; i++){
+        openGripper.request.value = false;
+        if (!ros::service::call("/write_io", openGripper)) {
+            ROS_ERROR("Can't call service write_io");
+            return -1;
+        }
+        ros::Duration(0.1).sleep();
+
+        openGripper.request.value = true;
+        ros::service::waitForService("/write_io");
+        if (!ros::service::call("/write_io", openGripper)) {
+            ROS_ERROR("Can't call service write_io");
+            return -1;
+        }
+        ros::Duration(0.5).sleep();
+    }
+
 }
 
 //Calculates the quaternion of a 4d rotatation matrix
@@ -1374,13 +1401,13 @@ bool Unfold::flipCloth(){
         desPoseUp = getArmPose(holdingArm);
         desPoseUp.position.z -= radious/3.0;
         moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm,radious+0.02);//(desPoseDown, movingArm, radious+0.02 );
-        setGripperState(holdingArm, true);
+        setGripperStates(holdingArm, true);
         switchArms();
         return true;
     }
     if (clothType == 5){
 
-        setGripperState(holdingArm, true);
+        setGripperStates(holdingArm, true);
         switchArms();
         return true;
 
@@ -1398,7 +1425,7 @@ bool Unfold::flipCloth(){
         desPoseUp = getArmPose(holdingArm);
         desPoseUp.position.z -= radious/3.0;
         moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm,radious+0.02);//(desPoseDown, movingArm, radious+0.02 );
-        setGripperState(holdingArm, true);
+        setGripperStates(holdingArm, true);
         switchArms();
         return true;
 
@@ -1652,7 +1679,7 @@ int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry
 bool Unfold::releaseCloth( const string &armName ){
 
     geometry_msgs::Pose pose = getArmPose(armName);
-    setGripperState(armName , true);
+    setGripperStates(armName , true);
     float dx, dz=0.1;
     if (armName == "r1")
         dx = -0.3;
