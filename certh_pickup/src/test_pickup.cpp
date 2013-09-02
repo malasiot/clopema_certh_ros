@@ -4,6 +4,7 @@
 #include <iostream>
 #include <robot_helpers/Robot.h>
 #include <robot_helpers/Utils.h>
+#include <robot_helpers/Geometry.h>
 #include <certh_libs/Point2D.h>
 #include <camera_helpers/OpenNICapture.h>
 
@@ -85,8 +86,15 @@ int main(int argc, char **argv) {
 
     targetP = calib * tar;
     cout << targetP << endl;
+    geometry_msgs::Pose pose;
+    pose.position.x = targetP.x();
+    pose.position.y = targetP.y();
+    pose.position.z = targetP.z()+0.1;
+    rotateGripper(gsp[0].alpha,armName);
+    pose.orientation = getArmPose(armName).orientation;
+    moveArm(pose,armName);
 
-    moveGripperPointingDown(cmove, armName, targetP.x(),targetP.y(),targetP.z()+0.1);
+
     setServoPowerOff();
     /////////////////
     return 0;

@@ -29,6 +29,9 @@ void makeSolidCone( shapes::Mesh  &mesh, double base, double height, int slices,
 // create a camera frustum mesh
 void makeCameraFrustum(shapes::Mesh  &mesh, double near_, double far_, double fovX, double fovY, bool makeSolid, bool addPrism) ;
 
+geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
+geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
+
 } // namespace robot_helpers
 
 #endif

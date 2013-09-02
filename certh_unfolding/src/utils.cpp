@@ -93,27 +93,27 @@ int Unfold::openG2(){
 
 }
 
-//Calculates the quaternion of a 4d rotatation matrix
-geometry_msgs::Quaternion Unfold::rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix){
+////Calculates the quaternion of a 4d rotatation matrix
+//geometry_msgs::Quaternion Unfold::rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix){
 
-    float roll , pitch, yaw;
+//    float roll , pitch, yaw;
 
-    roll= atan2f(matrix(2, 1),matrix(2, 2) );
-    pitch= atan2f(-matrix(2,0),sqrt(pow(matrix(2, 2),2)+pow(matrix(2, 1),2)));
-    yaw= atan2f(matrix(1, 0),matrix(0, 0));
-    return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
-}
+//    roll= atan2f(matrix(2, 1),matrix(2, 2) );
+//    pitch= atan2f(-matrix(2,0),sqrt(pow(matrix(2, 2),2)+pow(matrix(2, 1),2)));
+//    yaw= atan2f(matrix(1, 0),matrix(0, 0));
+//    return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
+//}
 
-//Calculates the quaternion of a 3d rotatation matrix
-geometry_msgs::Quaternion Unfold::rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix){
+////Calculates the quaternion of a 3d rotatation matrix
+//geometry_msgs::Quaternion Unfold::rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix){
 
-    float roll , pitch, yaw;
+//    float roll , pitch, yaw;
 
-    roll= atan2f(matrix(2, 1),matrix(2, 2) );
-    pitch= atan2f(-matrix(2,0),sqrt(pow(matrix(2, 2),2)+pow(matrix(2, 1),2)));
-    yaw= atan2f(matrix(1, 0),matrix(0, 0));
-    return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
-}
+//    roll= atan2f(matrix(2, 1),matrix(2, 2) );
+//    pitch= atan2f(-matrix(2,0),sqrt(pow(matrix(2, 2),2)+pow(matrix(2, 1),2)));
+//    yaw= atan2f(matrix(1, 0),matrix(0, 0));
+//    return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
+//}
 
 
 //Rotates the holding gripper to a given angle

@@ -1,6 +1,7 @@
 #include <robot_helpers/Geometry.h>
 #include <iostream>
 #include <Eigen/Geometry>
+#include <tf_conversions/tf_eigen.h>
 
 
 #include <geometric_shapes/shape_operations.h>
@@ -352,6 +353,26 @@ void makeCameraFrustum(shapes::Mesh  &mesh, double near_, double far_, double fo
 
 
 
+//Calculates the quaternion of a 4d rotatation matrix
+geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix){
 
+    float roll , pitch, yaw;
+
+    roll= atan2f(matrix(2, 1),matrix(2, 2) );
+    pitch= atan2f(-matrix(2,0),sqrt(pow(matrix(2, 2),2)+pow(matrix(2, 1),2)));
+    yaw= atan2f(matrix(1, 0),matrix(0, 0));
+    return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
+}
+
+//Calculates the quaternion of a 3d rotatation matrix
+geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix){
+
+    float roll , pitch, yaw;
+
+    roll= atan2f(matrix(2, 1),matrix(2, 2) );
+    pitch= atan2f(-matrix(2,0),sqrt(pow(matrix(2, 2),2)+pow(matrix(2, 1),2)));
+    yaw= atan2f(matrix(1, 0),matrix(0, 0));
+    return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
+}
 
 } // namespace robot_helpers

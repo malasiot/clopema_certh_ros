@@ -35,7 +35,7 @@
 #include <Eigen/Eigenvalues> // for cwise access
 
 using namespace std;
-
+using namespace robot_helpers;
 
 
 
@@ -163,8 +163,8 @@ public:
     bool releaseCloth( const string &armName );
     bool showUnfolding();
 
-    geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
-    geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
+   // geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
+    //geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
 
     bool grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, cv::Rect & r );
 
