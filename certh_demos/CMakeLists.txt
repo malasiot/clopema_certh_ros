@@ -33,7 +33,7 @@ find_package(Eigen)
 #Beginer - JOINT
 
 rosbuild_add_executable(move_joint_r1 src/move_joint_r1.cpp)
-
+rosbuild_add_executable(open_r2_gripper src/open_r2_gripper.cpp)
 rosbuild_add_executable(move_above_table_r1 src/move_above_table_r1.cpp)
 rosbuild_link_boost(move_above_table_r1 signals)
 
