@@ -11,6 +11,8 @@ using namespace std;
 int rf_num_states, rf_num_obs;
 RF* rf;
 
+int graspFromFloor(string armName);
+
 void processDepth(cv::Mat depth, cv::Mat& depth2, cv::Rect r){
     cv::Mat temp, temp2, temp3;
     temp = depth(r);
@@ -27,13 +29,15 @@ void processDepth(cv::Mat depth, cv::Mat& depth2, cv::Rect r){
     }
 }
 
-
 int main(int argc, char **argv) {
 
     ros::init(argc, argv, "unfolding");
     ros::NodeHandle nh;
     ros::Publisher marker_pub;
     marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
+
+    graspFromFloor("r2");
+
     Unfold rb("r2",marker_pub );
 
 
