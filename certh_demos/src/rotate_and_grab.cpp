@@ -19,7 +19,7 @@ boost::condition_variable finished ;
 
 int counter = 0 ;
 
-
+// set the robot speed to 1.3 for ~200 pics
 void stopCapture()
 {
     cout << "done" << endl ;

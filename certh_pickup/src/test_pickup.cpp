@@ -12,11 +12,11 @@
 using namespace std ;
 using namespace certh_libs ;
 using namespace robot_helpers ;
-using namespace std;
+using namespace std ;
 
 Eigen::Vector3d findTarget(float x , float y, pcl::PointCloud<pcl::PointXYZ> pc ){
 
-    Eigen::Vector3d v;
+    Eigen::Vector3d v ;
 
 
 
@@ -25,66 +25,100 @@ Eigen::Vector3d findTarget(float x , float y, pcl::PointCloud<pcl::PointXYZ> pc 
 
 int openG2(){
 
-    clopema_motoros::WriteIO openGripper;
-    openGripper.request.address = 10026;
+    clopema_motoros::WriteIO openGripper ;
+    openGripper.request.address = 10026 ;
 
     for(unsigned int i = 0 ; i < 3 ; i++){
-        openGripper.request.value = false;
+        openGripper.request.value = false ;
         if (!ros::service::call("/write_io", openGripper)) {
-            ROS_ERROR("Can't call service write_io");
-            return -1;
+            ROS_ERROR("Can't call service write_io") ;
+            return -1 ;
         }
-        ros::Duration(0.1).sleep();
+        ros::Duration(0.1).sleep() ;
 
-        openGripper.request.value = true;
-        ros::service::waitForService("/write_io");
+        openGripper.request.value = true ;
+        ros::service::waitForService("/write_io") ;
         if (!ros::service::call("/write_io", openGripper)) {
-            ROS_ERROR("Can't call service write_io");
-            return -1;
+            ROS_ERROR("Can't call service write_io") ;
+            return -1 ;
         }
-        ros::Duration(0.5).sleep();
+        ros::Duration(0.5).sleep() ;
     }
-    openGripper.request.value = false;
+    openGripper.request.value = false ;
     if (!ros::service::call("/write_io", openGripper)) {
-        ROS_ERROR("Can't call service write_io");
-        return -1;
+        ROS_ERROR("Can't call service write_io") ;
+        return -1 ;
     }
-    ros::Duration(0.1).sleep();
+    ros::Duration(0.1).sleep() ;
 
 }
+
+geometry_msgs::Quaternion findAngle(float theta, Eigen::Matrix4d calib){
+
+    Eigen::Vector4d norm ;
+    norm << cos(theta), sin(theta), 0, 0 ;
+
+    Eigen::Vector4d targetN ;
+    targetN = calib * norm.normalized() ;
+    cout<< targetN << "targetN" <<endl;
+    Eigen::Matrix3d rotMat;
+    Eigen::Vector3d Y(targetN.x(), targetN.y(), targetN.z());
+    Eigen::Vector3d X;
+    Eigen::Vector3d Z(0, 0, -1);
+    X = Y.cross(Z);
+
+    rotMat(0, 0)=X.x();
+    rotMat(1, 0)=X.y();
+    rotMat(2, 0)=X.z();
+
+    rotMat(0, 1)=Y.x();
+    rotMat(1, 1)=Y.y();
+    rotMat(2, 1)=Y.z();
+
+    rotMat(0, 2)=Z.x();
+    rotMat(1, 2)=Z.y();
+    rotMat(2, 2)=Z.z();
+
+    cout << rotMat << endl;
+    return rotationMatrix3ToQuaternion(rotMat);
+
+
+}
+
+
 int main(int argc, char **argv) {
 
 
-    ros::init(argc, argv, "unfolding");
-    ros::NodeHandle nh;
+    ros::init(argc, argv, "unfolding") ;
+    ros::NodeHandle nh ;
 
 
 //    cv::Mat clr = cv::imread("/home/malasiot/images/clothes/calibration/on_table/cap_3/cap_rgb_000009.png") ;
 //    cv::Mat depth = cv::imread("/home/malasiot/images/clothes/calibration/on_table/cap_3/cap_depth_000009.png", -1) ;
 //
-    string armName = "r2";
-    setGripperState(armName, false);
+    string armName = "r2" ;
+    setGripperState(armName, false) ;
 
 
-    MoveRobot cmove;
-    cmove.setServoMode(false);
-    moveGripperPointingDown(cmove, armName, 0, -1.1, 1.3 );
+    MoveRobot cmove ;
+    cmove.setServoMode(false) ;
+    moveGripperPointingDown(cmove, armName, 0, -1.1, 1.3 ) ;
 
-    camera_helpers::OpenNICaptureAll grabber("xtion2");
-    grabber.connect();
-    ros::Duration(0.3).sleep();
+    camera_helpers::OpenNICaptureAll grabber("xtion2") ;
+    grabber.connect() ;
+    ros::Duration(0.3).sleep() ;
 
-    cv::Mat rgb, depth;
-    pcl::PointCloud<pcl::PointXYZ> pc;
+    cv::Mat rgb, depth ;
+    pcl::PointCloud<pcl::PointXYZ> pc ;
     ros::Time ts ;
-    image_geometry::PinholeCameraModel cm;
+    image_geometry::PinholeCameraModel cm ;
 
     if(!grabber.grab(rgb, depth, pc, ts, cm)){
-        cout<<" Cant grab image!!  " << endl;
-        return false;
+        cout<<" Cant grab image!!  " << endl ;
+        return false ;
     }
 
-  //  grabber.disconnect();
+  //  grabber.disconnect() ;
 //
     ObjectOnPlaneDetector det(depth, 525, 525, 640/2-0.5, 480/2-0.5) ;
 
@@ -108,56 +142,54 @@ int main(int argc, char **argv) {
 
 
     cv::imwrite("/tmp/gsp.png", rgb) ;
-    //cout << "point is " <<gsp[0].x << " "<<  gsp[0].y << endl;
+    //cout << "point is " <<gsp[0].x << " "<<  gsp[0].y << endl ;
 
     ////////////////
     pcl::PointXYZ val = pc.at(gsp[0].x, gsp[0].y) ;
 
     Eigen::Vector3d p(val.x, val.y, val.z) ;
-    cout << p << endl;
-    Eigen::Matrix4d calib = getTranformationMatrix("xtion2_rgb_optical_frame");
-    Eigen::Vector4d tar(p.x(), p.y(), p.z(), 1);
-    Eigen::Vector4d targetP;
+    cout << p << endl ;
+    Eigen::Matrix4d calib = getTranformationMatrix("xtion2_rgb_optical_frame") ;
+    Eigen::Vector4d tar(p.x(), p.y(), p.z(), 1) ;
+    Eigen::Vector4d targetP ;
 
-    targetP = calib * tar;
-    //cout << targetP << endl;
-    cout << (gsp[0].alpha) <<  " = angle " << endl;
-    rotateGripper(M_PI-gsp[0].alpha,armName);
+    targetP = calib * tar ;
+    //cout << targetP << endl ;
+    cout << (gsp[0].alpha/M_PI)*180 <<  " = alpha " << endl ;
+    cout << findAngle( gsp[0].alpha, calib) << endl;
 
-    geometry_msgs::Pose pose;
-    float offset= 0.05;
-    pose.position.x = targetP.x();
-    pose.position.y = targetP.y();
-    pose.position.z = targetP.z()+offset;
-    pose.orientation = getArmPose(armName).orientation;
+    geometry_msgs::Pose pose ;
+    float offset= 0.05 ;
+    pose.position.x = targetP.x() ;
+    pose.position.y = targetP.y() ;
+    pose.position.z = targetP.z()+offset ;
+    pose.orientation = findAngle(gsp[0].alpha, calib);
     if ( moveArm(pose, armName) == -1)
-        cout<< "cant make 1st move"<< endl;
+        cout<< "cant make 1st move"<< endl ;
 
 
-    pose = getArmPose(armName, armName + "_ee");
-    pose.position.x += 0.02;
+    pose = getArmPose(armName, armName + "_ee") ;
+    pose.position.x += 0.01 ;
     if ( moveArm(pose, armName, armName + "_ee") == -1 )
-        cout<< "cant make 2nd move"<< endl;
+        cout<< "cant make 2nd move"<< endl ;
 
-    setGripperState(armName, true);
-    openG2();
-    setGripperState(armName, true);
+    setGripperState(armName, true) ;
+    openG2() ;
+    setGripperState(armName, true) ;
 
-    pose = getArmPose(armName);
-    pose.position.z -= offset;
-    cout<< " target = "<< pose.position.x << " " << pose.position.y << " "  <<pose.position.z << endl;
+    pose = getArmPose(armName) ;
+    pose.position.z -= offset ;
+    cout<< " target = "<< pose.position.x << " " << pose.position.y << " "  <<pose.position.z << endl ;
 
     if ( moveArm(pose, armName) == -1 )
-        cout<< "cant make 3rd move"<< endl;
+        cout<< "cant make 3rd move"<< endl ;
 
-    setGripperState(armName, false);
-    setGripperState(armName, false);
-    setGripperState(armName, false);
+    setGripperState(armName, false) ;
 
-    moveHomeArm(armName);
+    moveHomeArm(armName) ;
 
-    setServoPowerOff();
+    setServoPowerOff() ;
     /////////////////
-    return 0;
+    return 0 ;
 
 }
