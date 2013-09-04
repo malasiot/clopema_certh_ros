@@ -32,6 +32,19 @@ void makeCameraFrustum(shapes::Mesh  &mesh, double near_, double far_, double fo
 geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
 geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
 
+geometry_msgs::Quaternion eigenQuaterniondToTfQuaternion( Eigen::Quaterniond q );
+
+
+////------------------------ORIENTATIONS------------------------------//
+
+//const Eigen::Quaterniond verticalDownFaceFront ( 0.707107, -0.707107, 0, 0) ;
+//const Eigen::Quaterniond verticalDownFaceBack ( 0.707107, 0.707107, 0, 0 ) ;
+
+//const Eigen::Quaterniond horizontalLeftFaceFront ( 0.5, -0.5, -0.5, 0.5 ) ;
+//const Eigen::Quaterniond horizontalRightFaceFront ( -0.5, 0.5, -0.5, 0.5 ) ;
+//const Eigen::Quaterniond horizontalLeftFaceBack ( -0.5, -0.5, 0.5, 0.5 ) ;
+//const Eigen::Quaterniond horizontalRightFaceBack ( 0.5, 0.5, 0.5, 0.5 ) ;
+
 } // namespace robot_helpers
 
 #endif

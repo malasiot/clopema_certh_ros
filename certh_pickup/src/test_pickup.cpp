@@ -60,11 +60,12 @@ geometry_msgs::Quaternion findAngle(float theta, Eigen::Matrix4d calib){
 
     Eigen::Vector4d targetN ;
     targetN = calib * norm.normalized() ;
-    cout<< targetN << "targetN" <<endl;
+
     Eigen::Matrix3d rotMat;
     Eigen::Vector3d Y(targetN.x(), targetN.y(), targetN.z());
     Eigen::Vector3d X;
     Eigen::Vector3d Z(0, 0, -1);
+
     X = Y.cross(Z);
 
     rotMat(0, 0)=X.x();
@@ -79,7 +80,6 @@ geometry_msgs::Quaternion findAngle(float theta, Eigen::Matrix4d calib){
     rotMat(1, 2)=Z.y();
     rotMat(2, 2)=Z.z();
 
-    cout << rotMat << endl;
     return rotationMatrix3ToQuaternion(rotMat);
 
 
@@ -92,17 +92,17 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "unfolding") ;
     ros::NodeHandle nh ;
 
+    string armName = "r2", otherArm = "r1" ;
 
-//    cv::Mat clr = cv::imread("/home/malasiot/images/clothes/calibration/on_table/cap_3/cap_rgb_000009.png") ;
-//    cv::Mat depth = cv::imread("/home/malasiot/images/clothes/calibration/on_table/cap_3/cap_depth_000009.png", -1) ;
-//
-    string armName = "r2" ;
-    setGripperState(armName, false) ;
+    //system( "roslaunch certh_launch xtion2.launch") ;
+    //ros::Duration(5).sleep();
+
+    //setGripperState(armName, false) ;
 
 
     MoveRobot cmove ;
     cmove.setServoMode(false) ;
-    moveGripperPointingDown(cmove, armName, 0, -1.1, 1.3 ) ;
+    moveGripperPointingDown(cmove, armName, 1.2, 0, 1.3 ) ;
 
     camera_helpers::OpenNICaptureAll grabber("xtion2") ;
     grabber.connect() ;
@@ -118,8 +118,6 @@ int main(int argc, char **argv) {
         return false ;
     }
 
-  //  grabber.disconnect() ;
-//
     ObjectOnPlaneDetector det(depth, 525, 525, 640/2-0.5, 480/2-0.5) ;
 
     Eigen::Vector3d n ;
@@ -140,56 +138,62 @@ int main(int argc, char **argv) {
     rdg.detect(dmap, gsp) ;
     rdg.draw(rgb, gsp) ;
 
-
     cv::imwrite("/tmp/gsp.png", rgb) ;
-    //cout << "point is " <<gsp[0].x << " "<<  gsp[0].y << endl ;
 
-    ////////////////
-    pcl::PointXYZ val = pc.at(gsp[0].x, gsp[0].y) ;
+    for(unsigned int i = 0 ; i < gsp.size() ; i++ ){
 
-    Eigen::Vector3d p(val.x, val.y, val.z) ;
-    cout << p << endl ;
-    Eigen::Matrix4d calib = getTranformationMatrix("xtion2_rgb_optical_frame") ;
-    Eigen::Vector4d tar(p.x(), p.y(), p.z(), 1) ;
-    Eigen::Vector4d targetP ;
+        pcl::PointXYZ val = pc.at(gsp[0].x, gsp[0].y) ;
 
-    targetP = calib * tar ;
-    //cout << targetP << endl ;
-    cout << (gsp[0].alpha/M_PI)*180 <<  " = alpha " << endl ;
-    cout << findAngle( gsp[0].alpha, calib) << endl;
+        Eigen::Vector3d p(val.x, val.y, val.z) ;
 
-    geometry_msgs::Pose pose ;
-    float offset= 0.05 ;
-    pose.position.x = targetP.x() ;
-    pose.position.y = targetP.y() ;
-    pose.position.z = targetP.z()+offset ;
-    pose.orientation = findAngle(gsp[0].alpha, calib);
-    if ( moveArm(pose, armName) == -1)
-        cout<< "cant make 1st move"<< endl ;
+        Eigen::Matrix4d calib = getTranformationMatrix("xtion2_rgb_optical_frame") ;
+        Eigen::Vector4d tar (p.x(), p.y(), p.z(), 1) ;
+        Eigen::Vector4d targetP ;
 
+        targetP = calib * tar ;
 
-    pose = getArmPose(armName, armName + "_ee") ;
-    pose.position.x += 0.01 ;
-    if ( moveArm(pose, armName, armName + "_ee") == -1 )
-        cout<< "cant make 2nd move"<< endl ;
+        float offset= 0.10 ;
 
-    setGripperState(armName, true) ;
-    openG2() ;
-    setGripperState(armName, true) ;
+        geometry_msgs::Pose pose ;
 
-    pose = getArmPose(armName) ;
-    pose.position.z -= offset ;
-    cout<< " target = "<< pose.position.x << " " << pose.position.y << " "  <<pose.position.z << endl ;
+        pose.position.x = targetP.x() ;
+        pose.position.y = targetP.y() ;
+        pose.position.z = targetP.z()+offset ;
 
-    if ( moveArm(pose, armName) == -1 )
-        cout<< "cant make 3rd move"<< endl ;
+        pose.orientation = findAngle(gsp[0].alpha, calib) ;
+
+        if ( moveArm(pose, armName) == -1){
+            cout<< "cant make 1st move"<< endl ;
+            continue ;
+        }
+
+        pose = getArmPose(armName, armName + "_ee") ;
+        pose.position.x += 0.01 ;
+
+        if ( moveArm(pose, armName, armName + "_ee") == -1 ){
+            cout<< "cant make 2nd move"<< endl ;
+            continue ;
+        }
+
+        openG2() ;
+        setGripperState(armName, true) ;
+
+        pose = getArmPose(armName) ;
+        pose.position.z -= offset +0.01 ;
+        cout<< " GRASPING POINT = "<< pose.position.x << " " << pose.position.y << " "  <<pose.position.z << endl ;
+
+        if ( moveArm(pose, armName) == -1 )
+            cout<< "cant make 3rd move"<< endl ;
+
+        cout << "dominant grasping point i = " <<  i << endl;
+
+        break;
+    }
 
     setGripperState(armName, false) ;
-
     moveHomeArm(armName) ;
-
     setServoPowerOff() ;
-    /////////////////
+
     return 0 ;
 
 }

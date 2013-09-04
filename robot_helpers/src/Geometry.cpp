@@ -375,4 +375,21 @@ geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix){
     return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
 }
 
+geometry_msgs::Quaternion eigenQuaterniondToTfQuaternion( Quaterniond q ){
+
+    geometry_msgs::Quaternion tfq;
+
+    tfq.x = q.x();
+    tfq.y = q.y();
+    tfq.z = q.z();
+    tfq.w = q.w();
+
+    return tfq;
+
+}
+
+
+
+
+
 } // namespace robot_helpers
