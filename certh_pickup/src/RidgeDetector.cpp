@@ -11,6 +11,8 @@
 #include <Eigen/SVD>
 #include <Eigen/Eigenvalues>
 
+#include <fstream>
+
 using namespace std ;
 using namespace certh_libs ;
 using namespace cv ;
@@ -60,36 +62,60 @@ static void nonMaximaSuppressionDirectional(const Mat& src, Mat& dst, const Mat 
         }
 }
 
-
-static double graspable(const cv::Mat &src, double x, double y, double alpha, double sigma, double gripperOpenning, double gripperWidth)
+static void fitParabola(const vector<float> &X, const vector<float> &Y, double &a, double &b, double &c)
 {
-    Vector2 p0(x, y) ;
+    int n = X.size() ;
 
-    double sa = cos(alpha) ;
-    double ca = -sin(alpha) ;
+    MatrixXf A(n, 3) ;
+    VectorXf B(n) ;
 
-    Vector2 d(ca, sa) ;
-    Vector2 n(sa, -ca) ;
+    for( int i=0 ; i<n ; i++ )
+    {
+        A(i, 0) = X[i] * X[i] ;
+        A(i, 1) = X[i] ;
+        A(i, 2) = 1.0 ;
+        B[i] = Y[i] ;
+    }
+
+    JacobiSVD<MatrixXf> svd(A, ComputeThinU | ComputeThinV) ;
+    VectorXf sol = svd.solve(B) ;
+
+    a = sol[0] ;
+    b = sol[1] ;
+    c = sol[2] ;
+
+}
+
+void RidgeDetector::refineCandidate(GraspCandidate &cand, const cv::Mat &src)
+{
+    Vector2 p0(cand.x, cand.y) ;
+
+    double ca = -cos(cand.alpha) ;
+    double sa = sin(cand.alpha) ;
+
+    Vector2 d(ca, -sa) ;
+    Vector2 n(sa, ca) ;
 
     // find all points that are withing the gripper's profile (openned)
 
     Polygon2D poly ;
 
-    poly.addPoint(p0 + d * gripperWidth/2.0 + n * gripperOpenning/2.0) ;
-    poly.addPoint(p0 + d * gripperWidth/2.0 - n * gripperOpenning/2.0) ;
-    poly.addPoint(p0 - d * gripperWidth/2.0 - n * gripperOpenning/2.0) ;
-    poly.addPoint(p0 - d * gripperWidth/2.0 + n * gripperOpenning/2.0) ;
+    poly.addPoint(p0 + d * params.gripperWidth/2.0 + n * params.gripperOpenning/2.0) ;
+    poly.addPoint(p0 + d * params.gripperWidth/2.0 - n * params.gripperOpenning/2.0) ;
+    poly.addPoint(p0 - d * params.gripperWidth/2.0 - n * params.gripperOpenning/2.0) ;
+    poly.addPoint(p0 - d * params.gripperWidth/2.0 + n * params.gripperOpenning/2.0) ;
 
     vector<certh_libs::Point> pts ;
     getPointsInPoly(poly, pts);
 
     // project points to the center line
 
-    vector<double> X, Y ;
+    vector<float> X, Y ;
 
-    int nc = 0 ;
-    double area = 0 ;
-    double offset = 0 ;
+    ofstream strm("/tmp/prof.txt") ;
+
+    cv::Mat cc(src.size(), CV_8UC1) ;
+    cc = cv::Scalar(0) ;
 
     for(int i=0 ; i<pts.size() ; i++ )
     {
@@ -99,28 +125,41 @@ static double graspable(const cv::Mat &src, double x, double y, double alpha, do
         int y_ = p.y() ;
 
         if ( x_<0 || y_<0 || x_ >= src.cols-1 || y_ >= src.rows-1 ) continue ;
+        cc.at<uchar>(y_, x_) = 255 ;
 
-        float val = src.at<float>(y_, x_) ;
+        ushort val = src.at<ushort>(y_, x_) ;
 
-        double ds = Vector2(x_ - x, y_ - y).dot(d) ;
+        double ds = Vector2(x_ - cand.x, y_ - cand.y).dot(n) ;
 
-        if ( fabs(ds) > gripperOpenning/4 )
-        {
-            offset = std::max(offset, (double)val) ;
-        }
-        else
-        {
-            area += val ;
-            nc ++ ;
-        }
+        X.push_back(ds) ;
+        Y.push_back(val) ;
+
+        strm << ds << ' ' << val << endl ;
 
     }
 
-    area /= nc ;
-    //area -= offset * gripperWidth/2 ;
-    area -= offset ;
+    cv::imwrite("/tmp/mask.png", cc) ;
+    // fit a parabola to the points
 
-    return area ;
+    double a, b, c ;
+    fitParabola(X, Y, a, b, c) ;
+
+    double x0 = -b/2/a ;
+    double y0 = a * x0 * x0 + b * x0 + c ;
+    double c1 = c - ( y0 - params.gripperDepth * 1000);
+    double det = sqrt(b * b - 4*a*c1) ;
+    double hw = (-b + det)/2/a ;
+
+    Vector2d pt = p0 + x0 * n ;
+
+  //  cand.strength = hw ;
+  //  cand.width = fabs(hw)/2 ;
+    cand.x = pt.x() ;
+    cand.y = pt.y() ;
+
+   // cout << 2*a*x0 + b <<endl ;
+
+
 
 }
 
@@ -291,6 +330,11 @@ bool RidgeDetector::detect(const cv::Mat &src, std::vector<GraspCandidate> &cand
 
     resp = detect(src, alpha, scale, ridges) ;
     findCandidates(src, resp, ridges, alpha, scale, cand) ;
+
+    for(int i=0 ; i<cand.size() ; i++)
+        refineCandidate(cand[i], src) ;
+
+    sort(cand.begin(), cand.end(), CandSorter()) ;
 
     return !cand.empty() ;
 

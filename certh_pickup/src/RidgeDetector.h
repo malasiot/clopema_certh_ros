@@ -9,10 +9,14 @@ public:
     struct Parameters {
         double responseThreshold ; // ridge detector response threshold
         double minScale, maxScale, scaleStep ; // for multi-scale search
+        double gripperOpenning ; // approximate openning of the gripper in pixels
+        double gripperWidth ;    // approximate width of the gripper in pixels
+        double gripperDepth ;    // approximate sinking of the gripper with respect to the candidate point (m)
 
         Parameters():
             responseThreshold(10.0),
-            minScale(4.0), maxScale(8.0), scaleStep(0.25) {}
+            minScale(4.0), maxScale(8.0), scaleStep(0.25),
+            gripperOpenning(20.0), gripperWidth(7), gripperDepth(0.02){}
 
     };
 
@@ -48,6 +52,10 @@ protected:
 
     void findCandidates(const cv::Mat &src, const cv::Mat &resp, const cv::Mat &ridges,
                                 const cv::Mat &alpha, const cv::Mat &sigma, std::vector<GraspCandidate> &cand) ;
+
+    // compute strength of a detected ridge point with a gripper model
+
+    void refineCandidate(GraspCandidate &cand, const cv::Mat &src) ;
 
 
 

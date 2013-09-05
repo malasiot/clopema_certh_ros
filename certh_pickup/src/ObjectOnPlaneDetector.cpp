@@ -39,8 +39,8 @@ CloudType ObjectOnPlaneDetector::cvMatToCloud(const cv::Mat &depth_im, double fx
 
     CloudType cloud(w, h) ;
 
-    for( int i=0 ; i<h ; i++ )
-        for(int j=0 ; j<w ; j++)
+    for( int i=0 ; i<h ; i++  )
+        for(int j=0 ; j<w ; j++ )
         {
             pcl::PointXYZ& pt = cloud.at(j, i) ;
             ushort depth = dim[i][j] ;
@@ -91,20 +91,13 @@ static double calculateCloudDensity(const CloudType &cloud, double voxelSize = 0
 
 }
 
-bool ObjectOnPlaneDetector::findPlane(Eigen::Vector3d &n, double &d, cv::Mat &mask)
+bool ObjectOnPlaneDetector::findPlane(Eigen::Vector3d &n, double &d)
 {
     int w = in_cloud_.width, h = in_cloud_.height ;
 
-    CloudType::Ptr cloud_plane(new CloudType) ;
-    CloudType::Ptr cloud_rest(new CloudType) ;
-    CloudType::Ptr cloud_object(new CloudType) ;
-    CloudType::Ptr cloud_projected(new CloudType) ;
     CloudType::Ptr cloud_in (new CloudType(in_cloud_));
 
-    // Create model coefficients and inliners
-
     vector<pcl::ModelCoefficients::Ptr> coefficients ;
-    vector<Eigen::Vector4f> centers ;
 
     // Segmentation object and configuration
 
@@ -113,8 +106,8 @@ bool ObjectOnPlaneDetector::findPlane(Eigen::Vector3d &n, double &d, cv::Mat &ma
     seg.setProbability(0.99);
     seg.setModelType (pcl::SACMODEL_PLANE);
     seg.setMethodType (pcl::SAC_RANSAC);
-    seg.setDistanceThreshold (0.01);
-    seg.setMaxIterations(100);
+    seg.setDistanceThreshold (params.fitThreshold);
+    seg.setMaxIterations(params.ransacIterations);
 
     pcl::ExtractIndices<PointType> extract;
 
@@ -127,29 +120,8 @@ bool ObjectOnPlaneDetector::findPlane(Eigen::Vector3d &n, double &d, cv::Mat &ma
 
     if ( inliers_plane->indices.size() == 0 ) return false ;
 
-    // Extract indices
-
-    extract.setInputCloud (cloud_in);
-    extract.setIndices (inliers_plane);
-    extract.setNegative (false);
-    extract.filter (*cloud_plane);
-
-    extract.setNegative (true);
-    extract.filter (*cloud_rest);
-
     n = Eigen::Vector3d(coeff->values[0], coeff->values[1], coeff->values[2]) ;
     d = coeff->values[3] ;
-
-    mask = cv::Mat::zeros(h, w, CV_8UC1) ;
-
-    for(int i=0 ; i<inliers_plane->indices.size() ; i++ )
-    {
-        int index_ = inliers_plane->indices[i] ;
-        int row = index_ / w;
-        int col = index_ % w ;
-
-        mask.at<uchar>(row, col) = 255 ;
-    }
 
     return true ;
 }
@@ -243,20 +215,9 @@ cv::Mat ObjectOnPlaneDetector::getForegroundMask(const cv::Mat &mask_ref, vector
 
     cv::convexHull( cv::Mat(contour), hull, false );
 
-    /*
-
-    cv::Mat planeMaskFilled = cv::Mat::zeros(h, w, CV_8UC1) ;
-    cv::fillPoly(planeMaskFilled, contours, cv::Scalar(255)) ;
-
-    // find points in the mask that are not background
-
-    cv::Mat mask ;
-
-    cv::bitwise_xor(planeMask, planeMaskFilled, mask) ;
-*/
     cvReleaseImage(&labelImg);
 
-    cv::imwrite("/tmp/planeMask.png", planeMask) ;
+  //  cv::imwrite("/tmp/planeMask.png", planeMask) ;
 
     return planeMask ;
 
@@ -278,9 +239,6 @@ cv::Mat ObjectOnPlaneDetector::refineSegmentation(const cv::Mat &clr, const cv::
 
     cv::grabCut(clr, result, rectangle, bgModel, fgModel, 1, cv::GC_INIT_WITH_MASK);
 
-//    cv::grabCut(clr, result, rectangle, bgModel, fgModel, 1, cv::GC_EVAL);
-
-
     // Get the pixels marked as likely foreground
     cv::compare(result,cv::GC_PR_FGD, result, cv::CMP_EQ);
 
@@ -290,9 +248,7 @@ cv::Mat ObjectOnPlaneDetector::refineSegmentation(const cv::Mat &clr, const cv::
     cv::Mat foreground(clr.size(),CV_8UC3,cv::Scalar(255,255,255));
     clr.copyTo(foreground, fgMask_); // bg pixels not copied
 
-    cv::imwrite("/tmp/seg.png", result) ;
-
-
+//    cv::imwrite("/tmp/seg.png", result) ;
 
     return fgMask_ ;
 }

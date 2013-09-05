@@ -15,13 +15,23 @@ class ObjectOnPlaneDetector {
 
 public:
 
+    struct Parameters {
+        double fitThreshold ;
+        int ransacIterations ;
+
+        Parameters(): fitThreshold(0.01), ransacIterations(100) {}
+    };
+
+    Parameters params ;
+
+public:
+
     ObjectOnPlaneDetector(const CloudType &cloud) ;
     ObjectOnPlaneDetector(const cv::Mat &depth_im,
                            double fx, double fy, double cx, double cy)  ;
 
-
     // find object plane. this is the plane with the higher number of inliers to the plane model
-    bool findPlane(Eigen::Vector3d &n, double &d, cv::Mat &inliers) ;
+    bool findPlane(Eigen::Vector3d &n, double &d) ;
 
     // find an image mask that designates plane pixels by discarding pixels beyond and above the specified plane
     // Mask filtering is performed to obtain a single cluster

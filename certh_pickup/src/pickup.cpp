@@ -133,9 +133,8 @@ int main(int argc, char **argv) {
 
     Eigen::Vector3d n ;
     double d ;
-    cv::Mat inliers ;
 
-    if ( !objDet.findPlane(n, d, inliers) ) return 0 ;
+    if ( !objDet.findPlane(n, d) ) return 0 ;
 
     vector<cv::Point> hull ;
     cv::Mat dmap ;
