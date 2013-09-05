@@ -21,6 +21,7 @@ Eigen::Vector3d findTarget(float x , float y, pcl::PointCloud<pcl::PointXYZ> pc 
 
 
 }
+Eigen::Vector3d vect;
 
 
 int openG2(){
@@ -80,6 +81,8 @@ geometry_msgs::Quaternion findAngle(float theta, Eigen::Matrix4d calib){
     rotMat(1, 2)=Z.y();
     rotMat(2, 2)=Z.z();
 
+    vect << X.x() , X.y() , X.z() ;
+
     return rotationMatrix3ToQuaternion(rotMat);
 
 
@@ -98,8 +101,8 @@ int main(int argc, char **argv) {
     //ros::Duration(5).sleep();
 
     //setGripperState(armName, false) ;
-
-
+    openG2() ;
+    setGripperState(armName, true) ;
     MoveRobot cmove ;
     cmove.setServoMode(false) ;
     moveGripperPointingDown(cmove, armName, 1.2, 0, 1.3 ) ;
@@ -156,27 +159,24 @@ int main(int argc, char **argv) {
 
         geometry_msgs::Pose pose ;
 
-        pose.position.x = targetP.x() ;
-        pose.position.y = targetP.y() ;
-        pose.position.z = targetP.z()+offset ;
-
         pose.orientation = findAngle(gsp[0].alpha, calib) ;
+        pose.position.x = targetP.x(); //+ vect.x() * 0.01 ;
+        pose.position.y = targetP.y(); //+ vect.y() * 0.01;
+        pose.position.z = targetP.z()+ offset; //+ vect.z() * 0.01 ;
+        cout<< "vector = " << vect.x() << " "<< vect.y() <<" "<< vect.z() << endl;
 
         if ( moveArm(pose, armName) == -1){
             cout<< "cant make 1st move"<< endl ;
             continue ;
         }
 
-        pose = getArmPose(armName, armName + "_ee") ;
-        pose.position.x += 0.01 ;
+//        pose = getArmPose(armName, armName + "_ee") ;
+//        pose.position.x += 0.01 ;
 
-        if ( moveArm(pose, armName, armName + "_ee") == -1 ){
-            cout<< "cant make 2nd move"<< endl ;
-            continue ;
-        }
-
-        openG2() ;
-        setGripperState(armName, true) ;
+//        if ( moveArm(pose, armName, armName + "_ee") == -1 ){
+//            cout<< "cant make 2nd move"<< endl ;
+//            continue ;
+//        }
 
         pose = getArmPose(armName) ;
         pose.position.z -= offset +0.01 ;
@@ -190,8 +190,8 @@ int main(int argc, char **argv) {
         break;
     }
 
-    setGripperState(armName, false) ;
-    moveHomeArm(armName) ;
+    setGripperState( armName, false) ;
+    moveHomeArm( armName) ;
     setServoPowerOff() ;
 
     return 0 ;

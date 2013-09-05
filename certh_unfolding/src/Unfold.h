@@ -53,7 +53,6 @@ private:
     ros::Publisher marker_pub;
     camera_helpers::OpenNICaptureAll *grabber;
 
-
 public:
 
     void setClothType( int type);

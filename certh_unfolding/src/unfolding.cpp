@@ -41,6 +41,9 @@ int main(int argc, char **argv) {
 
     Unfold rb("r2",marker_pub );
 
+    ofstream ftxt("himg.txt");
+    ofstream frgb("rgb.txt");
+    ofstream fdepth("depth.txt");
 
 
     //-------------- Initialization -----------------//
@@ -153,8 +156,12 @@ int main(int argc, char **argv) {
                 rf_belief[i] *= rf_obsprob[i][obs];
 				denom += rf_belief[i];
 			}
-			for(int i=0; i<rf_num_states; ++i)
+            cout << "Belief: ";
+            for(int i=0; i<rf_num_states; ++i){
 				rf_belief[i] /= denom;
+                cout << "S" << i+1 << ": " << rf_belief[i] << "  ";
+            }
+            cout << endl;
 
             double max = -10000000000;
             int max_vector = -1;
@@ -176,6 +183,8 @@ int main(int argc, char **argv) {
         }
         rb.setClothType(rf_action);
         //------------------1st Grasping Point-----------------//
+
+
         stringstream shf;
         shf << "../src/forests/hf" << rf_action;
         HF* hf = new HF( shf.str().c_str());
@@ -258,6 +267,10 @@ int main(int argc, char **argv) {
             hImg = cv::Mat::zeros(530, 260, CV_32FC1);
             int res = hf->houghDetect(depth2, hImg, hrect);
 
+            ftxt << hImg << endl;
+            frgb << rgb2 << endl;
+            fdepth << depth2 << endl;
+
             int k=0;
             while(k<20){
                 cv::imshow("depth", depth2);
@@ -304,8 +317,8 @@ int main(int argc, char **argv) {
             hf_action = hf_actions[max_vector];            
             cout << "Action: " << hf_action << endl;
             if(hf_action==64){
-                rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
-                rot_angle += 10;
+                rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);
+                rot_angle += 15;
             }
         }
         if(hf_action==64)
@@ -425,6 +438,10 @@ int main(int argc, char **argv) {
             hImg = cv::Mat::zeros(r.width, r.height, CV_32FC1);
             int res = hf2->houghDetect(depth2, hImg, hrect);
 
+            ftxt << hImg << endl;
+            frgb << rgb2 << endl;
+            fdepth << depth2 << endl;
+
             k=0;
             while(k<20){
                 cv::imshow("depth", depth2);
@@ -471,8 +488,8 @@ int main(int argc, char **argv) {
             hf_action = hf2_actions[max_vector];
             cout << "Action: " << hf_action << endl;
             if(hf_action==64){
-                rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
-                rot_angle += 10;
+                rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);
+                rot_angle += 15;
             }
         }
         if(hf_action == 64)
@@ -493,6 +510,8 @@ int main(int argc, char **argv) {
 
         cloth_unfolded = true;
     }
+
+    ftxt.close();
 
     cout<< "time =  " << double(clock()) - double(start)/double(CLOCKS_PER_SEC) << endl;
 

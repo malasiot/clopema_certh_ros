@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     pose.position.y = -1 ;
     pose.position.z = 1 ;
 
-    pose.orientation = eigenQuaterniondToTfQuaternion(verticalDownFaceFront);
+    //pose.orientation = eigenQuaterniondToTfQuaternion(verticalDownFaceFront);
 
     cout << "Quaternion = ( " << pose.orientation.x << ", "<< pose.orientation.y << ", "<< pose.orientation.z << ", "<< pose.orientation.w << " )" << endl ;
 

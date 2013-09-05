@@ -943,10 +943,11 @@ int Unfold::graspLowestPoint(bool lastMove){
     }
 
     setGripperStates( movingArm, false);
-    if( !flipCloth() )
+    if( !flipCloth() ){
         cout << "CANT FLIP CLOTH"<< endl;
+        setGripperStates(movingArm, true);
+    }
 
-    setGripperStates(movingArm, true);
     moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
 return 0;
@@ -956,6 +957,8 @@ return 0;
 //Finds and grasps the given point of a hanging cloth, flips it and releases the moving arm
 int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove, bool orientLeft, bool orientUp  ){
 
+    float deep = 0.03 ;
+    float far = 0.1 ;
 
     Eigen::Vector3d n;
     pcl::PointXYZ val = pc.at(x, y) ;
@@ -965,7 +968,7 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
     Eigen::Matrix4d rotMat;
     Eigen::Vector4d targetP;
     tf::Transform ts;
-    setGripperStates(movingArm , true);
+   // setGripperStates(movingArm , true);
     int ox , oy;
    findMeanShiftPoint(pc, x, y, ox, oy, 0.05) ;
     n = computeNormal(pc, ox, oy) ;
@@ -1005,14 +1008,14 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
         desPose.orientation = rotationMatrix3ToQuaternion(orient);
 
-        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * 0.1;
-        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * 0.1;
-        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * 0.1;
+        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * far;
+        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * far;
+        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * far;
         poses.push_back(desPose);
 
-        desPose.position.x = targetP.x() + orient(0, 2) * 0.03 + orient(0, 0) * 0.02;
-        desPose.position.y = targetP.y() + orient(1, 2) * 0.03 + orient(1, 0) * 0.02;
-        desPose.position.z = targetP.z() + orient(2, 2) * 0.03 + orient(2, 0) * 0.02;
+        desPose.position.x = targetP.x() + orient(0, 2) * deep + orient(0, 0) * 0.02;
+        desPose.position.y = targetP.y() + orient(1, 2) * deep + orient(1, 0) * 0.02;
+        desPose.position.z = targetP.z() + orient(2, 2) * deep + orient(2, 0) * 0.02;
         poses.push_back(desPose);
         rotateHoldingGripper(theta);
         ros::Duration(2).sleep();
@@ -1021,14 +1024,14 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
         desPose.orientation = rotationMatrix4ToQuaternion(rotMat);
 
-        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.02 - rotMat(0, 2) * 0.1;
-        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.02 - rotMat(1, 2) * 0.1;
-        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.02 - rotMat(2, 2) * 0.1;
+        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.02 - rotMat(0, 2) * far;
+        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.02 - rotMat(1, 2) * far;
+        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.02 - rotMat(2, 2) * far;
         poses.push_back(desPose);
 
-        desPose.position.x = targetP.x() + rotMat(0, 2) * 0.03 + rotMat(0, 0) * 0.02;
-        desPose.position.y = targetP.y() + rotMat(1, 2) * 0.03 + rotMat(1, 0) * 0.02;
-        desPose.position.z = targetP.z() + rotMat(2, 2) * 0.03 + rotMat(2, 0) * 0.02;
+        desPose.position.x = targetP.x() + rotMat(0, 2) * deep + rotMat(0, 0) * 0.02;
+        desPose.position.y = targetP.y() + rotMat(1, 2) * deep + rotMat(1, 0) * 0.02;
+        desPose.position.z = targetP.z() + rotMat(2, 2) * deep + rotMat(2, 0) * 0.02;
         poses.push_back(desPose);
     }
 
@@ -1058,14 +1061,14 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
         desPose.orientation = rotationMatrix3ToQuaternion(orient);
 
-        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * 0.1;
-        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * 0.1;
-        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * 0.1;
+        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * far;
+        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * far;
+        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * far;
         poses.push_back(desPose);
 
-        desPose.position.x = targetP.x() + orient(0, 2) * 0.03 + orient(0, 0) * 0.02;
-        desPose.position.y = targetP.y() + orient(1, 2) * 0.03 + orient(1, 0) * 0.02;
-        desPose.position.z = targetP.z() + orient(2, 2) * 0.03 + orient(2, 0) * 0.02;
+        desPose.position.x = targetP.x() + orient(0, 2) * deep + orient(0, 0) * 0.02;
+        desPose.position.y = targetP.y() + orient(1, 2) * deep + orient(1, 0) * 0.02;
+        desPose.position.z = targetP.z() + orient(2, 2) * deep + orient(2, 0) * 0.02;
         poses.push_back(desPose);
 
          // GRASPING POINT
@@ -1467,7 +1470,7 @@ bool Unfold::flipCloth(){
 
             if ( moveArmsFlipCloth( marker_pub, radious + 0.1, desPoseUp, desPoseDown, holdingArm, movingArm) == -1){
                 resetCollisionModel();
-                return false;
+                return true;
             }
         }else{
             cout<< "just dropping the cloth" << endl;
@@ -1477,7 +1480,7 @@ bool Unfold::flipCloth(){
         resetCollisionModel();
         if (!releaseCloth( movingArm ))
             return false;
-        return false;
+        return true;
     }
 
 /////////////////////////////END///////////////////
@@ -1687,7 +1690,7 @@ bool Unfold::releaseCloth( const string &armName ){
         dx = 0.3;
     pose.position.x += dx;
     pose.position.z -= dz;
-    if ( moveArmConstrains(pose, armName, getArmsDistance()+abs(dx)+0.02) )
+    if ( moveArmConstrains(pose, armName, getArmsDistance()+abs(dx)+0.02) == -1)
         return false;
 
     return true;
