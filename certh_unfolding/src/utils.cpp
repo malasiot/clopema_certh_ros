@@ -1,8 +1,8 @@
 #include "Unfold.h"
 #include <opencv2/highgui/highgui.hpp>
-
+#include "clopema_motoros/WriteIO.h"
 #include <cv.h>
-
+//#include <thread>
 #include <Eigen/Core>
 #include <Eigen/Eigenvalues> // for cwise access
 
@@ -44,12 +44,13 @@ string Unfold::getMovingArm(){
 }
 
 //Opens or closes a gripper
-int Unfold::setGripperStates(const string &armName  , bool open){    
+int Unfold::setGripperStates(const string &armName  , bool open){
     ros::service::waitForService("/" + armName + "_gripper/set_open");
     clopema_motoros::SetGripperState sopen;
     sopen.request.open=open;
     ros::service::call("/" + armName + "_gripper/set_open", sopen);
-
+    if((armName == "r2") && (open == true))
+        openG2();
     return 0;
 }
 
@@ -63,30 +64,56 @@ int Unfold::setGrippersStates( bool open){
     ros::service::call("/r1_gripper/set_open", sopen);
     ros::service::call("/r2_gripper/set_open", sopen);
 
+
     return 0;
 }
 
-//Calculates the quaternion of a 4d rotatation matrix
-geometry_msgs::Quaternion Unfold::rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix){
 
-    float roll , pitch, yaw;
+int Unfold::openG2(){
 
-    roll= atan2f(matrix(2, 1),matrix(2, 2) );
-    pitch= atan2f(-matrix(2,0),sqrt(pow(matrix(2, 2),2)+pow(matrix(2, 1),2)));
-    yaw= atan2f(matrix(1, 0),matrix(0, 0));
-    return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
+    clopema_motoros::WriteIO openGripper;
+    openGripper.request.address = 10026;
+
+    for(unsigned int i = 0 ; i < 4 ; i++){
+        openGripper.request.value = false;
+        if (!ros::service::call("/write_io", openGripper)) {
+            ROS_ERROR("Can't call service write_io");
+            return -1;
+        }
+        ros::Duration(0.1).sleep();
+
+        openGripper.request.value = true;
+        ros::service::waitForService("/write_io");
+        if (!ros::service::call("/write_io", openGripper)) {
+            ROS_ERROR("Can't call service write_io");
+            return -1;
+        }
+        ros::Duration(0.5).sleep();
+    }
+
 }
 
-//Calculates the quaternion of a 3d rotatation matrix
-geometry_msgs::Quaternion Unfold::rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix){
+////Calculates the quaternion of a 4d rotatation matrix
+//geometry_msgs::Quaternion Unfold::rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix){
 
-    float roll , pitch, yaw;
+//    float roll , pitch, yaw;
 
-    roll= atan2f(matrix(2, 1),matrix(2, 2) );
-    pitch= atan2f(-matrix(2,0),sqrt(pow(matrix(2, 2),2)+pow(matrix(2, 1),2)));
-    yaw= atan2f(matrix(1, 0),matrix(0, 0));
-    return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
-}
+//    roll= atan2f(matrix(2, 1),matrix(2, 2) );
+//    pitch= atan2f(-matrix(2,0),sqrt(pow(matrix(2, 2),2)+pow(matrix(2, 1),2)));
+//    yaw= atan2f(matrix(1, 0),matrix(0, 0));
+//    return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
+//}
+
+////Calculates the quaternion of a 3d rotatation matrix
+//geometry_msgs::Quaternion Unfold::rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix){
+
+//    float roll , pitch, yaw;
+
+//    roll= atan2f(matrix(2, 1),matrix(2, 2) );
+//    pitch= atan2f(-matrix(2,0),sqrt(pow(matrix(2, 2),2)+pow(matrix(2, 1),2)));
+//    yaw= atan2f(matrix(1, 0),matrix(0, 0));
+//    return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
+//}
 
 
 //Rotates the holding gripper to a given angle
@@ -916,10 +943,11 @@ int Unfold::graspLowestPoint(bool lastMove){
     }
 
     setGripperStates( movingArm, false);
-    if( !flipCloth() )
+    if( !flipCloth() ){
         cout << "CANT FLIP CLOTH"<< endl;
+        setGripperStates(movingArm, true);
+    }
 
-    setGripperStates(movingArm, true);
     moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
 return 0;
@@ -929,6 +957,8 @@ return 0;
 //Finds and grasps the given point of a hanging cloth, flips it and releases the moving arm
 int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove, bool orientLeft, bool orientUp  ){
 
+    float deep = 0.03 ;
+    float far = 0.1 ;
 
     Eigen::Vector3d n;
     pcl::PointXYZ val = pc.at(x, y) ;
@@ -938,7 +968,7 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
     Eigen::Matrix4d rotMat;
     Eigen::Vector4d targetP;
     tf::Transform ts;
-    setGripperStates(movingArm , true);
+   // setGripperStates(movingArm , true);
     int ox , oy;
    findMeanShiftPoint(pc, x, y, ox, oy, 0.05) ;
     n = computeNormal(pc, ox, oy) ;
@@ -978,14 +1008,14 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
         desPose.orientation = rotationMatrix3ToQuaternion(orient);
 
-        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * 0.1;
-        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * 0.1;
-        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * 0.1;
+        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * far;
+        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * far;
+        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * far;
         poses.push_back(desPose);
 
-        desPose.position.x = targetP.x() + orient(0, 2) * 0.03 + orient(0, 0) * 0.02;
-        desPose.position.y = targetP.y() + orient(1, 2) * 0.03 + orient(1, 0) * 0.02;
-        desPose.position.z = targetP.z() + orient(2, 2) * 0.03 + orient(2, 0) * 0.02;
+        desPose.position.x = targetP.x() + orient(0, 2) * deep + orient(0, 0) * 0.02;
+        desPose.position.y = targetP.y() + orient(1, 2) * deep + orient(1, 0) * 0.02;
+        desPose.position.z = targetP.z() + orient(2, 2) * deep + orient(2, 0) * 0.02;
         poses.push_back(desPose);
         rotateHoldingGripper(theta);
         ros::Duration(2).sleep();
@@ -994,14 +1024,14 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
         desPose.orientation = rotationMatrix4ToQuaternion(rotMat);
 
-        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.02 - rotMat(0, 2) * 0.1;
-        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.02 - rotMat(1, 2) * 0.1;
-        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.02 - rotMat(2, 2) * 0.1;
+        desPose.position.x = targetP.x() + rotMat(0, 0) * 0.02 - rotMat(0, 2) * far;
+        desPose.position.y = targetP.y() + rotMat(1, 0) * 0.02 - rotMat(1, 2) * far;
+        desPose.position.z = targetP.z() + rotMat(2, 0) * 0.02 - rotMat(2, 2) * far;
         poses.push_back(desPose);
 
-        desPose.position.x = targetP.x() + rotMat(0, 2) * 0.03 + rotMat(0, 0) * 0.02;
-        desPose.position.y = targetP.y() + rotMat(1, 2) * 0.03 + rotMat(1, 0) * 0.02;
-        desPose.position.z = targetP.z() + rotMat(2, 2) * 0.03 + rotMat(2, 0) * 0.02;
+        desPose.position.x = targetP.x() + rotMat(0, 2) * deep + rotMat(0, 0) * 0.02;
+        desPose.position.y = targetP.y() + rotMat(1, 2) * deep + rotMat(1, 0) * 0.02;
+        desPose.position.z = targetP.z() + rotMat(2, 2) * deep + rotMat(2, 0) * 0.02;
         poses.push_back(desPose);
     }
 
@@ -1031,14 +1061,14 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
         desPose.orientation = rotationMatrix3ToQuaternion(orient);
 
-        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * 0.1;
-        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * 0.1;
-        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * 0.1;
+        desPose.position.x = targetP.x() + orient(0, 0) * 0.02 - orient(0, 2) * far;
+        desPose.position.y = targetP.y() + orient(1, 0) * 0.02 - orient(1, 2) * far;
+        desPose.position.z = targetP.z() + orient(2, 0) * 0.02 - orient(2, 2) * far;
         poses.push_back(desPose);
 
-        desPose.position.x = targetP.x() + orient(0, 2) * 0.03 + orient(0, 0) * 0.02;
-        desPose.position.y = targetP.y() + orient(1, 2) * 0.03 + orient(1, 0) * 0.02;
-        desPose.position.z = targetP.z() + orient(2, 2) * 0.03 + orient(2, 0) * 0.02;
+        desPose.position.x = targetP.x() + orient(0, 2) * deep + orient(0, 0) * 0.02;
+        desPose.position.y = targetP.y() + orient(1, 2) * deep + orient(1, 0) * 0.02;
+        desPose.position.z = targetP.z() + orient(2, 2) * deep + orient(2, 0) * 0.02;
         poses.push_back(desPose);
 
          // GRASPING POINT
@@ -1374,13 +1404,13 @@ bool Unfold::flipCloth(){
         desPoseUp = getArmPose(holdingArm);
         desPoseUp.position.z -= radious/3.0;
         moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm,radious+0.02);//(desPoseDown, movingArm, radious+0.02 );
-        setGripperState(holdingArm, true);
+        setGripperStates(holdingArm, true);
         switchArms();
         return true;
     }
     if (clothType == 5){
 
-        setGripperState(holdingArm, true);
+        setGripperStates(holdingArm, true);
         switchArms();
         return true;
 
@@ -1398,7 +1428,7 @@ bool Unfold::flipCloth(){
         desPoseUp = getArmPose(holdingArm);
         desPoseUp.position.z -= radious/3.0;
         moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm,radious+0.02);//(desPoseDown, movingArm, radious+0.02 );
-        setGripperState(holdingArm, true);
+        setGripperStates(holdingArm, true);
         switchArms();
         return true;
 
@@ -1440,7 +1470,7 @@ bool Unfold::flipCloth(){
 
             if ( moveArmsFlipCloth( marker_pub, radious + 0.1, desPoseUp, desPoseDown, holdingArm, movingArm) == -1){
                 resetCollisionModel();
-                return false;
+                return true;
             }
         }else{
             cout<< "just dropping the cloth" << endl;
@@ -1450,7 +1480,7 @@ bool Unfold::flipCloth(){
         resetCollisionModel();
         if (!releaseCloth( movingArm ))
             return false;
-        return false;
+        return true;
     }
 
 /////////////////////////////END///////////////////
@@ -1652,7 +1682,7 @@ int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry
 bool Unfold::releaseCloth( const string &armName ){
 
     geometry_msgs::Pose pose = getArmPose(armName);
-    setGripperState(armName , true);
+    setGripperStates(armName , true);
     float dx, dz=0.1;
     if (armName == "r1")
         dx = -0.3;
@@ -1660,7 +1690,7 @@ bool Unfold::releaseCloth( const string &armName ){
         dx = 0.3;
     pose.position.x += dx;
     pose.position.z -= dz;
-    if ( moveArmConstrains(pose, armName, getArmsDistance()+abs(dx)+0.02) )
+    if ( moveArmConstrains(pose, armName, getArmsDistance()+abs(dx)+0.02) == -1)
         return false;
 
     return true;

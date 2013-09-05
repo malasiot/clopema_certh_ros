@@ -1,15 +1,7 @@
 #include "Unfold.h"
 #include <opencv2/highgui/highgui.hpp>
-
 #include <cv.h>
 
-#include <Eigen/Core>
-#include <Eigen/Eigenvalues> // for cwise access
-
-
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/kdtree/kdtree_flann.h>
 using namespace robot_helpers;
 using namespace std;
 
@@ -51,15 +43,12 @@ Eigen::Vector3d findHighestPoint( pcl::PointCloud<pcl::PointXYZ> depth ){
 }
 
 
-int main(int argc, char **argv) {
-
-    ros::init(argc, argv, "grab_from_table");
-    ros::NodeHandle nh;
+int graspFromFloor(string armName){
 
     MoveRobot cmove;
     cmove.setServoMode(false);
-      setGripperState("r2", true);
-    moveGripperPointingDown(cmove, "r2", 0, -1.1, 1.1 );
+    setGripperState(armName, true);
+    moveGripperPointingDown(cmove, armName, 0, -1.1, 1.1 );
 
     camera_helpers::OpenNICaptureAll grabber("xtion2");
     grabber.connect();
@@ -88,12 +77,13 @@ int main(int argc, char **argv) {
     cout << targetP<< endl;
 
 
-    moveGripperPointingDown(cmove, "r2", targetP.x(), targetP.y(), targetP.z()+0.1);
+    moveGripperPointingDown(cmove, armName, targetP.x(), targetP.y(), targetP.z()+0.1);
 
-    moveGripperPointingDown(cmove, "r2", targetP.x(), targetP.y(), targetP.z()-0.05);
-    setGripperState("r2", false);
-    moveHomeArm("r2");
+    moveGripperPointingDown(cmove, armName, targetP.x(), targetP.y(), targetP.z()-0.05);
+    setGripperState(armName, false);
+    moveHomeArm(armName);
     grabber.disconnect();
+
     //Set servo power off
         clopema_motoros::SetPowerOff soff;
         soff.request.force = false;
@@ -103,4 +93,6 @@ int main(int argc, char **argv) {
             return -1;
         }
     return 0;
+
+
 }

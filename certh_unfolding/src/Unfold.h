@@ -35,7 +35,7 @@
 #include <Eigen/Eigenvalues> // for cwise access
 
 using namespace std;
-
+using namespace robot_helpers;
 
 
 
@@ -52,7 +52,6 @@ private:
     int clothType; //0 shirt ,1 trousers, 2 shorts1, 3 shorts2, 4 T-shirt1, 5 T-shirt2
     ros::Publisher marker_pub;
     camera_helpers::OpenNICaptureAll *grabber;
-
 
 public:
 
@@ -141,6 +140,8 @@ public:
 
     int setGripperStates(const string &armName  , bool open);
     int setGrippersStates( bool open);
+    int openG2();
+
     void rotateHoldingGripper(float angle );
 
     Eigen::Matrix4d findLowestPointOrientation(Eigen::Vector4d vector );
@@ -161,8 +162,8 @@ public:
     bool releaseCloth( const string &armName );
     bool showUnfolding();
 
-    geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
-    geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
+   // geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
+    //geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
 
     bool grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, cv::Rect & r );
 

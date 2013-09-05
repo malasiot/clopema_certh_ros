@@ -67,7 +67,7 @@ void rotateGripper(float angle, const std::string &armName);
 
 int moveArmBetweenSpheres( std::string armName, bool up, geometry_msgs::Pose goalPose);
 
-int moveArm(geometry_msgs::Pose pose, const std::string &armName);
+int moveArm(geometry_msgs::Pose pose, const std::string &armName,  const std::string &frameID = "base_link");
 
 int moveArms( geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const std::string &arm1Name = "r1", const std::string &arm2Name = "r2");
 

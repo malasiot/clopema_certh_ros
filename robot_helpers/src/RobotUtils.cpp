@@ -871,7 +871,7 @@ int moveArmBetweenSpheres( string armName, bool up, geometry_msgs::Pose goalPose
 
 
 
-int moveArm(geometry_msgs::Pose pose, const string &armName){
+int moveArm(geometry_msgs::Pose pose, const string &armName, const string &frameID){
 
         //Create plan
         clopema_arm_navigation::ClopemaMotionPlan mp;
@@ -886,7 +886,7 @@ int moveArm(geometry_msgs::Pose pose, const string &armName){
 
         arm_navigation_msgs::SimplePoseConstraint desired_pose;
 
-        desired_pose.header.frame_id = "base_link";
+        desired_pose.header.frame_id = frameID;
         desired_pose.header.stamp = ros::Time::now();
         desired_pose.link_name = armName + "_ee";
         desired_pose.pose = pose;

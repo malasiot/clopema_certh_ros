@@ -18,7 +18,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_boost_directories()
 
-rosbuild_add_executable(unfolding src/unfolding.cpp src/utils.cpp)
+rosbuild_add_executable(unfolding src/unfolding.cpp src/utils.cpp src/grasp_from_floor.cpp)
 
-rosbuild_add_executable(grasp_from_floor src/grasp_from_floor.cpp src/utils.cpp)
+#rosbuild_add_executable(grasp_from_floor src/grasp_from_floor.cpp src/utils.cpp)
 
