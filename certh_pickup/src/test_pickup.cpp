@@ -121,6 +121,16 @@ int main(int argc, char **argv) {
         return false ;
     }
 
+    ObjectOnPlaneDetector objDet(depth, cm.fx(), cm.fy(), cm.cx(), cm.cy()) ;
+
+    Eigen::Vector3d n ;
+    double d ;
+
+    if ( !objDet.findPlane(n, d) ) return 0 ;
+
+    vector<cv::Point> hull ;
+    cv::Mat dmap ;
+    cv::Mat mask = objDet.findObjectMask(n, d, 0.01, dmap, hull) ;
 
     RidgeDetector rdg ;
     vector<RidgeDetector::GraspCandidate> gsp ;
