@@ -109,6 +109,11 @@ void RobotDashboard::closeRightGripper()
     updateState() ;
 }
 
+void RobotDashboard::setServoPowerOff()
+{
+       robot_helpers::setServoPowerOff();
+}
+
 void RobotDashboard::updateState()
 {
     bool gripper_state ;

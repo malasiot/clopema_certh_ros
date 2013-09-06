@@ -8,6 +8,7 @@
 
 #include <QWidget>
 #include <ros/ros.h>
+#include <robot_helpers/Robot.h>
 
 namespace viz_helpers {
 
@@ -29,6 +30,7 @@ private Q_SLOTS:
     void openRightGripper() ;
     void closeRightGripper() ;
     void moveHome() ;
+    void setServoPowerOff() ;
 
 private:
 
