@@ -231,7 +231,15 @@ void grabpc(camera_helpers::OpenNICaptureAll *grabber)
 	cv::SVD svd(H, cv::SVD::FULL_UV);
 
     cv::Mat tr(4, 4, CV_32FC1, cv::Scalar::all(0)) ;
-	cv::Mat R = svd.vt.t() * svd.u.t();	
+
+    cv::Mat V = svd.vt.t();
+    double det = cv::determinant(V);
+    if(det < 0){
+        for(int i=0; i<V.rows; ++i)
+            V.at<float>(i,3) *= -1;
+    }
+
+    cv::Mat R = V * svd.u.t();
 	cv::Mat t = (-1)*R*meanXtion + meanRobot;
 	
 

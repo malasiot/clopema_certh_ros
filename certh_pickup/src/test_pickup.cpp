@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
     }
 
     setGripperState( armName, false) ;
-    moveHomeArm( armName) ;
+   // moveHomeArm( armName) ;
     setServoPowerOff() ;
 
     return 0 ;

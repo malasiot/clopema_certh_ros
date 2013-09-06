@@ -44,6 +44,7 @@ int main(int argc, char **argv) {
     ofstream ftxt("himg.txt");
     ofstream frgb("rgb.txt");
     ofstream fdepth("depth.txt");
+    ofstream flog("log.txt");
 
 
     //-------------- Initialization -----------------//
@@ -142,6 +143,7 @@ int main(int argc, char **argv) {
             }
             //Depth must contain only the cloth (filter background)
             int res = rf->RFDetect(depth2, RFout);
+            flog << "Observation: " << res << endl;
             cout << "Observation: " << res << "  -  ";
             for(int i=0; i<6; ++i)
                 cout << RFout[i] << " ";
@@ -160,8 +162,10 @@ int main(int argc, char **argv) {
             for(int i=0; i<rf_num_states; ++i){
 				rf_belief[i] /= denom;
                 cout << "S" << i+1 << ": " << rf_belief[i] << "  ";
+                flog << "S" << i+1 << ": " << rf_belief[i] << "  ";
             }
             cout << endl;
+            flog << endl;
 
             double max = -10000000000;
             int max_vector = -1;
@@ -177,6 +181,7 @@ int main(int argc, char **argv) {
 
             rf_action = rf_actions[max_vector];
             cout << "Action: " << rf_action << endl;
+            flog << "Action: " << rf_action << endl;
             if(rf_action==6){
                 rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);                
             }
@@ -184,6 +189,7 @@ int main(int argc, char **argv) {
         rb.setClothType(rf_action);
         //------------------1st Grasping Point-----------------//
 
+        flog << endl << "Grasp point 1:" << endl << endl;
 
         stringstream shf;
         shf << "../src/forests/hf" << rf_action;
@@ -280,7 +286,9 @@ int main(int argc, char **argv) {
             }
 
 			cout << "cur_bar: " << res%5 << "  xbar: " << (res/5)%8 << " ybar: " << (res/5)/8 << endl;
+            flog << "cur_bar: " << res%5 << "  xbar: " << (res/5)%8 << " ybar: " << (res/5)/8 << endl;
 			cout << "obs: " << res << endl;
+            flog << "obs: " << res << endl;
 
             vector<double> belief_new(hf_num_states, 0);
             double denom = 0;
@@ -316,6 +324,7 @@ int main(int argc, char **argv) {
 			
             hf_action = hf_actions[max_vector];            
             cout << "Action: " << hf_action << endl;
+            flog << "Action: " << hf_action << endl;
             if(hf_action==64){
                 rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);
                 rot_angle += 15;
@@ -350,6 +359,9 @@ int main(int argc, char **argv) {
 
 
         //---------------2nd Grasping Point----------------//
+
+        flog << endl << "Grasp point 2:" << endl << endl;
+
         stringstream shf2;
         shf2 << "../src/forests/";
         if(rf_action==0)
@@ -451,7 +463,9 @@ int main(int argc, char **argv) {
             }
 
             cout << "cur_bar: " << res%5 << "  xbar: " << (res/5)%8 << " ybar: " << (res/5)/8 << endl;
+            flog << "cur_bar: " << res%5 << "  xbar: " << (res/5)%8 << " ybar: " << (res/5)/8 << endl;
             cout << "obs: " << res << endl;
+            flog << "obs: " << res << endl;
 
             vector<double> belief_new(hf_num_states, 0);
             double denom = 0;
@@ -487,6 +501,7 @@ int main(int argc, char **argv) {
 
             hf_action = hf2_actions[max_vector];
             cout << "Action: " << hf_action << endl;
+            flog << "Action: " << hf_action << endl;
             if(hf_action==64){
                 rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);
                 rot_angle += 15;
@@ -512,6 +527,9 @@ int main(int argc, char **argv) {
     }
 
     ftxt.close();
+    flog.close();
+    fdepth.close();
+    frgb.close();
 
     cout<< "time =  " << double(clock()) - double(start)/double(CLOCKS_PER_SEC) << endl;
 
