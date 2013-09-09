@@ -89,7 +89,7 @@ geometry_msgs::Quaternion findAngle(float theta, Eigen::Matrix4d calib){
 
 }
 
-bool isGraspingSucceeded(cv::Mat depth1, cv::Mat depth2, string armName){
+bool isGraspingSucceeded(cv::Mat depth1, cv::Mat depth2, string armName, float threshold){
 
     vector <float> diff ;
 
@@ -107,14 +107,13 @@ bool isGraspingSucceeded(cv::Mat depth1, cv::Mat depth2, string armName){
 
     meanDepthDiff = (float)sum / 150000.0;
     cout << meanDepthDiff << endl;
-    if (meanDepthDiff > 60000)
+    if (meanDepthDiff > threshold)
         return true ;
     openG2() ;
     setGripperState(armName, true);
     return false ;
 
 }
-
 
 int main(int argc, char **argv) {
 
@@ -134,7 +133,7 @@ int main(int argc, char **argv) {
     MoveRobot cmove ;
     cmove.setServoMode(false) ;
     moveGripperPointingDown(cmove, armName, 1.2, 0, 1.3 ) ;
-
+    vector <geometry_msgs::Pose> poses;
     camera_helpers::OpenNICaptureAll grabber("xtion2") ;
     grabber.connect() ;
     ros::Duration(0.3).sleep() ;
@@ -173,8 +172,8 @@ int main(int argc, char **argv) {
         cv::imwrite("/tmp/gsp.png", rgb) ;
 
         for(unsigned int i = 0 ; i < gsp.size() ; i++ ){
-
-            pcl::PointXYZ val = pc.at(gsp[0].x, gsp[0].y) ;
+            poses.clear();
+            pcl::PointXYZ val = pc.at(gsp[i].x, gsp[i].y) ;
 
             Eigen::Vector3d p(val.x, val.y, val.z) ;
 
@@ -194,26 +193,15 @@ int main(int argc, char **argv) {
             pose.position.z = targetP.z()+ offset; //+ vect.z() * 0.01 ;
             cout<< "vector = " << vect.x() << " "<< vect.y() <<" "<< vect.z() << endl;
 
-            if ( moveArm(pose, armName) == -1){
-                cout<< "cant make 1st move"<< endl ;
-                continue ;
-            }
-
-    //        pose = getArmPose(armName, armName + "_ee") ;
-    //        pose.position.x += 0.01 ;
-
-    //        if ( moveArm(pose, armName, armName + "_ee") == -1 ){
-    //            cout<< "cant make 2nd move"<< endl ;
-    //            continue ;
-    //        }
-
-            pose = getArmPose(armName) ;
+            poses.push_back(pose);
             pose.position.z -= offset +0.01 ;
+            poses.push_back(pose);
             cout<< " GRASPING POINT = "<< pose.position.x << " " << pose.position.y << " "  <<pose.position.z << endl ;
 
-            if ( moveArm(pose, armName) == -1 )
-                cout<< "cant make 3rd move"<< endl ;
-
+            if ( moveArmThrough(poses, armName) == -1 ){
+                cout<< "cant make the grasp"<< endl ;
+                continue ;
+            }
             cout << "dominant grasping point i = " <<  i << endl;
 
             break;
@@ -227,7 +215,7 @@ int main(int argc, char **argv) {
             return false ;
         }
 
-        if ( isGraspingSucceeded(tmpDepth, depth, armName) )
+        if ( isGraspingSucceeded(tmpDepth, depth, armName, 60000) )
             grasp = true ;
     }
 
