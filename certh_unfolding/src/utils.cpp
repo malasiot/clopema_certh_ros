@@ -845,6 +845,11 @@ void printPose(geometry_msgs::Pose p){
 int Unfold::graspLowestPoint(bool lastMove){
 
 
+    geometry_msgs::Pose pose ;
+    pose = getArmPose("r2") ;
+    pose.position.z += 0.70 ;
+    moveArm(pose , "r2");
+
     moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
     setGripperStates(movingArm , true);
@@ -1470,7 +1475,8 @@ bool Unfold::flipCloth(){
 
             if ( moveArmsFlipCloth( marker_pub, radious + 0.1, desPoseUp, desPoseDown, holdingArm, movingArm) == -1){
                 resetCollisionModel();
-                return true;
+                setGripperStates(movingArm,true);
+                return false;
             }
         }else{
             cout<< "just dropping the cloth" << endl;
@@ -1478,8 +1484,10 @@ bool Unfold::flipCloth(){
             return true;
         }
         resetCollisionModel();
-        if (!releaseCloth( movingArm ))
+        if (!releaseCloth( movingArm )){
+            setGripperStates(movingArm, true);
             return false;
+        }
         return true;
     }
 

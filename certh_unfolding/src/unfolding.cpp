@@ -4,7 +4,7 @@
 #include "HFLibrary/hf.cpp"
 #include "Unfold.h"
 #include <sstream>
-#include <ctime>
+#include <time.h>
 
 using namespace std;
 
@@ -33,24 +33,27 @@ int main(int argc, char **argv) {
 
     ros::init(argc, argv, "unfolding");
     ros::NodeHandle nh;
-    ros::Publisher marker_pub;
-    marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
 
+    ros::Publisher marker_pub;
+    marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);    
+    system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./openXtion3.sh &");
+    sleep(3);
+    //cout << "Sleep ended" << endl;
 
    // graspFromFloor("r2");
 
     Unfold rb("r2",marker_pub );
 
-    ofstream ftxt("himg.txt");
-    ofstream frgb("rgb.txt");
-    ofstream fdepth("depth.txt");
-    ofstream flog("log.txt");
+//    ofstream ftxt("himg.txt");
+//    ofstream frgb("rgb.txt");
+//    ofstream fdepth("depth.txt");
+//    ofstream flog("log.txt");
 
 
     //-------------- Initialization -----------------//
     ifstream fin;
     cout << "Loading rf_obsprob... ";
-    fin.open("../src/forests/conf/obsprob.txt");
+    fin.open("/home/akargakos/ROS/clopema_certh_ros/certh_unfolding/src/forests/conf/obsprob.txt");
     fin >> rf_num_states >> rf_num_obs;
     vector < vector < double > >  rf_obsprob;
     rf_obsprob.resize(rf_num_states);
@@ -62,8 +65,17 @@ int main(int argc, char **argv) {
     fin.close();
     cout << "DONE" << endl;
 
+
+    cout << "Loading initial probabilities... ";
+    fin.open("/home/akargakos/ROS/clopema_certh_ros/certh_unfolding/src/forests/conf/initprob.txt");
+    vector<double> rf_initprob(rf_num_states, 0);
+    for(int i=0; i<rf_num_states; ++i)
+        fin >> rf_initprob[i];
+    cout << "DONE" << endl;
+    fin.close();
+
     cout << "Loading policy file... ";
-    fin.open("../src/forests/conf/out.policy");
+    fin.open("/home/akargakos/ROS/clopema_certh_ros/certh_unfolding/src/forests/conf/out.policy");
     int n;
     fin >> n;
     vector < vector < double > >  rf_vectors;
@@ -82,18 +94,10 @@ int main(int argc, char **argv) {
     }
     fin.close();
     cout << "DONE" << endl;
-
-    cout << "Loading initial probabilities... ";
-    fin.open("../src/forests/conf/initprob.txt");
-	vector<double> rf_initprob(rf_num_states, 0);
-	for(int i=0; i<rf_num_states; ++i)
-		fin >> rf_initprob[i];
-	cout << "DONE" << endl;
-	fin.close();
 	
 	
 	cout << "Loading forest... ";
-    rf = new RF( "../src/forests/rf_forest" );
+    rf = new RF( "/home/akargakos/ROS/clopema_certh_ros/certh_unfolding/src/forests/rf_forest" );
     cout << " done." << endl;
 
     vector<double> rf_belief(rf_num_states, 0);
@@ -110,8 +114,10 @@ int main(int argc, char **argv) {
     cv::moveWindow("rgb", 680, 0);
 
 
-    clock_t start = clock();
 
+    time_t start,end;
+    int recogn_rotations;
+    time(&start);
 
     //-------------- Planning -----------------//
 
@@ -125,6 +131,7 @@ int main(int argc, char **argv) {
         for(int i=0; i<rf_num_states; ++i)
             rf_belief[i] = rf_initprob[i];
         int rf_action = 6;
+        recogn_rotations = 0;
         while(rf_action == 6){
             cv::Mat depth, rgb;
             depth = cv::Mat::zeros(640, 480, CV_32FC1);
@@ -143,12 +150,16 @@ int main(int argc, char **argv) {
             }
             //Depth must contain only the cloth (filter background)
             int res = rf->RFDetect(depth2, RFout);
-            flog << "Observation: " << res << endl;
+            //flog << "Observation: " << res << endl;
             cout << "Observation: " << res << "  -  ";
             for(int i=0; i<6; ++i)
                 cout << RFout[i] << " ";
             cout << endl;
             
+//            cv::Mat log_rgb = rgb2(r);
+//            frgb << log_rgb << endl;
+//            fdepth << depth2 << endl;
+
 			int prob_bar = floor(RFout[res]/0.2f);
 			if(prob_bar > 4) prob_bar = 4;			
 			int obs = res*5 + prob_bar;
@@ -162,10 +173,10 @@ int main(int argc, char **argv) {
             for(int i=0; i<rf_num_states; ++i){
 				rf_belief[i] /= denom;
                 cout << "S" << i+1 << ": " << rf_belief[i] << "  ";
-                flog << "S" << i+1 << ": " << rf_belief[i] << "  ";
+                //flog << "S" << i+1 << ": " << rf_belief[i] << "  ";
             }
             cout << endl;
-            flog << endl;
+            //flog << endl;
 
             double max = -10000000000;
             int max_vector = -1;
@@ -181,18 +192,19 @@ int main(int argc, char **argv) {
 
             rf_action = rf_actions[max_vector];
             cout << "Action: " << rf_action << endl;
-            flog << "Action: " << rf_action << endl;
+            //flog << "Action: " << rf_action << endl;
             if(rf_action==6){
-                rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);                
+                rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);
+                recogn_rotations ++ ;
             }
         }
         rb.setClothType(rf_action);
         //------------------1st Grasping Point-----------------//
 
-        flog << endl << "Grasp point 1:" << endl << endl;
+        //flog << endl << "Grasp point 1:" << endl << endl;
 
         stringstream shf;
-        shf << "../src/forests/hf" << rf_action;
+        shf << "/home/akargakos/ROS/clopema_certh_ros/certh_unfolding/src/forests/hf" << rf_action;
         HF* hf = new HF( shf.str().c_str());
 				
 
@@ -273,9 +285,10 @@ int main(int argc, char **argv) {
             hImg = cv::Mat::zeros(530, 260, CV_32FC1);
             int res = hf->houghDetect(depth2, hImg, hrect);
 
-            ftxt << hImg << endl;
-            frgb << rgb2 << endl;
-            fdepth << depth2 << endl;
+//            cv::Mat log_rgb = rgb2(r);
+//            ftxt << hImg << endl;
+//            frgb << log_rgb << endl;
+//            fdepth << depth2 << endl;
 
             int k=0;
             while(k<20){
@@ -286,9 +299,9 @@ int main(int argc, char **argv) {
             }
 
 			cout << "cur_bar: " << res%5 << "  xbar: " << (res/5)%8 << " ybar: " << (res/5)/8 << endl;
-            flog << "cur_bar: " << res%5 << "  xbar: " << (res/5)%8 << " ybar: " << (res/5)/8 << endl;
+            //flog << "cur_bar: " << res%5 << "  xbar: " << (res/5)%8 << " ybar: " << (res/5)/8 << endl;
 			cout << "obs: " << res << endl;
-            flog << "obs: " << res << endl;
+            //flog << "obs: " << res << endl;
 
             vector<double> belief_new(hf_num_states, 0);
             double denom = 0;
@@ -324,10 +337,11 @@ int main(int argc, char **argv) {
 			
             hf_action = hf_actions[max_vector];            
             cout << "Action: " << hf_action << endl;
-            flog << "Action: " << hf_action << endl;
+            //flog << "Action: " << hf_action << endl;
             if(hf_action==64){
-                rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);
-                rot_angle += 15;
+                rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
+                rot_angle += 10;
+                if(rf_action == 1) sleep(1);
             }
         }
         if(hf_action==64)
@@ -360,10 +374,10 @@ int main(int argc, char **argv) {
 
         //---------------2nd Grasping Point----------------//
 
-        flog << endl << "Grasp point 2:" << endl << endl;
+        //flog << endl << "Grasp point 2:" << endl << endl;
 
         stringstream shf2;
-        shf2 << "../src/forests/";
+        shf2 << "/home/akargakos/ROS/clopema_certh_ros/certh_unfolding/src/forests/";
         if(rf_action==0)
             shf2 << "hf02";
         else if(rf_action==1)
@@ -450,9 +464,10 @@ int main(int argc, char **argv) {
             hImg = cv::Mat::zeros(r.width, r.height, CV_32FC1);
             int res = hf2->houghDetect(depth2, hImg, hrect);
 
-            ftxt << hImg << endl;
-            frgb << rgb2 << endl;
-            fdepth << depth2 << endl;
+//            cv::Mat log_rgb = rgb2(r);
+//            ftxt << hImg << endl;
+//            frgb << log_rgb << endl;
+//            fdepth << depth2 << endl;
 
             k=0;
             while(k<20){
@@ -463,9 +478,9 @@ int main(int argc, char **argv) {
             }
 
             cout << "cur_bar: " << res%5 << "  xbar: " << (res/5)%8 << " ybar: " << (res/5)/8 << endl;
-            flog << "cur_bar: " << res%5 << "  xbar: " << (res/5)%8 << " ybar: " << (res/5)/8 << endl;
+            //flog << "cur_bar: " << res%5 << "  xbar: " << (res/5)%8 << " ybar: " << (res/5)/8 << endl;
             cout << "obs: " << res << endl;
-            flog << "obs: " << res << endl;
+            //flog << "obs: " << res << endl;
 
             vector<double> belief_new(hf_num_states, 0);
             double denom = 0;
@@ -501,10 +516,10 @@ int main(int argc, char **argv) {
 
             hf_action = hf2_actions[max_vector];
             cout << "Action: " << hf_action << endl;
-            flog << "Action: " << hf_action << endl;
+            //flog << "Action: " << hf_action << endl;
             if(hf_action==64){
-                rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);
-                rot_angle += 15;
+                rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
+                rot_angle += 10;
             }
         }
         if(hf_action == 64)
@@ -526,12 +541,15 @@ int main(int argc, char **argv) {
         cloth_unfolded = true;
     }
 
-    ftxt.close();
-    flog.close();
-    fdepth.close();
-    frgb.close();
+//    ftxt.close();
+//    flog.close();
+//    fdepth.close();
+//    frgb.close();
 
-    cout<< "time =  " << double(clock()) - double(start)/double(CLOCKS_PER_SEC) << endl;
+    time(&end);
+    cout << endl << "----------------------" << endl << "unfolding time:  " << difftime(end, start) << "sec" << endl;
+    cout << "Recognition rotations: " << recogn_rotations << endl;
+    cout << "----------------------" << endl;
 
 
     //Set servo power off
@@ -542,6 +560,9 @@ int main(int argc, char **argv) {
             ROS_ERROR("Can't call service set_power_off");
             return -1;
         }
+
+        system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./killXtion3.sh");
+        sleep(10) ;
     return 0;
 
 

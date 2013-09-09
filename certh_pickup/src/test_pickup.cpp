@@ -14,6 +14,7 @@ using namespace certh_libs ;
 using namespace robot_helpers ;
 using namespace std ;
 
+
 Eigen::Vector3d findTarget(float x , float y, pcl::PointCloud<pcl::PointXYZ> pc ){
 
     Eigen::Vector3d v ;
@@ -95,10 +96,9 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "unfolding") ;
     ros::NodeHandle nh ;
 
+    system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./openXtion2.sh &");
+    sleep(10);
     string armName = "r2", otherArm = "r1" ;
-
-    //system( "roslaunch certh_launch xtion2.launch") ;
-    //ros::Duration(5).sleep();
 
     //setGripperState(armName, false) ;
     openG2() ;
@@ -189,7 +189,10 @@ int main(int argc, char **argv) {
 
     setGripperState( armName, false) ;
    // moveHomeArm( armName) ;
+
     setServoPowerOff() ;
+
+    system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./killXtion2.sh") ;
 
     return 0 ;
 

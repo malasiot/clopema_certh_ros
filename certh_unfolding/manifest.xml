@@ -11,5 +11,6 @@
   <depend package="certh_libs"/>
   <depend package="robot_helpers"/>
   <depend package="camera_helpers"/>
+  <depend package="certh_pickup"/>
  
 </package>
