@@ -89,6 +89,32 @@ geometry_msgs::Quaternion findAngle(float theta, Eigen::Matrix4d calib){
 
 }
 
+bool isGraspingSucceeded(cv::Mat depth1, cv::Mat depth2, string armName){
+
+    vector <float> diff ;
+
+    for ( int i = 0; i < 400 ; i++){
+        for ( int j = 0; j < 400 ; j++){
+
+            diff.push_back ( ((float)depth1.at<unsigned short>(i,j) - (float)depth2.at<unsigned short>(i,j)) * (float)(depth1.at<unsigned short>(i,j) - (float)depth2.at<unsigned short>(i,j))  ) ;
+
+        }
+    }
+     float sum = 0, meanDepthDiff = 0;
+
+    for ( int i = 0; i < 150000 ; i++)
+        sum += diff[i] ;
+
+    meanDepthDiff = (float)sum / 150000.0;
+    cout << meanDepthDiff << endl;
+    if (meanDepthDiff > 60000)
+        return true ;
+    openG2() ;
+    setGripperState(armName, true);
+    return false ;
+
+}
+
 
 int main(int argc, char **argv) {
 
@@ -97,8 +123,10 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh ;
 
     system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./openXtion2.sh &");
-    sleep(10);
+    sleep(5);
+
     string armName = "r2", otherArm = "r1" ;
+    bool grasp = false ;
 
     //setGripperState(armName, false) ;
     openG2() ;
@@ -111,87 +139,99 @@ int main(int argc, char **argv) {
     grabber.connect() ;
     ros::Duration(0.3).sleep() ;
 
-    cv::Mat rgb, depth ;
+    cv::Mat rgb, depth, tmpDepth;
     pcl::PointCloud<pcl::PointXYZ> pc ;
     ros::Time ts ;
     image_geometry::PinholeCameraModel cm ;
 
-    if(!grabber.grab(rgb, depth, pc, ts, cm)){
-        cout<<" Cant grab image!!  " << endl ;
-        return false ;
-    }
+    while (!grasp){
 
-    ObjectOnPlaneDetector objDet(depth, cm.fx(), cm.fy(), cm.cx(), cm.cy()) ;
-
-    Eigen::Vector3d n ;
-    double d ;
-
-    if ( !objDet.findPlane(n, d) ) return 0 ;
-
-    vector<cv::Point> hull ;
-    cv::Mat dmap ;
-    cv::Mat mask = objDet.findObjectMask(n, d, 0.01, dmap, hull) ;
-
-    RidgeDetector rdg ;
-    vector<RidgeDetector::GraspCandidate> gsp ;
-
-    rdg.detect(dmap, gsp) ;
-    rdg.draw(rgb, gsp) ;
-
-    cv::imwrite("/tmp/gsp.png", rgb) ;
-
-    for(unsigned int i = 0 ; i < gsp.size() ; i++ ){
-
-        pcl::PointXYZ val = pc.at(gsp[0].x, gsp[0].y) ;
-
-        Eigen::Vector3d p(val.x, val.y, val.z) ;
-
-        Eigen::Matrix4d calib = getTranformationMatrix("xtion2_rgb_optical_frame") ;
-        Eigen::Vector4d tar (p.x(), p.y(), p.z(), 1) ;
-        Eigen::Vector4d targetP ;
-
-        targetP = calib * tar ;
-
-        float offset= 0.10 ;
-
-        geometry_msgs::Pose pose ;
-
-        pose.orientation = findAngle(gsp[0].alpha, calib) ;
-        pose.position.x = targetP.x(); //+ vect.x() * 0.01 ;
-        pose.position.y = targetP.y(); //+ vect.y() * 0.01;
-        pose.position.z = targetP.z()+ offset; //+ vect.z() * 0.01 ;
-        cout<< "vector = " << vect.x() << " "<< vect.y() <<" "<< vect.z() << endl;
-
-        if ( moveArm(pose, armName) == -1){
-            cout<< "cant make 1st move"<< endl ;
-            continue ;
+        if(!grabber.grab(rgb, depth, pc, ts, cm)){
+            cout<<" Cant grab image!!  " << endl ;
+            return false ;
         }
 
-//        pose = getArmPose(armName, armName + "_ee") ;
-//        pose.position.x += 0.01 ;
+        tmpDepth = depth ;
 
-//        if ( moveArm(pose, armName, armName + "_ee") == -1 ){
-//            cout<< "cant make 2nd move"<< endl ;
-//            continue ;
-//        }
+        ObjectOnPlaneDetector objDet(depth, cm.fx(), cm.fy(), cm.cx(), cm.cy()) ;
 
-        pose = getArmPose(armName) ;
-        pose.position.z -= offset +0.01 ;
-        cout<< " GRASPING POINT = "<< pose.position.x << " " << pose.position.y << " "  <<pose.position.z << endl ;
+        Eigen::Vector3d n ;
+        double d ;
 
-        if ( moveArm(pose, armName) == -1 )
-            cout<< "cant make 3rd move"<< endl ;
+        if ( !objDet.findPlane(n, d) ) return 0 ;
 
-        cout << "dominant grasping point i = " <<  i << endl;
+        vector<cv::Point> hull ;
+        cv::Mat dmap ;
+        cv::Mat mask = objDet.findObjectMask(n, d, 0.01, dmap, hull) ;
 
-        break;
+        RidgeDetector rdg ;
+        vector<RidgeDetector::GraspCandidate> gsp ;
+
+        rdg.detect(dmap, gsp) ;
+        rdg.draw(rgb, gsp) ;
+
+        cv::imwrite("/tmp/gsp.png", rgb) ;
+
+        for(unsigned int i = 0 ; i < gsp.size() ; i++ ){
+
+            pcl::PointXYZ val = pc.at(gsp[0].x, gsp[0].y) ;
+
+            Eigen::Vector3d p(val.x, val.y, val.z) ;
+
+            Eigen::Matrix4d calib = getTranformationMatrix("xtion2_rgb_optical_frame") ;
+            Eigen::Vector4d tar (p.x(), p.y(), p.z(), 1) ;
+            Eigen::Vector4d targetP ;
+
+            targetP = calib * tar ;
+
+            float offset= 0.10 ;
+
+            geometry_msgs::Pose pose ;
+
+            pose.orientation = findAngle(gsp[0].alpha, calib) ;
+            pose.position.x = targetP.x(); //+ vect.x() * 0.01 ;
+            pose.position.y = targetP.y(); //+ vect.y() * 0.01;
+            pose.position.z = targetP.z()+ offset; //+ vect.z() * 0.01 ;
+            cout<< "vector = " << vect.x() << " "<< vect.y() <<" "<< vect.z() << endl;
+
+            if ( moveArm(pose, armName) == -1){
+                cout<< "cant make 1st move"<< endl ;
+                continue ;
+            }
+
+    //        pose = getArmPose(armName, armName + "_ee") ;
+    //        pose.position.x += 0.01 ;
+
+    //        if ( moveArm(pose, armName, armName + "_ee") == -1 ){
+    //            cout<< "cant make 2nd move"<< endl ;
+    //            continue ;
+    //        }
+
+            pose = getArmPose(armName) ;
+            pose.position.z -= offset +0.01 ;
+            cout<< " GRASPING POINT = "<< pose.position.x << " " << pose.position.y << " "  <<pose.position.z << endl ;
+
+            if ( moveArm(pose, armName) == -1 )
+                cout<< "cant make 3rd move"<< endl ;
+
+            cout << "dominant grasping point i = " <<  i << endl;
+
+            break;
+        }
+
+        setGripperState( armName, false) ;
+        moveGripperPointingDown(cmove, armName, 1.2, 0, 1.3 ) ;
+
+        if(!grabber.grab(rgb, depth, pc, ts, cm)){
+            cout<<" Cant grab image!!  " << endl ;
+            return false ;
+        }
+
+        if ( isGraspingSucceeded(tmpDepth, depth, armName) )
+            grasp = true ;
     }
 
-    setGripperState( armName, false) ;
-   // moveHomeArm( armName) ;
-
-    setServoPowerOff() ;
-
+    moveHomeArm( armName) ;
     system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./killXtion2.sh") ;
 
     return 0 ;
