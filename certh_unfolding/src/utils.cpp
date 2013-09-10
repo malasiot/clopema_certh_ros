@@ -20,7 +20,6 @@ Unfold::Unfold(const string &armName, ros::Publisher markerPub){
    grabber=new camera_helpers::OpenNICaptureAll ("xtion3");
    grabber->connect();
    clothType = -1;
-
 }
 
 Unfold::~Unfold() {
@@ -948,6 +947,7 @@ int Unfold::graspLowestPoint(bool lastMove){
     }
 
     setGripperStates( movingArm, false);
+
     if( !flipCloth() ){
         cout << "CANT FLIP CLOTH"<< endl;
         setGripperStates(movingArm, true);
@@ -1362,7 +1362,83 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
 
 //}
 
+
+bool Unfold::confirmGrasping(){
+
+    cv::Mat rgb, depth ;
+    pcl::PointCloud <pcl::PointXYZ> pc ;
+
+    grabFromXtion(rgb, depth, pc ) ;
+    string rgbFileName = "/tmp/rgb_cap.png" ;
+    cv::imwrite(rgbFileName, rgb) ;
+
+    geometry_msgs::Point point ;
+    point = getArmPose(movingArm, "xtion3_rgb_optical_frame").position ;
+
+    float x, y ; //640 ,480
+
+    x = (525.0 * (float) point.x)/(float) point.z + 320.0 ;
+    y = (525.0 * (float) point.y)/(float) point.z + 240.0 ;
+
+    y -= 10.0 ;
+    for (int i = -4 ; i<5 ; i++){
+        for ( int j = -4 ; j<5 ; j++){
+
+            rgb.at<cv::Vec3b>(y+i,x+j)[0] = 1;
+            rgb.at<cv::Vec3b>(y+i,x+j)[1] = 1;
+            rgb.at<cv::Vec3b>(y+i,x+j)[2] = 200;
+
+        }
+    }
+
+    cv::imwrite(rgbFileName, rgb) ;
+
+    float sum, mean ;
+    unsigned int count=0 ;
+    cout<< endl << "-------depth values--------"<< endl;
+
+    for (int i = -4 ; i<5 ; i++){
+        for ( int j = -4 ; j<5 ; j++){
+
+            cout << (float)depth.at<unsigned short>(y+i,x+j) << endl;
+
+            if ((float)depth.at<unsigned short>(y+i,x+j) > 0){
+
+                sum += (float)depth.at<unsigned short>(y+i,x+j) ;
+                count ++ ;
+
+            }
+        }
+    }
+
+    mean = sum / (float) count ;
+    cout << "MEAN = " << mean << endl;
+
+    return true ;
+
+
+
+}
+
+//Grabs the rgb , depth map and point cloud from xtion
+
+bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc ){
+
+
+    ros::Duration(0.3).sleep();
+    ros::Time ts(0);
+    image_geometry::PinholeCameraModel cm;
+
+    if(!grabber->grab(rgb, depth, pc, ts, cm)){
+        cout<<"cant grab!  " << endl;
+        return false;
+    }
+
+    return true;
+}
+
 //Grabs the rgb , depth map and point cloud from xtion, returning a rectangular depending on the holding arm
+
 bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, cv::Rect & r ){
 
 
@@ -1409,6 +1485,7 @@ bool Unfold::flipCloth(){
         desPoseUp = getArmPose(holdingArm);
         desPoseUp.position.z -= radious/3.0;
         moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm,radious+0.02);//(desPoseDown, movingArm, radious+0.02 );
+
         setGripperStates(holdingArm, true);
         switchArms();
         return true;
@@ -1433,22 +1510,29 @@ bool Unfold::flipCloth(){
         desPoseUp = getArmPose(holdingArm);
         desPoseUp.position.z -= radious/3.0;
         moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm,radious+0.02);//(desPoseDown, movingArm, radious+0.02 );
+
         setGripperStates(holdingArm, true);
         switchArms();
         return true;
 
     }
     else{
-        desPoseDown.position.z += 0.15;
+
+        desPoseDown = getArmPose(holdingArm) ;
+        desPoseDown.position.z -= getArmsDistance() ;
+        desPoseDown.position.z += 0.20;
+
         if(holdingArm == "r2"){
-            desPoseDown.position.x -=0.15;
+            desPoseDown.position.x -=0.20;
         }
         else{
-            desPoseDown.position.x += 0.15;
+            desPoseDown.position.x += 0.20;
         }
         desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
 
         moveArmConstrains(desPoseDown, movingArm, radious+0.02 );
+
+        confirmGrasping();
 
         //getting the orientation
         if(holdingArm == "r2")
@@ -1475,11 +1559,13 @@ bool Unfold::flipCloth(){
 
             if ( moveArmsFlipCloth( marker_pub, radious + 0.1, desPoseUp, desPoseDown, holdingArm, movingArm) == -1){
                 resetCollisionModel();
+
                 setGripperStates(movingArm,true);
                 return false;
             }
         }else{
             cout<< "just dropping the cloth" << endl;
+
             setGripperStates(movingArm, true);
             return true;
         }
