@@ -8,11 +8,14 @@
 #include <certh_libs/Point2D.h>
 #include <camera_helpers/OpenNICapture.h>
 #include <clopema_motoros/WriteIO.h>
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 
 using namespace std ;
 using namespace certh_libs ;
 using namespace robot_helpers ;
 using namespace std ;
+using namespace Eigen ;
 
 
 Eigen::Vector3d findTarget(float x , float y, pcl::PointCloud<pcl::PointXYZ> pc ){
@@ -115,6 +118,71 @@ bool isGraspingSucceeded(cv::Mat depth1, cv::Mat depth2, string armName, float t
 
 }
 
+const double defaultDist = 1.0 ;
+const double defaultTableHeight = 0.75 ;
+//const double defaultTableHeight = 0.075 ;
+const double gripperOffset = 0.35 ;
+
+
+Affine3d getSensorPose(const tf::TransformListener &listener, const string &camera)
+{
+    tf::StampedTransform transform;
+    Affine3d pose ;
+
+    try {
+        listener.waitForTransform(camera + "_rgb_optical_frame", "base_link", ros::Time(0), ros::Duration(1) );
+        listener.lookupTransform(camera + "_rgb_optical_frame", "base_link", ros::Time(0), transform);
+
+        tf::TransformTFToEigen(transform, pose);
+
+        return pose ;
+    } catch (tf::TransformException ex) {
+        ROS_ERROR("%s",ex.what());
+        return pose ;
+    }
+}
+
+double getTableHeightFromPlane(const Vector3d &n, double d, const Affine3d &frame)
+{
+    return n.dot(frame.translation()) + d ;
+}
+
+cv::Mat clr_ ;
+
+Vector3d retargetSensor(const cv::Mat dmap, const vector<cv::Point> &hull, const image_geometry::PinholeCameraModel &cm, double Zd)
+{
+    double minZ, maxZ, Z ;
+
+    cv::minMaxLoc(dmap, &minZ, &maxZ) ;
+
+    // compute the minimum distance of the sensor from the table
+
+    minZ = maxZ/1000.0 + 0.7 ;
+
+    // find the center of the object and re-target the sensor
+
+    cv::Point2f center ;
+    float rad ;
+    cv::minEnclosingCircle(hull, center, rad) ;
+
+    double zS = Zd * rad / std::min(dmap.cols, dmap.rows) ;
+
+    cv::circle(clr_, center, rad, cv::Scalar(255, 0, 255)) ;
+
+    zS = std::max(minZ, zS) ;
+
+    zS = 0.7 + maxZ/1000 ;
+
+    cv::Point3d p = cm.projectPixelTo3dRay(cv::Point2d(center.x, center.y));
+
+    p.x *= zS ; p.y *= zS ; p.z *= zS ;
+
+    cv::imwrite("/tmp/oo.png", clr_);
+
+    return Vector3d(p.x, p.y, p.z) ;
+
+}
+
 int main(int argc, char **argv) {
 
 
@@ -126,6 +194,7 @@ int main(int argc, char **argv) {
 
     string armName = "r2", otherArm = "r1" ;
     bool grasp = false ;
+    string camera = "xtion2" ;
 
     //setGripperState(armName, false) ;
     openG2() ;
@@ -134,46 +203,90 @@ int main(int argc, char **argv) {
     cmove.setServoMode(false) ;
     moveGripperPointingDown(cmove, armName, 1.2, 0, 1.3 ) ;
     vector <geometry_msgs::Pose> poses;
-    camera_helpers::OpenNICaptureAll grabber("xtion2") ;
+    camera_helpers::OpenNICaptureRGBD grabber("xtion2") ;
     grabber.connect() ;
     ros::Duration(0.3).sleep() ;
 
     cv::Mat rgb, depth, tmpDepth;
-    pcl::PointCloud<pcl::PointXYZ> pc ;
+
     ros::Time ts ;
     image_geometry::PinholeCameraModel cm ;
 
+    if(!grabber.grab(rgb, depth, ts, cm)){
+       cout<<" Cant grab image!!  " << endl ;
+       return false ;
+    }
+
+    tmpDepth = depth ;
+
+    ObjectOnPlaneDetector objDet(depth, cm.fx(), cm.fy(), cm.cx(), cm.cy()) ;
+
+    Eigen::Vector3d n ;
+    double d ;
+
+    if ( !objDet.findPlane(n, d) ) return 0 ;
+
+    vector<cv::Point> hull ;
+    cv::Mat dmap ;
+    cv::Mat mask = objDet.findObjectMask(n, d, 0.01, dmap, hull) ;
+
+    // Sensor planning
+
+    tf::TransformListener listener ;
+    Affine3d frame = getSensorPose(listener, camera) ;
+
+    Vector3d t = retargetSensor(dmap, hull, cm, defaultDist - defaultTableHeight) ;
+
+    Vector3d target = frame.inverse() * t ;
+
+    double newDist = target.z() +  0.7 ;
+
+    //double newDist = t.z() + defaultTableHeight - gripperOffset ;
+
+
+
+    trajectory_msgs::JointTrajectory traj ;
+    if ( robot_helpers::planXtionToPose(armName, Vector3d(target.x(), target.y(), newDist ), robot_helpers::lookAt(Vector3d(0, 0, -1)), traj) )
+    {
+        cmove.execTrajectory(traj) ;
+    }
+
+    ///////////////////////////////////////////////////////////////////////
+
     while (!grasp){
 
-        if(!grabber.grab(rgb, depth, pc, ts, cm)){
-            cout<<" Cant grab image!!  " << endl ;
-            return false ;
+        if(!grabber.grab(rgb, depth, ts, cm)){
+           cout<<" Cant grab image!!  " << endl ;
+           return false ;
         }
 
-        tmpDepth = depth ;
+        ObjectOnPlaneDetector objDet2(depth, cm.fx(), cm.fy(), cm.cx(), cm.cy()) ;
 
-        ObjectOnPlaneDetector objDet(depth, cm.fx(), cm.fy(), cm.cx(), cm.cy()) ;
 
-        Eigen::Vector3d n ;
-        double d ;
+        if ( !objDet2.findPlane(n, d) ) return 0 ;
 
-        if ( !objDet.findPlane(n, d) ) return 0 ;
-
-        vector<cv::Point> hull ;
-        cv::Mat dmap ;
-        cv::Mat mask = objDet.findObjectMask(n, d, 0.01, dmap, hull) ;
+        hull.clear() ;
+        cv::Mat dmap2 ;
+        mask = objDet2.findObjectMask(n, d, 0.01, dmap2, hull) ;
 
         RidgeDetector rdg ;
         vector<RidgeDetector::GraspCandidate> gsp ;
 
-        rdg.detect(dmap, gsp) ;
+        rdg.detect(dmap2, gsp) ;
         rdg.draw(rgb, gsp) ;
 
         cv::imwrite("/tmp/gsp.png", rgb) ;
 
         for(unsigned int i = 0 ; i < gsp.size() ; i++ ){
+
             poses.clear();
-            pcl::PointXYZ val = pc.at(gsp[i].x, gsp[i].y) ;
+            unsigned short zval = depth.at<ushort>(gsp[i].y, gsp[i].x) ;
+
+            cv::Point3d val = cm.projectPixelTo3dRay(cv::Point2d(gsp[i].x, gsp[i].y));
+
+            val.x *= zval/1000.0 ;
+            val.y *= zval/1000.0 ;
+            val.z *= zval/1000.0 ;
 
             Eigen::Vector3d p(val.x, val.y, val.z) ;
 
@@ -208,9 +321,10 @@ int main(int argc, char **argv) {
         }
 
         setGripperState( armName, false) ;
+
         moveGripperPointingDown(cmove, armName, 1.2, 0, 1.3 ) ;
 
-        if(!grabber.grab(rgb, depth, pc, ts, cm)){
+        if(!grabber.grab(rgb, depth,  ts, cm)){
             cout<<" Cant grab image!!  " << endl ;
             return false ;
         }
