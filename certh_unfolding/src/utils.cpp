@@ -15,9 +15,10 @@ using namespace std;
 using namespace robot_helpers;
 
 Unfold::Unfold(const string &armName, ros::Publisher markerPub){
-    setHoldingArm(armName);
+
+   setHoldingArm(armName);
    marker_pub  = markerPub;
-   grabber=new camera_helpers::OpenNICaptureAll ("xtion3");
+   grabber = new camera_helpers::OpenNICaptureAll ("xtion3");
    grabber->connect();
    clothType = -1;
 }
@@ -842,12 +843,6 @@ void printPose(geometry_msgs::Pose p){
 
 //Finds and grasps the lowest point of a hanging cloth, flips the cloth and releases the moving arm
 int Unfold::graspLowestPoint(bool lastMove){
-
-
-    geometry_msgs::Pose pose ;
-    pose = getArmPose("r2") ;
-    pose.position.z += 0.70 ;
-    moveArm(pose , "r2");
 
     moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 

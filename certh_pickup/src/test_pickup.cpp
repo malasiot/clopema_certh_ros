@@ -25,6 +25,7 @@ Eigen::Vector3d findTarget(float x , float y, pcl::PointCloud<pcl::PointXYZ> pc 
 
 
 }
+
 Eigen::Vector3d vect;
 
 
@@ -151,7 +152,7 @@ cv::Mat clr_ ;
 
 Vector3d retargetSensor(const cv::Mat dmap, const vector<cv::Point> &hull, const image_geometry::PinholeCameraModel &cm, double Zd)
 {
-    double minZ, maxZ, Z ;
+    double minZ, maxZ ;
 
     cv::minMaxLoc(dmap, &minZ, &maxZ) ;
 
@@ -186,7 +187,7 @@ Vector3d retargetSensor(const cv::Mat dmap, const vector<cv::Point> &hull, const
 int main(int argc, char **argv) {
 
 
-    ros::init(argc, argv, "unfolding") ;
+    ros::init(argc, argv, "pick_up") ;
     ros::NodeHandle nh ;
 
     system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./openXtion2.sh &");
@@ -333,7 +334,7 @@ int main(int argc, char **argv) {
             grasp = true ;
     }
 
-    moveHomeArm( armName) ;
+   // moveHomeArm( armName) ;
     system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./killXtion2.sh") ;
 
     return 0 ;
