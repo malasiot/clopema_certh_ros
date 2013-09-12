@@ -34,8 +34,8 @@ target_link_libraries(pickup ${OpenCV_LIBS} cvblob)
 rosbuild_add_executable(pickup_node	src/pickup.cpp)
 target_link_libraries(pickup_node pickup)
 
-rosbuild_add_executable(test_pickup src/test_pickup.cpp)
-target_link_libraries(test_pickup pickup)
+#rosbuild_add_executable(test_pickup src/test_pickup.cpp)
+#target_link_libraries(test_pickup pickup)
 
 rosbuild_add_executable(picking_up src/picking_up.cpp src/utils.cpp)
 target_link_libraries(picking_up pickup)
