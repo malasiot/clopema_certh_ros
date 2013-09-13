@@ -106,6 +106,8 @@ protected:
 
 };
 
+typedef boost::shared_ptr<IKSolver> IKSolverPtr ;
+
 
 class MA1400_R1_IKSolver: public IKSolver {
 public:  MA1400_R1_IKSolver() ;
