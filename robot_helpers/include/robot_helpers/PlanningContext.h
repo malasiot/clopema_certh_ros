@@ -59,11 +59,13 @@ protected:
 
 class PlanningContextDual: public PlanningContext {
 public:
-    PlanningContextDual(const std::string &group, KinematicsModel *kmodel, IKSolver *solver1, const std::string &ee1,
-                        IKSolver *solver2,  const std::string &ee2 ):
+    PlanningContextDual(const std::string &group, KinematicsModel *kmodel, const IKSolverPtr &solver1, const std::string &ee1,
+                        const IKSolverPtr solver2,  const std::string &ee2 ):
         PlanningContext(group, kmodel), solver1_(solver1), ee1_(ee1),
             solver2_(solver2), ee2_(ee2)
     {
+        solver1_->setKinematicModel(kmodel);
+        solver2_->setKinematicModel(kmodel);
     }
 
     int getManipulators() const { return 2 ; }
@@ -87,10 +89,18 @@ public:
 protected:
 
     std::string ee1_, ee2_ ;
-    IKSolver *solver1_, *solver2_ ;
+    boost::shared_ptr<IKSolver> solver1_, solver2_ ;
 };
 
+class PlanningContextDualDefault: public PlanningContextDual {
+public:
+    PlanningContextDualDefault(KinematicsModel *kmodel):
+        PlanningContextDual("arms", kmodel, IKSolverPtr(new MA1400_R1_IKSolver), "r1_ee",  IKSolverPtr(new MA1400_R1_IKSolver), "r2_ee")
+    {
 
+    }
+
+};
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////

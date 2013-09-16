@@ -3,6 +3,7 @@
 #include <robot_helpers/KinematicsInterface.h>
 #include <robot_helpers/Geometry.h>
 #include <robot_helpers/Planner.h>
+#include <robot_helpers/Planners.h>
 
 using namespace std;
 using namespace robot_helpers ;
@@ -166,13 +167,7 @@ bool distanceConstraint(const PlanningContextPtr &ctx, double dist, const JointS
 void planDual(KinematicsModel &kmodel)
 {
 
-    MA1400_R1_IKSolver solver_r1 ;
-    solver_r1.setKinematicModel(&kmodel);
-
-    MA1400_R2_IKSolver solver_r2 ;
-    solver_r2.setKinematicModel(&kmodel);
-
-    boost::shared_ptr<PlanningContext> pctx(new PlanningContextDual("arms", &kmodel, &solver_r1, "r1_ee", &solver_r2, "r2_ee" ) ) ;
+    boost::shared_ptr<PlanningContext> pctx(new PlanningContextDualDefault( &kmodel ) );
 
     BoxShapedRegion region1(Vector3d(0.0, -0.8, 1.4), Vector3d(0.1, 0.1, 0.1), Vector3d() ) ;
     BoxShapedRegion region2(Vector3d(0.1, -0.5, 1.4), Vector3d(0.1, 0.1, 0.1), Vector3d() ) ;
@@ -200,10 +195,49 @@ void planDual(KinematicsModel &kmodel)
 }
 
 
+void publishTargetMarker(ros::Publisher &vis_pub, const Eigen::Vector3d &p, const Eigen::Vector3d &n)
+{
 
-namespace robot_helpers {
-extern void graspHangingPlanApproach(ros::Publisher &pub, const string &armName, const Vector3d &p, const Vector3d &perp_dir) ;
+
+    visualization_msgs::Marker marker;
+        // Set the frame ID and timestamp.  See the TF tutorials for information on these.
+    marker.header.frame_id = "base_link";
+    marker.header.stamp = ros::Time::now();
+
+    marker.ns = "target point";
+    marker.id = 0;
+
+    // Set the marker type.  Initially this is CUBE, and cycles between that and SPHERE, ARROW, and CYLINDER
+    marker.type = visualization_msgs::Marker::ARROW ;
+
+    Eigen::Vector3d ep = p + 0.3 *n ;
+
+    geometry_msgs::Point p1, p2 ;
+    p1.x = p.x() ;
+    p1.y = p.y() ;
+    p1.z = p.z() ;
+    p2.x = ep.x() ;
+    p2.y = ep.y() ;
+    p2.z = ep.z() ;
+
+    marker.points.push_back(p1) ;
+    marker.points.push_back(p2) ;
+
+    marker.scale.x = 0.1;
+    marker.scale.y = 0.1;
+    marker.scale.z = 0.1;
+
+    marker.color.r = 0.0f;
+    marker.color.g = 1.0f;
+    marker.color.b = 0.0f;
+    marker.color.a = 1.0;
+
+    marker.lifetime = ros::Duration();
+
+    vis_pub.publish(marker);
+
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -228,13 +262,23 @@ int main(int argc, char *argv[])
     Vector3d pos(-0.1, -0.8, 1.0 ) ;
     Vector3d dir(1, 0, 0) ;
 
-    robot_helpers::graspHangingPlanApproach(pub2, "r1", pos, dir) ;
+    GraspHangingPlanner gsp(kmodel, "r1") ;
+    trajectory_msgs::JointTrajectory traj ;
+
+    if ( gsp.plan(pos, dir, traj) )
+    {
+        cout << "ok here" << endl ;
+        mv.execTrajectory(traj) ;
+
+        publishTargetMarker(pub2, gsp.fp, gsp.fdir);
+    }
+
 
 
 
 //    planDual(kmodel) ;
 
-
+    return 0 ;
     ros::spin() ;
 
 
