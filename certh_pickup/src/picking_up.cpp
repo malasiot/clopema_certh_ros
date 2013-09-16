@@ -1,5 +1,6 @@
 #include "ros/ros.h"
 #include "PickUp.h"
+#include <robot_helpers/Robot.h>
 
 int main(int argc, char **argv) {
 
@@ -8,6 +9,9 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
 
     PickUp pick("r2");
+
+   // robot_helpers::setRobotSpeed(1) ;
+
     pick.graspClothFromTable();
     setServoPowerOff();
 

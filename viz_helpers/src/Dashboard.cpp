@@ -133,6 +133,7 @@ void RobotDashboard::updateState()
 
 void RobotDashboard::moveHome()
 {
+ //   robot_helpers::setRobotSpeed(0.1) ;
     MoveRobot mv ;
     robot_helpers::moveHome(mv) ;
 }

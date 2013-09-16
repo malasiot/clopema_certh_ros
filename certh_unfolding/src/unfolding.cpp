@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 
     ros::Publisher marker_pub;
     marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);    
-    system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./openXtion3.sh &");
+    //system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./openXtion3.sh &");
     sleep(3);
     //cout << "Sleep ended" << endl;
 
@@ -562,7 +562,7 @@ int main(int argc, char **argv) {
             return -1;
         }
 
-        system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./killXtion3.sh");
+       // system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./killXtion3.sh");
         sleep(10) ;
     return 0;
 

@@ -970,7 +970,7 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
     tf::Transform ts;
    // setGripperStates(movingArm , true);
     int ox , oy;
-   findMeanShiftPoint(pc, x, y, ox, oy, 0.05) ;
+    findMeanShiftPoint(pc, x, y, ox, oy, 0.05) ;
     n = computeNormal(pc, ox, oy) ;
     x= ox;
     y= oy;
@@ -1365,19 +1365,24 @@ bool Unfold::confirmGrasping(){
 
     grabFromXtion(rgb, depth, pc ) ;
     string rgbFileName = "/tmp/rgb_cap.png" ;
+    string depthFileName = "/tmp/depth_cap.png" ;
     cv::imwrite(rgbFileName, rgb) ;
 
     geometry_msgs::Point point ;
     point = getArmPose(movingArm, "xtion3_rgb_optical_frame").position ;
 
-    float x, y ; //640 ,480
+    int x, y ; //640 ,480
 
     x = (525.0 * (float) point.x)/(float) point.z + 320.0 ;
     y = (525.0 * (float) point.y)/(float) point.z + 240.0 ;
 
-    y -= 10.0 ;
-    for (int i = -4 ; i<5 ; i++){
-        for ( int j = -4 ; j<5 ; j++){
+    if (movingArm == "r1")
+        y -= 10 ;
+    else
+        y += 10 ;
+
+    for (int i = -4; i<5 ; i++){
+        for ( int j = -20 ; j<5 ; j++){
 
             rgb.at<cv::Vec3b>(y+i,x+j)[0] = 1;
             rgb.at<cv::Vec3b>(y+i,x+j)[1] = 1;
@@ -1387,31 +1392,36 @@ bool Unfold::confirmGrasping(){
     }
 
     cv::imwrite(rgbFileName, rgb) ;
+    cv::imwrite(depthFileName, depth) ;
 
-    float sum, mean ;
-    unsigned int count=0 ;
-    cout<< endl << "-------depth values--------"<< endl;
+    float sum =0;
+    pcl::PointXYZ val ;
+    unsigned int count = 0 ;
+
 
     for (int i = -4 ; i<5 ; i++){
-        for ( int j = -4 ; j<5 ; j++){
+        for ( int j = -20 ; j<5 ; j++){
 
-            cout << (float)depth.at<unsigned short>(y+i,x+j) << endl;
+            val = pc.at(x+j,y+i) ;
 
-            if ((float)depth.at<unsigned short>(y+i,x+j) > 0){
+            if((val.z > 0.7) && (val.z < 2.0) ){
 
-                sum += (float)depth.at<unsigned short>(y+i,x+j) ;
-                count ++ ;
+                sum +=(float) val.z ;
+                count++ ;
 
             }
         }
     }
 
-    mean = sum / (float) count ;
-    cout << "MEAN = " << mean << endl;
+    if (count < 20) return false;
+
+    float mean = sum/(float) count ;
+
+    if ( abs( mean - point.z ) > 0.1 )
+        return false ;
 
     return true ;
-
-
+    cout << "MEAN = " << mean << "GRIPPER POINT = " << point.z << endl;
 
 }
 
@@ -1480,7 +1490,7 @@ bool Unfold::flipCloth(){
         desPoseUp = getArmPose(holdingArm);
         desPoseUp.position.z -= radious/3.0;
         moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm,radious+0.02);//(desPoseDown, movingArm, radious+0.02 );
-
+        confirmGrasping() ;
         setGripperStates(holdingArm, true);
         switchArms();
         return true;
@@ -1505,7 +1515,7 @@ bool Unfold::flipCloth(){
         desPoseUp = getArmPose(holdingArm);
         desPoseUp.position.z -= radious/3.0;
         moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm,radious+0.02);//(desPoseDown, movingArm, radious+0.02 );
-
+        confirmGrasping() ;
         setGripperStates(holdingArm, true);
         switchArms();
         return true;
@@ -1515,13 +1525,13 @@ bool Unfold::flipCloth(){
 
         desPoseDown = getArmPose(holdingArm) ;
         desPoseDown.position.z -= getArmsDistance() ;
-        desPoseDown.position.z += 0.20;
+        desPoseDown.position.z += 0.30;
 
         if(holdingArm == "r2"){
-            desPoseDown.position.x -=0.20;
+            desPoseDown.position.x -=0.30;
         }
         else{
-            desPoseDown.position.x += 0.20;
+            desPoseDown.position.x += 0.30;
         }
         desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
 
