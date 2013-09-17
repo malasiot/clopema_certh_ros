@@ -49,7 +49,7 @@ void HF::splitSet(TrainSet& SetA, TrainSet& SetB, Test& test, TrainSet& trainSet
 	SetB.resize(trainSet.size());
 	samplesA = 0;
 	samplesB = 0;
-	for(int i=0; i<trainSet.size(); ++i){
+    for(int i=0; i<trainSet.size(); ++i){
 		SetA[i].resize(0);
 		SetB[i].resize(0);
 		for(int j=0; j<trainSet[i].size(); ++j){					
@@ -73,7 +73,7 @@ double HF::measureSplit(TrainSet& SetA, TrainSet& SetB, int measure_mode){
 	if( measure_mode == 0 ){				
 
 		double sizeA = 0;
-		for(int i=0; i<SetA.size(); ++i)
+        for(int i=0; i<SetA.size(); ++i)
 			sizeA += (double) SetA[i].size();
 
 		double sizeB = 0;

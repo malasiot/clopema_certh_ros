@@ -1,8 +1,8 @@
 #ifndef __ROBOT_HELPERS_UNFOLDING_H__
 #define __ROBOT_HELPERS_UNFOLDING_H__
 
-#include "robot_helpers/Utils.h"
-#include "robot_helpers/Geometry.h"
+#include <robot_helpers/Utils.h>
+#include <robot_helpers/Geometry.h>
 #include <geometric_shapes/shape_operations.h>
 #include <planning_environment/util/construct_object.h>
 #include <geometry_msgs/Pose.h>
@@ -41,19 +41,25 @@ using namespace robot_helpers;
 
 class Unfold {
 
+
+
 public:
     Unfold(const string &armName, ros::Publisher markerPub);
     virtual ~Unfold();
 
 private:
 
+
     string holdingArm;
     string movingArm;
     int clothType; //0 shirt ,1 trousers, 2 shorts1, 3 shorts2, 4 T-shirt1, 5 T-shirt2
     ros::Publisher marker_pub;
-    camera_helpers::OpenNICaptureAll *grabber;
+public:
+    camera_helpers::OpenNICaptureAll  *grabber;
+
 
 public:
+
 
     void setClothType( int type);
     string getHoldingArm();
@@ -171,10 +177,30 @@ public:
     bool grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, cv::Rect & r);
 
 
+
+    //------- DIMITRA--------
+
+public:
+
+    struct grabRGBD {
+
+        cv::Mat rgb ;
+        cv::Mat depth ;
+        Eigen::Matrix4d gripperOrientation;
+
+    };
+
+    std::vector <grabRGBD> grabRGBD360() ;
+//    std::vector <grabRGBD> rotateAndGrab() ;
+
+//    void startCapture() ;
+//    void stopCapture() ;
+//    void doCapture() ;
+
+
 };
 
 void printPose(geometry_msgs::Pose p);
-
 
 
 

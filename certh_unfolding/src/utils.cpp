@@ -11,6 +11,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
+#include <boost/signals2.hpp>
+
 using namespace std;
 using namespace robot_helpers;
 
@@ -1416,12 +1418,12 @@ bool Unfold::confirmGrasping(){
     if (count < 20) return false;
 
     float mean = sum/(float) count ;
+    cout << "MEAN = " << mean << "GRIPPER POINT = " << point.z << endl;
 
     if ( abs( mean - point.z ) > 0.1 )
         return false ;
 
     return true ;
-    cout << "MEAN = " << mean << "GRIPPER POINT = " << point.z << endl;
 
 }
 
@@ -1832,3 +1834,148 @@ bool Unfold::showUnfolding(){
 
 }
 
+//-------------------------DIMITRA ----------------------------
+
+
+
+std::vector <Unfold::grabRGBD> Unfold::grabRGBD360() {
+
+    moveArms(holdingArmPose(), movingArmPose(), holdingArm, movingArm ) ;
+
+    std::vector <grabRGBD> images ;
+    cv::Mat rgb, depth ;
+    pcl::PointCloud <pcl::PointXYZ> pc ;
+    grabRGBD image ;
+    ros::Time ts(0);
+    image_geometry::PinholeCameraModel cm;
+
+    for (unsigned int i = 0 ; i < 8 ; i++){
+
+        rotateGripper( 0.09 , holdingArm) ;
+
+        grabber->grab(rgb, depth, pc, ts, cm);
+
+        image.rgb = rgb ;
+        image.depth = depth ;
+        image.gripperOrientation =  getTranformationMatrix( holdingArm + "_ee", "xtion3_rgb_optical_frame" ) ;
+        cout<< image.gripperOrientation << endl;
+        images.push_back(image);
+     }
+
+    return images ;
+}
+
+
+//bool captureStoped ;
+//boost::mutex captureMutex ;
+//boost::condition_variable finished ;
+
+//int counter = 0 ;
+
+//std::vector <Unfold::grabRGBD> Unfold::rotateAndGrab(){
+
+//    MoveRobot cmove ;
+//    cmove.setServoMode(false);
+
+//    moveGripperPointingDown(cmove, "r1", 0, -0.7, 1.5) ;
+
+//    cmove.actionStarted.connect(boost::bind(&Unfold::startCapture, this)) ;
+// //   cmove.actionCompleted.connect(boost::bind(&Unfold::stopCapture, this)) ;
+
+//    rotateGripper(cmove, holdingArm, 2*M_PI) ;
+
+//    while (!captureStoped ) ;
+
+
+//}
+
+//void Unfold::stopCapture()
+//{
+//    cout << "done" << endl ;
+
+//    boost::unique_lock<boost::mutex> lock_ ;
+//    captureStoped = true ;
+//    finished.notify_all();
+
+//    //Set servo power off
+//    clopema_motoros::SetPowerOff soff;
+//    soff.request.force = false;
+//    ros::service::waitForService("/joint_trajectory_action/set_power_off");
+//    if (!ros::service::call("/joint_trajectory_action/set_power_off", soff)) {
+//        ROS_ERROR("Can't call service set_power_off");
+//    }
+
+//}
+
+
+
+//void Unfold::doCapture()
+//{
+//    bool _stoped = false ;
+
+//    ofstream cap_data("/tmp/rot/cap.txt") ;
+
+//    tf::TransformListener listener(ros::Duration(1.0));
+
+//    do {
+
+//        {
+//            boost::unique_lock<boost::mutex> lock_ ;
+//            _stoped = captureStoped ;
+//        }
+
+//        if ( !_stoped )
+//        {
+
+//            cv::Mat clr, depth ;
+//            pcl::PointCloud<pcl::PointXYZ> pc ;
+//            ros::Time ts ;
+//            image_geometry::PinholeCameraModel cm;
+
+//            string rgbFileName = "/tmp/rot/" + str(boost::format("cap_rgb_%06d.png") % counter) ;
+//            string depthFileName = "/tmp/rot/" + str(boost::format("cap_depth_%06d.png") % counter) ;
+//            string cloudFileName = "/tmp/rot/" + str(boost::format("cap_cloud_%06d.pcd") % counter) ;
+//            if ( grabber->grab(clr, depth, pc, ts, cm) )
+//            {
+
+//                cout << counter << endl ;
+
+//                tf::StampedTransform transform;
+
+//                Eigen::Affine3d pose ;
+
+//                try {
+//                    listener.waitForTransform("xtion3_rgb_optical_frame","r1_ee", ts, ros::Duration(1) );
+//                    listener.lookupTransform("xtion3_rgb_optical_frame","r1_ee", ts, transform);
+
+////                    listener.waitForTransform("r1_ee", "base_link", ts, ros::Duration(1) );
+////                    listener.lookupTransform("r1_ee", "base_link", ts, transform);
+
+//                    cv::imwrite(rgbFileName, clr) ;
+//                    cv::imwrite(depthFileName, depth) ;
+//                    pcl::io::savePCDFileBinary(cloudFileName, pc) ;
+//                    tf::TransformTFToEigen(transform, pose);
+
+//                    cap_data << counter << endl << pose.matrix() << endl ;
+
+//                    counter ++ ;
+
+//                } catch (tf::TransformException ex) {
+//                    ROS_INFO("%s",ex.what());
+//                }
+
+
+//            }
+
+//        }
+
+//    } while ( !_stoped ) ;
+
+//}
+
+//void Unfold::startCapture()
+//{
+//    captureStoped = false ;
+//    boost::thread capture_thread(boost::bind(&Unfold::doCapture, this)) ;
+
+//}
