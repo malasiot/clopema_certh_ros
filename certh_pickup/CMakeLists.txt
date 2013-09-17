@@ -39,3 +39,6 @@ target_link_libraries(pickup_node pickup)
 
 rosbuild_add_executable(picking_up src/picking_up.cpp src/utils.cpp)
 target_link_libraries(picking_up pickup)
+
+rosbuild_add_executable(test_rotate src/test_rotate.cpp)
+rosbuild_link_boost(test_rotate signals)

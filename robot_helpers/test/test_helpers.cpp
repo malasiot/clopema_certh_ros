@@ -5,9 +5,11 @@
 #include <robot_helpers/Planner.h>
 #include <robot_helpers/Planners.h>
 
+
 using namespace std;
 using namespace robot_helpers ;
 using namespace Eigen ;
+
 
 void createMarkerFromMesh( shapes::Mesh &mesh, const Eigen::Affine3d &trans, visualization_msgs::Marker &marker)
 {

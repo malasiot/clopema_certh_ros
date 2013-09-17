@@ -20,6 +20,8 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/CMake/"   )
+
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/CMake/qt.cmake)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
@@ -40,6 +42,7 @@ SET (CAMERA_VIEW_SOURCES
 	src/CameraViewPlugin.cpp
 	src/Commander.cpp
 	src/CommandPanelServer.cpp
+
 )
 
 ADD_QT_LIBRARY(viz_helpers SOURCES ${CAMERA_VIEW_SOURCES} HEADERS ${CAMERA_VIEW_HEADERS} FORMS src/Dashboard.ui)
@@ -67,3 +70,10 @@ FIND_PACKAGE(Bullet)
 rosbuild_add_executable(cloth_simulator src/ClothSimulatorServer.cpp src/Physics.cpp)
 target_link_libraries(cloth_simulator BulletSoftBody)
 
+FIND_PACKAGE(OSMesa)
+FIND_PACKAGE(OpenGL)
+
+IF ( OSMESA_FOUND )
+rosbuild_add_executable(ofrender src/OffscreenRenderer.cpp)
+target_link_libraries(ofrender  ${OSMESA_LIBRARY} ${OPENGL_LIBRARIES})
+ENDIF( OSMESA_FOUND )
