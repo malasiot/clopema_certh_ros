@@ -10,6 +10,9 @@
   <depend package="roscpp"/>
   <depend package="image_transport"/>
   <depend package="image_geometry"/>
+  <depend package="cv_bridge"/>
+  <depend package="camera_info_manager"/>
+
 	<depend package="collision_space"/>
 	<depend package="geometric_shapes"/>
 	<depend package="arm_navigation_msgs"/>

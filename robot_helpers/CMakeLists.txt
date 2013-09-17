@@ -42,5 +42,5 @@ rosbuild_add_library(robot_helpers
 target_link_libraries(robot_helpers ${LAPACK_LIBRARIES} ${BLAS_LIBRARIES} ${OMPL_LIBRARIES})
 
 rosbuild_add_executable(test_helpers test/test_helpers.cpp)
-target_link_libraries(test_helpers robot_helpers "GLU" "OSMesa32")
+target_link_libraries(test_helpers robot_helpers)
 
