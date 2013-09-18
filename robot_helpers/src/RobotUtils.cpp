@@ -211,8 +211,8 @@ bool rotateGripper(MoveRobot &cmove, const std::string &armName, double theta)
     for( unsigned int i=0 ; i<names.size() ; i++ )
     {
         mp.request.motion_plan_req.goal_constraints.joint_constraints[i].joint_name = names[i];
-        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].tolerance_below = 0.1;
-        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].tolerance_above = 0.1;
+        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].tolerance_below = 0.01;
+        mp.request.motion_plan_req.goal_constraints.joint_constraints[i].tolerance_above = 0.01;
 
         for( unsigned int j=0 ; j< mp.request.motion_plan_req.start_state.joint_state.name.size() ; j++ )
         {
