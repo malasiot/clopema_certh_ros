@@ -219,8 +219,11 @@ bool rotateGripper(MoveRobot &cmove, const std::string &armName, double theta)
             if ( mp.request.motion_plan_req.start_state.joint_state.name[j] == names[i] )
             {
                 if ( names[i] == gripperJointName )
+                {
+                    cout << mp.request.motion_plan_req.start_state.joint_state.position[j] << endl ;
                     mp.request.motion_plan_req.goal_constraints.joint_constraints[i].position =
                             mp.request.motion_plan_req.start_state.joint_state.position[j] + theta ;
+                }
                 else
                     mp.request.motion_plan_req.goal_constraints.joint_constraints[i].position =
                             mp.request.motion_plan_req.start_state.joint_state.position[j]  ;

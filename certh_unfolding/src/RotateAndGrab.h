@@ -17,19 +17,21 @@ public:
 
 protected:
 
-    virtual void process(const cv::Mat &clr, const cv::Mat &depth, const image_geometry::PinholeCameraModel cm,
+    virtual void process(const cv::Mat &clr, const cv::Mat &depth, const image_geometry::PinholeCameraModel &cm,
                          const ros::Time &ts, Eigen::Affine3d &tip_pose_in_camera_frame) = 0;
 
-private:
+
     void startCapture() ;
     void doCapture() ;
     void stopCapture() ;
 
     robot_helpers::MoveRobot cmove ;
     camera_helpers::OpenNICaptureRGBD cap ;
+
     std::string camera, arm ;
     bool captureStoped ;
     boost::mutex mutex ;
+    boost::thread capture_thread ;
 };
 
 

@@ -62,7 +62,7 @@ void GraspHangingGoalRegion::sample(std::vector<double> &xyz_rpy)
     double pa = boost::uniform_real<double>(planner->yaw_tol_min, planner->yaw_tol_max)(gen) ;
     double roll = boost::uniform_real<double>(planner->roll_tol_min, planner->roll_tol_max)(gen) ;
 
-    r =  Quaterniond(r) * AngleAxisd(angle, Eigen::Vector3d::UnitX()) * AngleAxisd(-roll, Eigen::Vector3d::UnitY()) ; /** AngleAxisd(pa, Eigen::Vector3d::UnitZ()) */
+    r =  Quaterniond(r) * /*AngleAxisd(angle, Eigen::Vector3d::UnitX()) * */ AngleAxisd(-roll, Eigen::Vector3d::UnitY()) ; /** AngleAxisd(pa, Eigen::Vector3d::UnitZ()) */
 
     // we allow the holding arm to move within a box with dimensions t x t x t around the current position
 

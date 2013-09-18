@@ -1,6 +1,7 @@
 #include "RotateAndGrab.h"
 
 #include <robot_helpers/Utils.h>
+#include <robot_helpers/Geometry.h>
 
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
@@ -16,7 +17,7 @@ RotateAndGrab::RotateAndGrab(const string &camera_, const string &arm_): cap(cam
 
 void RotateAndGrab::init(const Vector3d &pos)
 {
-    moveGripperPointingDown(cmove, arm, pos.x(), pos.y(), pos.z()) ;
+    moveGripper(cmove, arm, pos, lookAt(Vector3d(0, 0, -1), 0)) ;
 
     cap.connect() ;
     cmove.actionStarted.connect(boost::bind(&RotateAndGrab::startCapture, this)) ;
@@ -28,12 +29,14 @@ void RotateAndGrab::rotate(double theta)
     rotateGripper(cmove, arm, theta) ;
 
     while (!captureStoped ) ;
+
+    capture_thread.join() ;
 }
 
 void RotateAndGrab::startCapture()
 {
     captureStoped = false ;
-    boost::thread capture_thread(boost::bind(&RotateAndGrab::doCapture, this)) ;
+    capture_thread = boost::thread(boost::bind(&RotateAndGrab::doCapture, this)) ;
 }
 
 void RotateAndGrab::doCapture()

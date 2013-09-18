@@ -25,6 +25,8 @@ struct ret_all{
     vector<vector<int> > table;
 	a_corners a_corn;
 };
+
+extern void grasp_point(bool  , vector<double>& , vector<Eigen::Matrix4d>&  , vector<vector<int> >&  , vector<vector<Point> >&  , vector<vector<bool> >&  , int );
 //these functions are used for the detection of the corners that are created from a fold of the cloth(arrow junctions)
 /////call_main ///
 //this function detects the edges and junctions of the hanging cloth
@@ -44,10 +46,37 @@ struct ret_all{
 class folds{
 
 public:
+
+    folds() {
+        score.resize(1) ;
+        score.back().push_back(0) ;
+
+        location.resize(1) ;
+        location.back().push_back(Point(0, 0)) ;
+
+        current_corner.resize(1) ;
+        current_corner.back().push_back(false) ;
+    }
+
 	ret_all call_main(Mat,Mat);
 
     bool fold_detector(Mat, Mat, int, vector<double>& , vector<vector<int> > &, vector<vector<Point> >& , vector<vector<bool> >& ,int );
 
+    bool detect(const Mat &clr, const Mat &depth, int frame, vector<double> &graspCandidates, int cx ) {
+        bool res =  fold_detector(clr, depth, frame, graspCandidates, score, location, current_corner, cx) ;
+
+        return res ;
+    }
+
+    void select(bool detected, vector<double> &grasp_candidate, vector<Eigen::Matrix4d> &orientations, int cx)
+    {
+
+       grasp_point (detected , grasp_candidate, orientations ,  score , location , current_corner , cx);
+    }
+
+    vector<vector<int> > score ;
+    vector<vector<Point> > location ;
+    vector<vector<bool> > current_corner ;
 
 };
 
