@@ -16,6 +16,53 @@ using namespace robot_helpers ;
 
 class RotateAndGrab {
 public:
+
+
+    void rotateHoldingGripper(float angle){
+
+        //Create plan
+        clopema_arm_navigation::ClopemaMotionPlan mp;
+    //    MoveRobot cmove;
+    //    cmove.setServoMode(false);
+        mp.request.motion_plan_req.group_name = arm + "_arm";
+        mp.request.motion_plan_req.allowed_planning_time = ros::Duration(5.0);
+
+        //Set start state
+        getRobotState(mp.request.motion_plan_req.start_state);
+
+        arm_navigation_msgs::SimplePoseConstraint desired_pose;
+
+        desired_pose.header.frame_id = arm + "_ee";
+        desired_pose.header.stamp = ros::Time::now();
+        desired_pose.link_name = arm + "_ee";
+
+        desired_pose.pose.position.x = 0;
+        desired_pose.pose.position.y = 0;
+        desired_pose.pose.position.z = 0;
+        desired_pose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(0, 0, angle );
+
+
+       // cout<< "\n going to --- >  "<< desired_pose.pose.position.x<< " "  << desired_pose.pose.position.y<<"  " << desired_pose.pose.position.z <<"\n";
+
+        desired_pose.absolute_position_tolerance.x = 0.002;
+        desired_pose.absolute_position_tolerance.y = 0.002;
+        desired_pose.absolute_position_tolerance.z = 0.002;
+        desired_pose.absolute_roll_tolerance = 0.004;
+        desired_pose.absolute_pitch_tolerance = 0.004;
+        desired_pose.absolute_yaw_tolerance = 0.004;
+        poseToClopemaMotionPlan(mp, desired_pose);
+
+        ROS_INFO("Planning");
+        if (!plan(mp))
+            return ;
+
+        ROS_INFO("Executing");
+        control_msgs::FollowJointTrajectoryGoal goal;
+        goal.trajectory = mp.response.joint_trajectory;
+        cmove.doGoal(goal);
+
+    }
+
     RotateAndGrab(const string &camera_, const string &arm_): cap(camera_), camera(camera_), arm(arm_), captureStoped(false), counter(0) {
 
     }
@@ -27,7 +74,7 @@ public:
         cmove.actionStarted.connect(boost::bind(&RotateAndGrab::startCapture, this)) ;
         cmove.actionCompleted.connect(boost::bind(&RotateAndGrab::stopCapture, this)) ;
 
-        rotateGripper(cmove, arm, 2*M_PI) ;
+        rotateHoldingGripper(M_PI) ;
 
         while (!captureStoped ) ;
     }
