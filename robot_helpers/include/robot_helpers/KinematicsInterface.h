@@ -46,6 +46,8 @@ public:
     KinematicsModel() ;
 
     bool init() ;
+    // use this to specify collision objects
+    bool init(const arm_navigation_msgs::PlanningScene &planning_scene_diff) ;
 
     JointState getJointState() const ;
     JointState getJointState(const std::vector<std::string> &joints) ;
