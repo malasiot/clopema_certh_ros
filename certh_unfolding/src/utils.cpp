@@ -365,7 +365,7 @@ void Unfold::robustPlane3DFit(vector<Eigen::Vector3d> &x, Eigen::Vector3d  &c, E
         sort(weight, weight + N) ;
 
         sigma = weight[N/2]/0.6745 ;
-
+        cout << "FIT QUALITY: " << sigma << endl;
         // Update weights using Hubers scheme
 
         wsum = 0.0 ;
@@ -844,7 +844,7 @@ void printPose(geometry_msgs::Pose p){
 //}
 
 //Finds and grasps the lowest point of a hanging cloth, flips the cloth and releases the moving arm
-int Unfold::graspLowestPoint(bool lastMove){
+bool Unfold::graspLowestPoint(bool lastMove){
 
     moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
@@ -936,8 +936,8 @@ int Unfold::graspLowestPoint(bool lastMove){
         if(moveArm(desPose, movingArm)==-1){
             cout<< "Cant grasp lowest Point .. " << i << "TIMES" <<endl;
             if (i == 3){
-                cout<< "ABORDING ..." << endl;
-                return -1;
+                cout<< "ABORDING: Inverse Kinematics not found!" << endl;
+                return false;
             }
         }else
             break;
@@ -948,16 +948,17 @@ int Unfold::graspLowestPoint(bool lastMove){
     if( !flipCloth() ){
         cout << "CANT FLIP CLOTH"<< endl;
         setGripperStates(movingArm, true);
+        return false;
     }
 
     moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
-return 0;
+    return true;
 
 }
 
 //Finds and grasps the given point of a hanging cloth, flips it and releases the moving arm
-int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove, bool orientLeft, bool orientUp  ){
+bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove, bool orientLeft, bool orientUp  ){
 
     float deep = 0.03 ;
     float far = 0.1 ;
@@ -1078,8 +1079,10 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
             if(moveArmThrough(poses, movingArm) == -1){
                 cout<< "Cant grasp Point .. " << i << "TIMES" <<endl;
                 if (i == 3){
-                    cout<< "ABORDING ..." << endl;
-                    return -1;
+                    cout<< "ABORDING: Motion Planning Failed!" << endl;
+                    moveArm(movingArmPose(), movingArm) ;
+                    setGripperStates(movingArm, true);
+                    return false;
                 }
             }else
                 break;
@@ -1090,16 +1093,26 @@ int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y 
     setGripperStates(movingArm , false);
 
     if(lastMove == true){
+        moveToCheckGrasping() ;
+        if(!confirmGrasping() ){
+            moveArm(movingArmPose(), movingArm) ;
+            setGripperStates(movingArm, true);
+            return false ;
+        }
         showUnfolding();
-        return 0;
+        return true ;
     }
 
-    if( !flipCloth() )
+    if( !flipCloth() ){
         cout << "CANT FLIP CLOTH"<< endl;
+        moveArm(movingArmPose(), movingArm) ;
+        setGripperStates(movingArm, true);
+        return false;
+    }
 
     setGripperStates(movingArm, true);
     moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
-
+    return true;
 }
 
 //int Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove, bool orientLeft, bool orientUp  ){
@@ -1402,7 +1415,7 @@ bool Unfold::confirmGrasping(){
 
 
     for (int i = -4 ; i<5 ; i++){
-        for ( int j = -20 ; j<5 ; j++){
+        for ( int j = -10 ; j<10 ; j++){
 
             val = pc.at(x+j,y+i) ;
 
@@ -1415,12 +1428,15 @@ bool Unfold::confirmGrasping(){
         }
     }
 
+    cout << "COUNT = " << count<< endl;
+
     if (count < 20) return false;
 
     float mean = sum/(float) count ;
+
     cout << "MEAN = " << mean << "GRIPPER POINT = " << point.z << endl;
 
-    if ( abs( mean - point.z ) > 0.1 )
+    if ( abs( mean - point.z ) > 0.15 )
         return false ;
 
     return true ;
@@ -1467,6 +1483,37 @@ bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::Po
     return true;
 }
 
+
+bool Unfold::moveToCheckGrasping(){
+
+    float radious = getArmsDistance() ;
+    float offset ;
+
+    if (radious > 0.3)
+        offset = 0.3 ;
+    else
+        offset = radious ;
+
+    geometry_msgs::Pose desPoseUp , desPoseDown ;
+    desPoseUp = getArmPose(holdingArm) ;
+    desPoseDown.position = desPoseUp.position ;
+    desPoseDown.position.z -= radious - offset;
+
+    if(movingArm == "r1")
+        desPoseDown.position.x -=  offset ;
+    else
+        desPoseDown.position.x += offset ;
+
+    desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
+
+    if ( moveArmConstrains(desPoseDown, movingArm, radious+0.02 ) == 0 )
+        return true;
+    return false ;
+
+}
+
+
+
 //Flips the cloth
 bool Unfold::flipCloth(){
 
@@ -1476,12 +1523,19 @@ bool Unfold::flipCloth(){
     desPoseDown = getArmPose(movingArm);
     desPoseUp = getArmPose(holdingArm);
 
+    moveToCheckGrasping() ;
+    bool grasp = confirmGrasping() ;
+    cout << "grasping = " << grasp  << endl ;
+    if(!grasp)
+        return false;
 
 ////////////////////NEW///////////////////
 
     if( (clothType == 0) || (clothType == 2) || (clothType == 3)  || (clothType == 4) ) {
 
-        desPoseDown.position.z += 2.0*radious/3.0;
+        desPoseDown.position = desPoseUp.position ;
+        desPoseDown.position.z += 2.0*radious/3.0 - radious ;
+
         if(holdingArm == "r2"){
             desPoseDown.position.x -=2.0*radious/3.0;
         }
@@ -1492,7 +1546,6 @@ bool Unfold::flipCloth(){
         desPoseUp = getArmPose(holdingArm);
         desPoseUp.position.z -= radious/3.0;
         moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm,radious+0.02);//(desPoseDown, movingArm, radious+0.02 );
-        confirmGrasping() ;
         setGripperStates(holdingArm, true);
         switchArms();
         return true;
@@ -1506,7 +1559,9 @@ bool Unfold::flipCloth(){
     }
     if(clothType == 1){
 
-        desPoseDown.position.z += 2.0*radious/3.0;
+        desPoseDown.position = desPoseUp.position ;
+        desPoseDown.position.z += 2.0*radious/3.0 -radious ;
+
         if(holdingArm == "r2"){
             desPoseDown.position.x -=radious/2.0;
         }
@@ -1517,7 +1572,6 @@ bool Unfold::flipCloth(){
         desPoseUp = getArmPose(holdingArm);
         desPoseUp.position.z -= radious/3.0;
         moveArmsNoTearing(desPoseDown, desPoseUp, movingArm, holdingArm,radious+0.02);//(desPoseDown, movingArm, radious+0.02 );
-        confirmGrasping() ;
         setGripperStates(holdingArm, true);
         switchArms();
         return true;
@@ -1526,20 +1580,6 @@ bool Unfold::flipCloth(){
     else{
 
         desPoseDown = getArmPose(holdingArm) ;
-        desPoseDown.position.z -= getArmsDistance() ;
-        desPoseDown.position.z += 0.30;
-
-        if(holdingArm == "r2"){
-            desPoseDown.position.x -=0.30;
-        }
-        else{
-            desPoseDown.position.x += 0.30;
-        }
-        desPoseDown.orientation = rotationMatrix3ToQuaternion(horizontal());
-
-        moveArmConstrains(desPoseDown, movingArm, radious+0.02 );
-
-        confirmGrasping();
 
         //getting the orientation
         if(holdingArm == "r2")
@@ -1568,7 +1608,7 @@ bool Unfold::flipCloth(){
                 resetCollisionModel();
 
                 setGripperStates(movingArm,true);
-                return false;
+                return true;
             }
         }else{
             cout<< "just dropping the cloth" << endl;
@@ -1584,6 +1624,7 @@ bool Unfold::flipCloth(){
         return true;
     }
 
+    return false ;
 /////////////////////////////END///////////////////
 //    desPoseDown.position.z += 0.15;
 //    if(holdingArm == "r2"){
