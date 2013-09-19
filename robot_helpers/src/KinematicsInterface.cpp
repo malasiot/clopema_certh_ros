@@ -70,20 +70,47 @@ KinematicsModel::KinematicsModel() { }
 
 bool KinematicsModel::init()
 {
-	ros::service::waitForService("/environment_server/set_planning_scene_diff");
+    ros::service::waitForService("/environment_server/get_planning_scene");
 
 	arm_navigation_msgs::GetPlanningScene planning_scene;
     
-    if (!ros::service::call("/environment_server/set_planning_scene_diff", planning_scene)) {
+    if (!ros::service::call("/environment_server/get_planning_scene", planning_scene)) {
 		ROS_ERROR("Can't get planning scene");
 		return false ;
 	}
 
 	cm_.reset(new planning_environment::CollisionModels("robot_description")) ;
-	state_ = cm_->setPlanningScene(planning_scene.response.planning_scene);
 
     cm_->getKinematicModel()->getLinkModelNames(link_names) ;
     cm_->getKinematicModel()->getJointModelNames(joint_names) ;
+
+	state_ = cm_->setPlanningScene(planning_scene.response.planning_scene);
+
+    return true ;
+
+}
+
+bool KinematicsModel::init(const arm_navigation_msgs::PlanningScene &planning_scene_diff)
+{
+    ros::service::waitForService("/environment_server/get_planning_scene");
+
+    arm_navigation_msgs::GetPlanningScene planning_scene;
+
+    planning_scene.request.planning_scene_diff = planning_scene_diff ;
+
+    if (!ros::service::call("/environment_server/get_planning_scene", planning_scene)) {
+        ROS_ERROR("Can't get planning scene");
+        return false ;
+    }
+
+    cm_.reset(new planning_environment::CollisionModels("robot_description")) ;
+
+    cm_->getKinematicModel()->getLinkModelNames(link_names) ;
+    cm_->getKinematicModel()->getJointModelNames(joint_names) ;
+
+    state_ = cm_->setPlanningScene(planning_scene.response.planning_scene);
+
+    return true ;
 
 }
 
@@ -170,6 +197,8 @@ std::vector<std::string> KinematicsModel::getJoints(const std::string &groupName
     return state_->getJointStateGroup(groupName)->getJointNames() ;
 
 }
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

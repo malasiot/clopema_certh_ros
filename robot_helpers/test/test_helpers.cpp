@@ -4,7 +4,7 @@
 #include <robot_helpers/Geometry.h>
 #include <robot_helpers/Planner.h>
 #include <robot_helpers/Planners.h>
-
+#include <planning_environment/util/construct_object.h>
 
 using namespace std;
 using namespace robot_helpers ;
@@ -79,7 +79,7 @@ void planSingle(KinematicsModel &kmodel)
 
     PlanningContextPtr pctx(new PlanningContextSingle("r1_arm", &kmodel, &solver_r1, "r1_ee" ) );
 
-    BoxShapedRegion region(Vector3d(0.2, -0.8, 1.4), Vector3d(0.01, 0.01, 0.01), Vector3d() ) ;
+    BoxShapedRegion region(Vector3d(0.6, -0.7, 1.4), Vector3d(0.01, 0.01, 0.01), Vector3d() ) ;
 
     region.roll_min = -M_PI/4 ;
     region.roll_max = M_PI/4 ;
@@ -93,16 +93,20 @@ void planSingle(KinematicsModel &kmodel)
 
     bool rplan = planner.solve(region, traj) ;
 
+    if ( rplan )
+    {
+
 //    traj.completeTrajectory(kmodel.getJointState()) ;
 
-    trajectory_msgs::JointTrajectory msg = traj.toMsg(10), filtered ;
+        trajectory_msgs::JointTrajectory msg = traj.toMsg(10), filtered ;
 
-    filterTrajectory("r1_arm", msg, filtered) ;
+        filterTrajectory("r1_arm", msg, filtered) ;
 
 
-    MoveRobot mv ;
+        MoveRobot mv ;
 
-    mv.execTrajectory(filtered) ;
+        mv.execTrajectory(msg) ;
+    }
 
 }
 
@@ -119,7 +123,7 @@ void planSingleTaskSpace(KinematicsModel &kmodel)
 
     PlanningContextPtr pctx(new PlanningContextSingle("r1_arm", &kmodel, &solver_r1, "r1_ee" ) );
 
-    BoxShapedRegion region(Vector3d(0.3, -1.2, 1.4), Vector3d(0.01, 0.01, 0.01), Vector3d() ) ;
+    BoxShapedRegion region(Vector3d(0.3, -0.5, 1.4), Vector3d(0.01, 0.01, 0.01), Vector3d() ) ;
 
     region.roll_min = -M_PI/6 ;
     region.roll_max = M_PI/6;
@@ -240,6 +244,42 @@ void publishTargetMarker(ros::Publisher &vis_pub, const Eigen::Vector3d &p, cons
 
 }
 
+bool attachConeToCollisionModel(arm_navigation_msgs::AttachedCollisionObject &att_object, const std::string &armName, double length, double radius)
+{
+    att_object.link_name = armName + "_gripper";
+
+    att_object.object.id = "attached_cone";
+    att_object.object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
+
+    att_object.object.header.frame_id = "base_link";
+    att_object.object.header.stamp = ros::Time::now();
+
+    Eigen::Vector3d p = robot_helpers::getPose(armName).inverse().translation() ;
+
+
+    arm_navigation_msgs::Shape object;
+
+    shapes::Mesh mesh ;
+    makeSolidCone(mesh, radius, length, 10, 20) ;
+
+    if(!planning_environment::constructObjectMsg(&mesh, object)) {
+      ROS_WARN_STREAM("Object construction fails");
+    }
+
+    geometry_msgs::Pose pose;
+    pose.position.x = p.x();
+    pose.position.y = p.y();
+    pose.position.z = p.z() ;
+    pose.orientation.x = 0;
+    pose.orientation.y = 0;
+    pose.orientation.z = 0;
+    pose.orientation.w = 1;
+
+    att_object.object.shapes.push_back(object);
+    att_object.object.poses.push_back(pose);
+
+    return true ;
+}
 
 int main(int argc, char *argv[])
 {
@@ -249,14 +289,30 @@ int main(int argc, char *argv[])
     ros::NodeHandle nh_ ;
 
     KinematicsModel kmodel ;
+
+    arm_navigation_msgs::AttachedCollisionObject att_object ;
+
     kmodel.init() ;
 
     ros::AsyncSpinner spinner(4) ;
     spinner.start() ;
 
+    planSingle(kmodel) ;
 
     ros::Publisher pub = nh_.advertise<visualization_msgs::MarkerArray>( "visualization_marker_array", 0 );
     ros::Publisher pub2 = nh_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
+
+    visualization_msgs::MarkerArray markers_ ;
+    kmodel.getRobotMarkers(markers_) ;
+
+ /*   while ( 1)
+    {
+        pub.publish(markers_) ;
+
+        ros::spinOnce() ;
+    }
+*/
+    return 0 ;
 
     MoveRobot mv ;
     moveGripperPointingDown(mv, "r1", -0.2, -0.7, 1.6) ;
