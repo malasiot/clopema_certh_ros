@@ -31,6 +31,7 @@ rosbuild_add_library(certh_libs_geometry
 	src/geometry/Triangle2D.cpp
 	src/geometry/TriangleMesh2D.cpp
 	src/geometry/TriangleMeshTopology.cpp
+	src/geometry/Utils.cpp
 )
 
 target_link_libraries(certh_libs_geometry ${Eigen_LIBRARIES})

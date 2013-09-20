@@ -19,7 +19,9 @@ public:
         KPIECE, BKPIECE, LBKPIECE, SBL, pSBL, EST, RRT, RRTConnect, LazyRRT, pRRT, PRM, PRMStar
     } ;
 
-    PlannerBase(const PlanningContextPtr &pc): pctx(pc), alg(LazyRRT), time_out(5.0) {}
+    PlannerBase(const PlanningContextPtr &pc): pctx(pc), alg(RRT), time_out(5.0) {
+
+    }
 
     void setAlgorithm(Algorithm alg_) { alg = alg_ ; }
     void setTimeOut(double time_out_) { time_out = time_out_ ; }
@@ -46,7 +48,7 @@ public:
     }
 
     // find a trajectory that brings the end-effector in one of the specified poses
-    bool solve(GoalRegion &goal, JointTrajectory &traj) ;
+    bool solve(GoalRegionPtr &goal, JointTrajectory &traj) ;
 
 
 

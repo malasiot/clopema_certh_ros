@@ -6,6 +6,8 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_real.hpp>
 
+#include <certh_libs/Geometry.h>
+
 using namespace std ;
 using namespace Eigen ;
 
@@ -62,7 +64,7 @@ void GraspHangingGoalRegion::sample(std::vector<double> &xyz_rpy)
     double pa = boost::uniform_real<double>(planner->yaw_tol_min, planner->yaw_tol_max)(gen) ;
     double roll = boost::uniform_real<double>(planner->roll_tol_min, planner->roll_tol_max)(gen) ;
 
-    r =  Quaterniond(r) * /*AngleAxisd(angle, Eigen::Vector3d::UnitX()) * */ AngleAxisd(-roll, Eigen::Vector3d::UnitY()) ; /** AngleAxisd(pa, Eigen::Vector3d::UnitZ()) */
+    r =  Quaterniond(r) * AngleAxisd(angle, Eigen::Vector3d::UnitX()) *  AngleAxisd(pa, Eigen::Vector3d::UnitZ()) ;
 
     // we allow the holding arm to move within a box with dimensions t x t x t around the current position
 
@@ -124,12 +126,15 @@ void GraspHangingGoalRegion::sample(std::vector<double> &xyz_rpy)
 GraspHangingPlanner::GraspHangingPlanner(KinematicsModel &model, const string &armName): kmodel(model), arm(armName) {
 
     IKSolverPtr solver_r1(new MA1400_R1_IKSolver) ;
-    solver_r1->setKinematicModel(&kmodel);
+     solver_r1->setKinematicModel(&kmodel);
 
-    IKSolverPtr solver_r2(new MA1400_R2_IKSolver) ;
-    solver_r2->setKinematicModel(&kmodel);
+     IKSolverPtr solver_r2(new MA1400_R2_IKSolver) ;
+     solver_r2->setKinematicModel(&kmodel);
 
-    pCtx.reset(new PlanningContextDual("arms", &kmodel, solver_r1, "r1_ee", solver_r2, "r2_ee" ) ) ;
+     pCtx.reset(new PlanningContextDual("arms", &kmodel, solver_r1, "r1_ee", solver_r2, "r2_ee")) ;
+
+
+//    pCtx.reset(new PlanningContextDualDefault(&kmodel)) ;
 
     x_tol = y_tol = z_tol = 0.5 ;
     roll_tol_min = -M_PI/6.0 ;
@@ -140,14 +145,34 @@ GraspHangingPlanner::GraspHangingPlanner(KinematicsModel &model, const string &a
     pitch_tol_max = 0 ;
     offset = 0.05 ;
 
+    cone_length = 0.8 ;
+    cone_aperture = M_PI/12 ;
+
 }
 
+bool GraspHangingPlanner::collisionConstraint(const JointState &js)
+{
+    KinematicsModel *model = pCtx->getModel() ;
 
+    model->setJointState(js) ;
+
+    Affine3d p1 = model->getWorldTransform("r1_ee") ;
+    Affine3d p2 = model->getWorldTransform("r2_ee") ;
+
+
+    if ( arm == "r1" )
+        return !certh_libs::pointInsideCone(p2.translation(), p1.translation(), p1.translation() + Vector3d(0, 0, -cone_length), cone_aperture) ;
+    else
+        return !certh_libs::pointInsideCone(p1.translation(), p2.translation(), p2.translation() + Vector3d(0, 0, -cone_length), cone_aperture) ;
+
+}
 
 bool GraspHangingPlanner::plan(const Vector3d &p, const Vector3d &perp_dir, trajectory_msgs::JointTrajectory &traj)
 {
 
     JointSpacePlanner planner(pCtx) ;
+
+    planner.addStateValidityChecker(boost::bind(&GraspHangingPlanner::collisionConstraint, this, _1));
 
     // get pose of the end effector for the arm tip holding the cloth
 
@@ -156,7 +181,7 @@ bool GraspHangingPlanner::plan(const Vector3d &p, const Vector3d &perp_dir, traj
     Vector3d rp = orig_pose.inverse() * p ;
     Vector3d rdir = orig_pose.rotation().inverse() * perp_dir ;
 
-    GraspHangingGoalRegion rg(this, orig_pose, p, perp_dir) ;
+    GoalRegionPtr rg(new GraspHangingGoalRegion(this, orig_pose, p, perp_dir)) ;
 
     JointTrajectory traj_ ;
 

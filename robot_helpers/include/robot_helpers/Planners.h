@@ -21,9 +21,13 @@ public:
 public:
 
     double x_tol, y_tol, z_tol ; // tolerance of the movement of arm1 around initial position
-    double roll_tol_min, roll_tol_max, yaw_tol_min, yaw_tol_max, pitch_tol_min, pitch_tol_max ; // rotation tolerance of the approaching arm
+    double roll_tol_min, roll_tol_max ; // tolerance of the rotation of arm1 around initial position
+
+    double yaw_tol_min, yaw_tol_max, pitch_tol_min, pitch_tol_max ; // rotation tolerance of the approaching arm
     double offset ; // offset with respect to the target point
 
+    double cone_length ; // length of teh collision cone
+    double cone_aperture ;   // aperture of the collision cone
 
     // if plan succesfull these will contain the position and orientation of the target point
 
@@ -32,6 +36,35 @@ public:
 
 private:
     friend class GraspHangingGoalRegion ;
+
+    bool collisionConstraint(const JointState &js) ;
+
+    boost::shared_ptr<PlanningContext> pCtx ;
+    KinematicsModel &kmodel ;
+    std::string arm ;
+} ;
+
+
+class FlipHandsPlanner {
+
+public:
+    FlipHandsPlanner( KinematicsModel &kmodel, const std::string &armName ) ;
+
+    // One arm (arm1) is holding the cloth from the top and the other arm (arm2) is grasping it from a random point.
+    // Flip hands position without tearing the cloth
+
+    bool plan( trajectory_msgs::JointTrajectory &traj) ;
+
+    double min_dist_perc ;   // minimum length constraint (percentage)
+
+    double x_tol, y_tol, z_tol ; // tolerance of the movement of arm2 around target position
+    double roll_tol_min, roll_tol_max ;
+    double yaw_tol_min, yaw_tol_max, pitch_tol_min, pitch_tol_max ; // rotation tolerance of the arm the will grasp from below
+
+private:
+    friend class FlipHandsGoalRegion ;
+
+    bool tearingConstraint(double length, const JointState &js) ;
 
     boost::shared_ptr<PlanningContext> pCtx ;
     KinematicsModel &kmodel ;
