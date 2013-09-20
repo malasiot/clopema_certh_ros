@@ -127,7 +127,11 @@ int main(int argc, char **argv) {
     pcl::PointCloud<pcl::PointXYZ> pc2;    
     while(!cloth_unfolded){
         rb.setClothType(-1);
-        rb.graspLowestPoint();
+
+        while(!rb.graspLowestPoint()){
+          //  moveHomeArm(rb.getMovingArm()) ;
+        }
+
         for(int i=0; i<rf_num_states; ++i)
             rf_belief[i] = rf_initprob[i];
         int rf_action = 6;
@@ -193,7 +197,7 @@ int main(int argc, char **argv) {
             rf_action = rf_actions[max_vector];
             cout << "Action: " << rf_action << endl;
             //flog << "Action: " << rf_action << endl;
-
+            //rf_action = 4;
             if(rf_action==6){
                 rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);
                 recogn_rotations ++ ;
@@ -342,7 +346,54 @@ int main(int argc, char **argv) {
             if(hf_action==64){
                 rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
                 rot_angle += 10;
-                if(rf_action == 1) sleep(1);
+                if(rf_action == 1) sleep(0.5);
+            }
+            else{
+                //re-estimate
+                sleep(5);
+                depth = cv::Mat::zeros(640, 480, CV_32FC1);
+                rb.grabFromXtion(rgb, depth, pc, r);
+                pc2 = pc;
+                rgb2 = rgb;
+                depth2 = cv::Mat::zeros(r.width, r.height, CV_32FC1);
+                processDepth(depth, depth2, r);
+                hImg = cv::Mat::zeros(530, 260, CV_32FC1);
+                hf->houghDetect(depth2, hImg, hrect);
+                //grasp
+                int x,y;
+                x = r.x + r.width - (hrect.y + hrect.height/2);
+                y = r.y + r.height - (hrect.x + hrect.width/2);
+                cv::Point p(x, y);
+                cv::circle(rgb2, p, 10, cv::Scalar(255, 0, 0), 8);
+                int k=0;
+                while(k<20){
+                    cv::imshow("rgb", rgb2);
+                    cv::waitKey(1);
+                    k++;
+                }
+                bool rotate_cloth = hrect.x + hrect.width/2 > 260/2;
+                bool grasp_ok;
+                bool finish = false;
+                if(rf_action==3)
+                    finish = true;
+                if(rf_action == 4)
+                    grasp_ok = rb.graspPoint(pc2, x, y, finish, rotate_cloth, true);
+                else
+                    grasp_ok = rb.graspPoint(pc2, x, y, finish, rotate_cloth);
+                if(grasp_ok)
+                    break;
+                else{
+                    rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
+                    rot_angle += 10;
+                    if(rf_action == 1) sleep(0.5);
+                    if(rotate_cloth){
+                        for(int i=0; i<hf_num_states; ++i)
+                            hf_belief[i] = hf_initprob[i];
+                    }
+
+                    hf_action = 64;
+                }
+
             }
         }
         if(hf_action==64)
@@ -350,22 +401,7 @@ int main(int argc, char **argv) {
         bool finish = false;
         if(rf_action==3)
             finish = true;
-        int x,y;
-        x = r.x + r.width - (hrect.y + hrect.height/2);
-        y = r.y + r.height - (hrect.x + hrect.width/2);
-        cv::Point p(x, y);
-        cv::circle(rgb2, p, 10, cv::Scalar(255, 0, 0), 8);
-        int k=0;
-        while(k<20){
-            cv::imshow("rgb", rgb2);
-            cv::waitKey(1);
-            k++;
-        }
 
-        if(rf_action == 4)
-            rb.graspPoint(pc2, x, y, finish, hrect.x + hrect.width/2 > 260/2, true);
-        else
-            rb.graspPoint(pc2, x, y, finish, hrect.x + hrect.width/2 > 260/2);
 
         if(finish){
             cloth_unfolded = true;
@@ -470,7 +506,7 @@ int main(int argc, char **argv) {
 //            frgb << log_rgb << endl;
 //            fdepth << depth2 << endl;
 
-            k=0;
+            int k=0;
             while(k<20){
                 cv::imshow("depth", depth2);
                 cv::imshow("hough", hImg);
@@ -522,22 +558,49 @@ int main(int argc, char **argv) {
                 rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
                 rot_angle += 10;
             }
+            else{
+                //re-estimate
+                sleep(3);
+                depth = cv::Mat::zeros(640, 480, CV_32FC1);
+                rb.grabFromXtion(rgb, depth, pc, r);
+                pc2 = pc;
+                rgb2 = rgb;
+                depth2 = cv::Mat::zeros(r.width, r.height, CV_32FC1);
+                processDepth(depth, depth2, r);
+                hImg = cv::Mat::zeros(r.width, r.height, CV_32FC1);
+                hf2->houghDetect(depth2, hImg, hrect);
+                //
+                int x = r.x + r.width - (hrect.y + hrect.height/2);
+                int y = r.y + r.height - (hrect.x + hrect.width/2);
+                cv::Point p2(x, y);
+                cv::circle(rgb2, p2, 10, cv::Scalar(255, 0, 0), 8);
+                k=0;
+                while(k<20){
+                    cv::imshow("rgb", rgb2);
+                    cv::imshow("hough", hImg);
+                    cv::waitKey(1);
+                    k++;
+                }
+                bool rotate_cloth = hrect.x + hrect.width/2 > 260/2;
+                bool grasp_ok = rb.graspPoint(pc2, x, y, true, rotate_cloth);
+                if(grasp_ok)
+                    break;
+                else{
+                    rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
+                    rot_angle += 10;
+                    if(rotate_cloth){
+                        for(int i=0; i<hf_num_states; ++i)
+                            hf2_belief[i] = hf2_initprob[i];
+                    }
+                    hf_action = 64;
+                }
+            }
         }
         if(hf_action == 64)
             continue;
-        x = r.x + r.width - (hrect.y + hrect.height/2);
-        y = r.y + r.height - (hrect.x + hrect.width/2);
-        cv::Point p2(x, y);
-        cv::circle(rgb2, p2, 10, cv::Scalar(255, 0, 0), 8);
-        k=0;
-        while(k<20){
-            cv::imshow("rgb", rgb2);
-            cv::imshow("hough", hImg);
-            cv::waitKey(1);
-            k++;
-        }
 
-        rb.graspPoint(pc2, x, y, true, hrect.x + hrect.width/2 > 260/2);
+
+
 
         cloth_unfolded = true;
     }

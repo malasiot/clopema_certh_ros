@@ -490,10 +490,12 @@ int HF::houghDetect(cv::Mat& dImg, cv::Mat& hImg, cv::Rect& hrect){
 		for(int j=0; j<leafs[i]->graspPList.size(); ++j){
 			int x = int( leafs[i]->graspPList[j].x * (double)rect.width + rect.x );
 			int y = int( leafs[i]->graspPList[j].y * (double)rect.height + rect.y );
-			hImg.at<float>(y, x) += leafs[i]->pfg;
-			meanx += leafs[i]->pfg * x;
-			meany += leafs[i]->pfg * y;
-			votes_weight_sum += leafs[i]->pfg;
+            if(matOut.at<float>(y,x) != 0){
+                hImg.at<float>(y, x) += leafs[i]->pfg;
+                meanx += leafs[i]->pfg * x;
+                meany += leafs[i]->pfg * y;
+                votes_weight_sum += leafs[i]->pfg;
+            }
 		}		
 	}
 	meanx /= votes_weight_sum;
