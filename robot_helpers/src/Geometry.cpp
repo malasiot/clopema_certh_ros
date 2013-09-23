@@ -370,8 +370,14 @@ geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix){
     float roll , pitch, yaw;
 
     roll= atan2f(matrix(2, 1),matrix(2, 2) );
-    pitch= atan2f(-matrix(2,0),sqrt(pow(matrix(2, 2),2)+pow(matrix(2, 1),2)));
-    yaw= atan2f(matrix(1, 0),matrix(0, 0));
+
+    float c2 = sqrt(matrix(0, 0)*matrix(0, 0)+matrix(1, 0)*matrix(1, 0));
+    pitch= atan2f(-matrix(2,0),c2);
+
+    float s1 = sin(roll);
+    float c1 = cos(roll);
+    yaw= atan2f((s1*matrix(0,2) - c1*matrix(0,1)), (c1*matrix(1,1) - s1*matrix(1,2)));
+
     return tf::createQuaternionMsgFromRollPitchYaw(roll, pitch, yaw );
 }
 

@@ -522,9 +522,9 @@ int HF::houghDetect(cv::Mat& dImg, cv::Mat& hImg, cv::Rect& hrect){
 	cv::Point minp, maxp;	
 	cv::minMaxLoc(gImg, &min, &max, &minp, &maxp, cv::Mat());
 	gImg /= max;
-	hrect.x = maxp.x-10; hrect.y = maxp.y-10; hrect.width = 20; hrect.height = 20;
-	//cv::TermCriteria criteria(1, 20, 0.001);
-	//cv::meanShift(hImg, hrect, criteria);
+    hrect.x = maxp.x-10; hrect.y = maxp.y-10; hrect.width = 20; hrect.height = 20;
+    cv::TermCriteria criteria(1, 10, 0.001);
+    cv::meanShift(dImg, hrect, criteria);
 		
 	hImg = gImg;
 

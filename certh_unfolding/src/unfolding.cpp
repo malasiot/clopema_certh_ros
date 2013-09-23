@@ -204,6 +204,8 @@ int main(int argc, char **argv) {
             }
         }
         rb.setClothType(rf_action);
+
+
         //------------------1st Grasping Point-----------------//
 
         //flog << endl << "Grasp point 1:" << endl << endl;
@@ -278,6 +280,7 @@ int main(int argc, char **argv) {
         cv::Rect hrect;               
         double rot_angle = 0;        
         int hf_action = 64;
+        bool first_error = true;
         while((hf_action == 64) && (rot_angle<360) ){
             cv::Mat depth, rgb;
             depth = cv::Mat::zeros(640, 480, CV_32FC1);
@@ -383,10 +386,16 @@ int main(int argc, char **argv) {
                 if(grasp_ok)
                     break;
                 else{
-                    rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
-                    rot_angle += 10;
+                    if(!first_error){
+                        rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
+                        rot_angle += 10;
+                    }
+                    else
+                        first_error = false;
+
                     if(rf_action == 1) sleep(0.5);
                     if(rotate_cloth){
+                        rot_angle = 0;
                         for(int i=0; i<hf_num_states; ++i)
                             hf_belief[i] = hf_initprob[i];
                     }
@@ -488,6 +497,7 @@ int main(int argc, char **argv) {
 
         rot_angle = 0;
         hf_action = 64;
+        first_error = true;
         while((hf_action == 64) && (rot_angle<360) ){
             cv::Mat depth, rgb;
             pcl::PointCloud<pcl::PointXYZ> pc;
@@ -586,9 +596,15 @@ int main(int argc, char **argv) {
                 if(grasp_ok)
                     break;
                 else{
-                    rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
-                    rot_angle += 10;
+                    if(!first_error){
+                        rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
+                        rot_angle += 10;
+                    }
+                    else
+                        first_error = false;
+
                     if(rotate_cloth){
+                        rot_angle = 0;
                         for(int i=0; i<hf_num_states; ++i)
                             hf2_belief[i] = hf2_initprob[i];
                     }
@@ -626,7 +642,7 @@ int main(int argc, char **argv) {
         }
 
        // system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./killXtion3.sh");
-        sleep(10) ;
+        //sleep(10) ;
     return 0;
 
 

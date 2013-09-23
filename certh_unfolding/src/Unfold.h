@@ -79,7 +79,9 @@ public:
     inline Eigen::Matrix3d horizontal(){
         Eigen::Matrix3d horizontal;
         if(holdingArm == "r1"){
-            horizontal << 0, 0, -1, -1, 0, 0, 0, 1, 0 ;
+            horizontal << 0, 0, -1,
+                    -1, 0, 0,
+                    0, 1, 0 ;
         }
         else{
             horizontal << 0, 0, 1, 1, 0, 0, 0, 1, 0 ;
@@ -125,21 +127,40 @@ public:
         return pose;
     }
 
+
+
     inline geometry_msgs::Pose movingArmPose(){
         geometry_msgs::Pose pose;
-        pose.orientation = rotationMatrix3ToQuaternion(vertical());
+        pose.orientation = rotationMatrix3ToQuaternion(horizontal());
         if (holdingArm == "r1"){
-            pose.position.x = 0.7 ;
-            pose.position.y = -1;
-            pose.position.z = 1.3;
+            pose.position.x = 0.7;
+            pose.position.y = -0.8;
+            pose.position.z = 1.1;
         }
         else{
             pose.position.x = -0.7 ;
-            pose.position.y = -0.5;
-            pose.position.z = 1.5;
+            pose.position.y = -0.8;
+            pose.position.z = 1.1;
         }
         return pose;
     }
+
+
+//    inline geometry_msgs::Pose movingArmPose(){
+//        geometry_msgs::Pose pose;
+//        pose.orientation = rotationMatrix3ToQuaternion(vertical());
+//        if (holdingArm == "r1"){
+//            pose.position.x = 0.7 ;
+//            pose.position.y = -1;
+//            pose.position.z = 1.3;
+//        }
+//        else{
+//            pose.position.x = -0.7 ;
+//            pose.position.y = -0.5;
+//            pose.position.z = 1.5;
+//        }
+//        return pose;
+//    }
 
     void switchArms();
     void setHoldingArm(const string &armName);

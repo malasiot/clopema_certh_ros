@@ -66,6 +66,8 @@ rosbuild_add_executable(cloth_simulator src/cloth_simulator.cpp)
 
 rosbuild_add_executable(grippers_testing src/grippers_testing.cpp)
 
+rosbuild_add_executable(testing src/testing.cpp)
+
 include_directories(${Eigen_INCLUDE_DIRS})
 
 #Intermediate - JOINT

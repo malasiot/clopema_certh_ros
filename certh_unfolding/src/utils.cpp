@@ -973,7 +973,8 @@ bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y
     tf::Transform ts;
    // setGripperStates(movingArm , true);
     int ox , oy;
-    findMeanShiftPoint(pc, x, y, ox, oy, 0.05) ;
+   // findMeanShiftPoint(pc, x, y, ox, oy, 0.05) ;
+    ox = x; oy = y;
     n = computeNormal(pc, ox, oy) ;
     x= ox;
     y= oy;
@@ -1469,11 +1470,36 @@ bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::Po
     ros::Time ts(0);
     image_geometry::PinholeCameraModel cm;
 
+
     if(!grabber->grab(rgb, depth, pc, ts, cm)){
         cout<<"cant grab!  " << endl;
         return false;
     }
+    pcl::PointCloud<pcl::PointXYZ> pc_avg;
+    pcl::copyPointCloud<pcl::PointXYZ>(pc, pc_avg);
+    for(int x = 0; x<640; ++x){
+        for(int y = 0; y<480; ++y){
+            pc_avg.at(x, y).x /= 10;
+            pc_avg.at(x, y).y /= 10;
+            pc_avg.at(x, y).z /= 10;
+        }
+    }
 
+    for(int i=0; i<9; ++i){
+        if(!grabber->grab(rgb, depth, pc, ts, cm)){
+            cout<<"cant grab!  " << endl;
+            return false;
+        }
+        for(int x = 0; x<640; ++x){
+            for(int y = 0; y<480; ++y){
+                pc_avg.at(x, y).x += pc.at(x,y).x/10;
+                pc_avg.at(x, y).y += pc.at(x,y).y/10;
+                pc_avg.at(x, y).z += pc.at(x,y).z/10;
+            }
+        }
+    }
+
+    pcl::copyPointCloud<pcl::PointXYZ>(pc_avg, pc);
 
 
     if(holdingArm == "r1")
