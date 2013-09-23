@@ -19,7 +19,7 @@ public:
         KPIECE, BKPIECE, LBKPIECE, SBL, pSBL, EST, RRT, RRTConnect, LazyRRT, pRRT, PRM, PRMStar
     } ;
 
-    PlannerBase(const PlanningContextPtr &pc): pctx(pc), alg(RRT), time_out(5.0) {
+    PlannerBase(const PlanningContextPtr &pc): pctx(pc), alg(LazyRRT), time_out(5.0) {
 
     }
 

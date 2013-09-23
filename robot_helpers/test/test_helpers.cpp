@@ -72,20 +72,16 @@ void planSingle(KinematicsModel &kmodel)
     MA1400_R1_IKSolver solver_r1 ;
     solver_r1.setKinematicModel(&kmodel);
 
-    Quaterniond q = lookAt(Eigen::Vector3d(1, 0, 0), M_PI/6) ;
+    Quaterniond q = lookAt(Eigen::Vector3d(0, 0, -1),0) ;
 
     double roll, pitch, yaw ;
     robot_helpers::rpyFromQuat(q, roll, pitch, yaw) ;
 
-    PlanningContextPtr pctx(new PlanningContextSingle("r1_arm", &kmodel, &solver_r1, "r1_ee" ) );
 
-    BoxShapedRegion *region = new BoxShapedRegion(Vector3d(0.6, -0.7, 1.4), Vector3d(0.01, 0.01, 0.01), Vector3d() ) ;
 
-    region->roll_min = -M_PI/4 ;
-    region->roll_max = M_PI/4 ;
+     PlanningContextPtr pctx(new PlanningContextSingle("r1_arm", &kmodel, &solver_r1, "r1_ee" ) );
 
-    region->pitch_min = -M_PI/4 ;
-    region->pitch_max = M_PI/4 ;
+    SimplePoseGoal *region = new SimplePoseGoal(Affine3d(Translation3d(Vector3d(0.0, -1.0, 1.5)) * q)  ) ;
 
     JointSpacePlanner planner(pctx) ;
 
@@ -107,7 +103,7 @@ void planSingle(KinematicsModel &kmodel)
 
         MoveRobot mv ;
 
-        mv.execTrajectory(msg) ;
+        mv.execTrajectory(filtered) ;
     }
 
 }
@@ -298,14 +294,20 @@ int main(int argc, char *argv[])
     ros::Publisher pub2 = nh_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
 
-
-
+    MoveRobot mv ;
+    moveHome(mv) ;
+ //   moveGripper(mv, "r1", Vector3d(0.0, -1.0, 1.5),  lookAt(Eigen::Vector3d(0, 0, -1),0)) ;
 
 
         KinematicsModel kmodel ;
         kmodel.init() ;
 
-          MoveRobot mv ;
+        planSingle(kmodel) ;
+
+        ros::spin() ;
+
+        return 0 ;
+
     moveHome(mv) ;
     moveGripperPointingDown(mv, "r1", 0, -0.7, 1.6) ;
 
