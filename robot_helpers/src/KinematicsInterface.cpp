@@ -282,7 +282,8 @@ void IKSolver::collisionCheck(const geometry_msgs::Pose &ik_pose,
                     int &error_code)
 {
 
-
+    error_code = kinematics::SUCCESS;
+/*
     // save current state
     JointState cs = model_->getJointState() ;
 
@@ -295,6 +296,7 @@ void IKSolver::collisionCheck(const geometry_msgs::Pose &ik_pose,
     else error_code = kinematics::SUCCESS;
 
     model_->setJointState(cs) ;
+    */
 }
 
 void IKSolver::initialPoseCheck(const geometry_msgs::Pose &ik_pose,

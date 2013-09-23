@@ -100,7 +100,7 @@ void BoxShapedRegion::computePositionBounds()
     double zmax = fabs(sz.z()) ;
 
     lower_bounds.push_back(xmin) ;
-    lower_bounds.push_back(xmin) ;
+    lower_bounds.push_back(ymin) ;
     lower_bounds.push_back(zmin) ;
 
     upper_bounds.push_back(xmax) ;

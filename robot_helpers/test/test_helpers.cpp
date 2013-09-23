@@ -72,26 +72,24 @@ void planSingle(KinematicsModel &kmodel)
     MA1400_R1_IKSolver solver_r1 ;
     solver_r1.setKinematicModel(&kmodel);
 
-    Quaterniond q = lookAt(Eigen::Vector3d(1, 0, 0), M_PI/6) ;
+    Quaterniond q = lookAt(Eigen::Vector3d(0, 0, -1),0) ;
 
     double roll, pitch, yaw ;
     robot_helpers::rpyFromQuat(q, roll, pitch, yaw) ;
 
-    PlanningContextPtr pctx(new PlanningContextSingle("r1_arm", &kmodel, &solver_r1, "r1_ee" ) );
 
-    BoxShapedRegion region(Vector3d(0.6, -0.7, 1.4), Vector3d(0.01, 0.01, 0.01), Vector3d() ) ;
 
-    region.roll_min = -M_PI/4 ;
-    region.roll_max = M_PI/4 ;
+     PlanningContextPtr pctx(new PlanningContextSingle("r1_arm", &kmodel, &solver_r1, "r1_ee" ) );
 
-    region.pitch_min = -M_PI/4 ;
-    region.pitch_max = M_PI/4 ;
+    SimplePoseGoal *region = new SimplePoseGoal(Affine3d(Translation3d(Vector3d(0.0, -1.0, 1.5)) * q)  ) ;
 
     JointSpacePlanner planner(pctx) ;
 
     JointTrajectory traj ;
 
-    bool rplan = planner.solve(region, traj) ;
+    GoalRegionPtr rg(region) ;
+
+    bool rplan = planner.solve(rg, traj) ;
 
     if ( rplan )
     {
@@ -105,7 +103,7 @@ void planSingle(KinematicsModel &kmodel)
 
         MoveRobot mv ;
 
-        mv.execTrajectory(msg) ;
+        mv.execTrajectory(filtered) ;
     }
 
 }
@@ -175,10 +173,10 @@ void planDual(KinematicsModel &kmodel)
 
     boost::shared_ptr<PlanningContext> pctx(new PlanningContextDualDefault( &kmodel ) );
 
-    BoxShapedRegion region1(Vector3d(0.0, -0.8, 1.4), Vector3d(0.1, 0.1, 0.1), Vector3d() ) ;
-    BoxShapedRegion region2(Vector3d(0.1, -0.5, 1.4), Vector3d(0.1, 0.1, 0.1), Vector3d() ) ;
+    GoalRegionPtr region1(new BoxShapedRegion(Vector3d(0.0, -0.8, 1.4), Vector3d(0.1, 0.1, 0.1), Vector3d() )) ;
+    GoalRegionPtr region2(new BoxShapedRegion(Vector3d(0.1, -0.5, 1.4), Vector3d(0.1, 0.1, 0.1), Vector3d() )) ;
 
-    GoalDualCompositeRegion rg(&region1, &region2) ;
+    GoalRegionPtr rg(new GoalDualCompositeRegion(region1, region2)) ;
 
     JointSpacePlanner planner(pctx) ;
 
@@ -288,35 +286,33 @@ int main(int argc, char *argv[])
 
     ros::NodeHandle nh_ ;
 
-    KinematicsModel kmodel ;
-
-    arm_navigation_msgs::AttachedCollisionObject att_object ;
-
-    kmodel.init() ;
 
     ros::AsyncSpinner spinner(4) ;
     spinner.start() ;
 
-    planSingle(kmodel) ;
-
     ros::Publisher pub = nh_.advertise<visualization_msgs::MarkerArray>( "visualization_marker_array", 0 );
     ros::Publisher pub2 = nh_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
-    visualization_msgs::MarkerArray markers_ ;
-    kmodel.getRobotMarkers(markers_) ;
-
- /*   while ( 1)
-    {
-        pub.publish(markers_) ;
-
-        ros::spinOnce() ;
-    }
-*/
-    return 0 ;
 
     MoveRobot mv ;
-    moveGripperPointingDown(mv, "r1", -0.2, -0.7, 1.6) ;
+    moveHome(mv) ;
+ //   moveGripper(mv, "r1", Vector3d(0.0, -1.0, 1.5),  lookAt(Eigen::Vector3d(0, 0, -1),0)) ;
 
+
+        KinematicsModel kmodel ;
+        kmodel.init() ;
+
+        planSingle(kmodel) ;
+
+        ros::spin() ;
+
+        return 0 ;
+
+    moveHome(mv) ;
+    moveGripperPointingDown(mv, "r1", 0, -0.7, 1.6) ;
+
+    moveGripper(mv, "r2", Vector3d(0, -0.75, 0.8), lookAt(Vector3d(-1, 0, 0))) ;
+/*
     Vector3d pos(-0.1, -0.8, 1.0 ) ;
     Vector3d dir(1, 0, 0) ;
 
@@ -330,16 +326,27 @@ int main(int argc, char *argv[])
 
         publishTargetMarker(pub2, gsp.fp, gsp.fdir);
     }
+*/
+
+    FlipHandsPlanner fh(kmodel, "r1") ;
+
+    trajectory_msgs::JointTrajectory traj ;
+
+    if ( fh.plan(traj) )
+    {
+        cout << "ok here" << endl ;
+        mv.execTrajectory(traj) ;
+
+    }
+
 
 
 
 
 //    planDual(kmodel) ;
 
-    return 0 ;
+
     ros::spin() ;
-
-
 
 
     Eigen::Affine3d pose = kmodel.getWorldTransform("r1_ee") ;

@@ -308,7 +308,7 @@ class OmplJointGoalSampler {
 
     OmplJointGoalSampler(const ompl::base::SpaceInformationPtr &space_information,
                    const ompl::base::ProblemDefinitionPtr &pd,
-                   GoalRegion *goal,
+                   GoalRegionPtr goal,
                    const PlanningContextPtr &manip) ;
 
     bool sampleGoal(const ompl::base::GoalLazySamples *gls, ompl::base::State *state) ;
@@ -316,7 +316,7 @@ class OmplJointGoalSampler {
 
     int sampleNum ;
     const PlanningContextPtr manip ;
-    GoalRegion *goal ;
+    GoalRegionPtr goal ;
     vector<string> joints ;
     JointState cs ;
 
@@ -330,9 +330,9 @@ class OmplJointGoalSampler {
 
 OmplJointGoalSampler::OmplJointGoalSampler(const ompl::base::SpaceInformationPtr &space_information_,
                            const ompl::base::ProblemDefinitionPtr &pd_,
-                           GoalRegion *goal_,
+                           GoalRegionPtr goal_,
                            const PlanningContextPtr &manip_): manip(manip_), goal(goal_),
-    si(space_information_), sampleNum(0), max_sample_count_(100), pd(pd_) {
+    si(space_information_), sampleNum(0), max_sample_count_(10000), pd(pd_) {
 
     joints = manip->getJoints() ;
     manip->getJointState(cs);
@@ -387,7 +387,7 @@ bool OmplJointGoalSampler::sampleGoal(const ompl::base::GoalLazySamples *gls, om
 
    }
 
-    return sampleNum < max_sample_count_  ;//&& !pd->hasSolution();
+    return sampleNum < max_sample_count_ ; /*&& !pd->hasSolution()*/
 
 
 }
@@ -440,10 +440,12 @@ bool OmplValidityChecker::isValid(const ompl::base::State *state) const
 ////////////////////////////////////////////////////////////////////////////////
 
 
-bool JointSpacePlanner::solve(GoalRegion &goal_,
+bool JointSpacePlanner::solve(GoalRegionPtr &goal_,
                                  JointTrajectory &traj)
 {
     using namespace ompl::base ;
+
+  //  ompl::msg::noOutputHandler() ;
 
     StateSpacePtr ompl_state_space = createOmplStateSpace(pctx.get()) ;
 
@@ -467,9 +469,9 @@ bool JointSpacePlanner::solve(GoalRegion &goal_,
     // set the goal region
     ompl::base::GoalPtr goal;
 
-    OmplJointGoalSampler goal_sampler(si, ompl_planner_setup->getProblemDefinition(), &goal_,  pctx) ;
+    boost::shared_ptr<OmplJointGoalSampler> goal_sampler(new OmplJointGoalSampler(si, ompl_planner_setup->getProblemDefinition(), goal_,  pctx)) ;
 
-    goal.reset(new ompl::base::GoalLazySamples(si, boost::bind(&OmplJointGoalSampler::sampleGoal, &goal_sampler,_1,_2)));
+    goal.reset(new ompl::base::GoalLazySamples(si, boost::bind(&OmplJointGoalSampler::sampleGoal, goal_sampler,_1,_2)));
 
     ompl_planner_setup->setStartState(start_state);
     ompl_planner_setup->setGoal(goal) ;

@@ -3,19 +3,22 @@
 
 #include <vector>
 #include <Eigen/Geometry>
+#include <boost/shared_ptr.hpp>
 
 namespace robot_helpers {
 
 class GoalRegion {
 
 public:
-    GoalRegion() {};
+    GoalRegion() {}
 
     // sampling function. for dual arm manipulators the sample for each end-effector are concatenated
 
     virtual void sample(std::vector<double> &xyz_rpy) = 0;
 
 };
+
+typedef boost::shared_ptr<GoalRegion> GoalRegionPtr ;
 
 
 // This class defines a tolerance zone around a desired pose
@@ -116,7 +119,7 @@ private:
 class GoalDualCompositeRegion: public GoalRegion {
 public:
 
-    GoalDualCompositeRegion(GoalRegion *left_arm_region, GoalRegion *right_arm_region): lreg(left_arm_region), rreg(right_arm_region) {}
+    GoalDualCompositeRegion(const GoalRegionPtr &left_arm_region, const GoalRegionPtr &right_arm_region): lreg(left_arm_region), rreg(right_arm_region) {}
 
     virtual void sample(std::vector<double> &xyz_rpy)
     {
@@ -126,7 +129,7 @@ public:
 
 
 private:
-    GoalRegion *lreg, *rreg ;
+    GoalRegionPtr lreg, rreg ;
 
 };
 

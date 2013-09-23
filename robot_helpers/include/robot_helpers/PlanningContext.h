@@ -46,7 +46,10 @@ public:
 
     bool solve(const std::vector<Eigen::Affine3d> &pose, const JointState &cur, JointState &solution) const {
         bool res = solver_->solveIK(ee_, pose[0].translation(), Eigen::Quaterniond(pose[0].rotation()), cur, solution) ;
-        return res ;
+        if ( !res ) return false ;
+
+        return kmodel_->isStateValid(solution) ;
+
     }
 
 protected:
@@ -80,7 +83,8 @@ public:
 
         if ( res1 && res2 ) {
             solution = JointState::merged(solution1, solution2) ;
-            return true ;
+
+            return kmodel_->isStateValid(solution) ;
         }
         else return false ;
 
