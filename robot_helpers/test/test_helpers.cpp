@@ -69,21 +69,30 @@ void createMarkerFromMesh( shapes::Mesh &mesh, const Eigen::Affine3d &trans, vis
 void planSingle(KinematicsModel &kmodel)
 {
 
-    MA1400_R1_IKSolver solver_r1 ;
-    solver_r1.setKinematicModel(&kmodel);
+    MA1400_R2_IKSolver solver_r2 ;
+    solver_r2.setKinematicModel(&kmodel);
 
-    Quaterniond q = lookAt(Eigen::Vector3d(0, 0, -1),0) ;
+    Quaterniond q = lookAt(Eigen::Vector3d(1, 0, 0),-M_PI/2) ;
 
     double roll, pitch, yaw ;
     robot_helpers::rpyFromQuat(q, roll, pitch, yaw) ;
 
 
 
-     PlanningContextPtr pctx(new PlanningContextSingle("r1_arm", &kmodel, &solver_r1, "r1_ee" ) );
+     PlanningContextPtr pctx(new PlanningContextSingle("r2_arm", &kmodel, &solver_r2, "r2_ee" ) );
 
-    SimplePoseGoal *region = new SimplePoseGoal(Affine3d(Translation3d(Vector3d(0.0, -1.0, 1.5)) * q)  ) ;
+    SimplePoseGoal *region = new SimplePoseGoal(Affine3d(Translation3d(Vector3d(-0.3, -0.9, 0.85)) * q)  ) ;
+
+    region->roll_delta_minus = M_PI  ;
+    region->roll_delta_plus = M_PI ;
+    region->pitch_delta_minus = M_PI/8  ;
+    region->pitch_delta_plus = M_PI/18  ;
+    region->yaw_delta_minus = M_PI/128 ;
+    region->yaw_delta_plus = M_PI/128  ;
 
     JointSpacePlanner planner(pctx) ;
+
+    planner.setTimeOut(20);
 
     JointTrajectory traj ;
 
@@ -98,12 +107,15 @@ void planSingle(KinematicsModel &kmodel)
 
         trajectory_msgs::JointTrajectory msg = traj.toMsg(10), filtered ;
 
-        filterTrajectory("r1_arm", msg, filtered) ;
+        filterTrajectory("r2_arm", msg, filtered) ;
 
 
         MoveRobot mv ;
 
         mv.execTrajectory(filtered) ;
+
+        JointState rs = JointState::fromRobotState() ;
+        kmodel.setJointState(rs);
     }
 
 }
@@ -242,36 +254,33 @@ void publishTargetMarker(ros::Publisher &vis_pub, const Eigen::Vector3d &p, cons
 
 }
 
-bool attachConeToCollisionModel(arm_navigation_msgs::AttachedCollisionObject &att_object, const std::string &armName, double length, double radius)
+bool attachBoxToCollisionModel(arm_navigation_msgs::AttachedCollisionObject &att_object, const std::string &armName)
 {
-    att_object.link_name = armName + "_gripper";
+    att_object.link_name = armName + "_xtion";
 
-    att_object.object.id = "attached_cone";
+    att_object.object.id = "attached_box";
     att_object.object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
 
-    att_object.object.header.frame_id = "base_link";
+    att_object.object.header.frame_id = armName + "_xtion";
     att_object.object.header.stamp = ros::Time::now();
 
-    Eigen::Vector3d p = robot_helpers::getPose(armName).inverse().translation() ;
-
-
-    arm_navigation_msgs::Shape object;
-
-    shapes::Mesh mesh ;
-    makeSolidCone(mesh, radius, length, 10, 20) ;
-
-    if(!planning_environment::constructObjectMsg(&mesh, object)) {
-      ROS_WARN_STREAM("Object construction fails");
-    }
-
     geometry_msgs::Pose pose;
-    pose.position.x = p.x();
-    pose.position.y = p.y();
-    pose.position.z = p.z() ;
+    pose.position.x = 0.0;
+    pose.position.y = -0.05;
+    pose.position.z = 0.0;
     pose.orientation.x = 0;
     pose.orientation.y = 0;
     pose.orientation.z = 0;
     pose.orientation.w = 1;
+
+    arm_navigation_msgs::Shape object;
+
+    object.type = arm_navigation_msgs::Shape::BOX;
+
+    object.dimensions.resize(3);
+    object.dimensions[0] = 0.2;
+    object.dimensions[1] = 0.2;
+    object.dimensions[2] = 0.2;
 
     att_object.object.shapes.push_back(object);
     att_object.object.poses.push_back(pose);
@@ -279,6 +288,38 @@ bool attachConeToCollisionModel(arm_navigation_msgs::AttachedCollisionObject &at
     return true ;
 }
 
+bool attachTableToCollisionModel(arm_navigation_msgs::CollisionObject &col_object)
+{
+    col_object.id = "table";
+    col_object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
+
+    col_object.header.frame_id = "base_link";
+    col_object.header.stamp = ros::Time::now();
+
+    geometry_msgs::Pose pose;
+
+    pose.position.x = 0;
+    pose.position.y = -1;
+    pose.position.z = 0.72;
+    pose.orientation.x = 0;
+    pose.orientation.y = 0;
+    pose.orientation.z = 0;
+    pose.orientation.w = 1;
+
+    arm_navigation_msgs::Shape object;
+
+    object.type = arm_navigation_msgs::Shape::BOX;
+
+    object.dimensions.resize(3);
+    object.dimensions[0] = 1.2;
+    object.dimensions[1] = 1.5;
+    object.dimensions[2] = 0.02;
+
+    col_object.shapes.push_back(object);
+    col_object.poses.push_back(pose);
+
+    return true ;
+}
 int main(int argc, char *argv[])
 {
 
@@ -293,6 +334,17 @@ int main(int argc, char *argv[])
     ros::Publisher pub = nh_.advertise<visualization_msgs::MarkerArray>( "visualization_marker_array", 0 );
     ros::Publisher pub2 = nh_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
+    arm_navigation_msgs::AttachedCollisionObject att_object ;
+    arm_navigation_msgs::CollisionObject col_object ;
+
+
+    attachTableToCollisionModel(col_object) ;
+    attachBoxToCollisionModel(att_object, "r2") ;
+
+
+    arm_navigation_msgs::PlanningScene scene ;
+    scene.attached_collision_objects.push_back(att_object) ;
+    scene.collision_objects.push_back(col_object) ;
 
     MoveRobot mv ;
     moveHome(mv) ;
@@ -300,11 +352,18 @@ int main(int argc, char *argv[])
 
 
         KinematicsModel kmodel ;
-        kmodel.init() ;
+        kmodel.init(scene) ;
 
         planSingle(kmodel) ;
 
-        ros::spin() ;
+        visualization_msgs::MarkerArray markers_ ;
+        kmodel.getRobotMarkers(markers_);
+
+
+
+            pub.publish(markers_) ;
+            ros::spin() ;
+
 
         return 0 ;
 
