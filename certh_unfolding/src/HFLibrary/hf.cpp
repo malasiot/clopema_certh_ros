@@ -748,7 +748,7 @@ void HF::loadNodeFromFile(treeNode *n, ifstream& f){
 
 void HF::loadForestFromFolder(string folder_name){
 		
-    ifstream conf( (folder_name+"/"+"forest.txt").c_str());
+    ifstream conf( (folder_name+"/forest.txt").c_str());
 	conf >> ntrees;
 	conf.close();
 	
@@ -756,7 +756,7 @@ void HF::loadForestFromFolder(string folder_name){
 	
 	for(int t=0; t<ntrees; ++t){
 		stringstream s;
-		s << folder_name.c_str() << "\\tree" << t << ".dat";		
+        s << folder_name.c_str() << "/tree" << t << ".dat";
 		ifstream f(s.str().c_str(), ios::in | ios::binary);
 
 		if(f.is_open()){														
