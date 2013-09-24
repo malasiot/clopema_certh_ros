@@ -42,6 +42,10 @@ public:
 
     cv::Mat refineSegmentation(const cv::Mat &clr, const cv::Mat &fgMask, std::vector<cv::Point> &hull) ;
 
+    cv::Mat colorSegmentation(const cv::Mat &clr, const cv::Mat &tableMask) ;
+
+   static void trainColorClassifier(double fx, double fy, double cx, double cy, const std::string &dataFolder, const std::string &fileName) ;
+
 
 private:
 

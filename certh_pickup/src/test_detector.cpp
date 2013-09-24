@@ -18,16 +18,23 @@ int main(int argc, char **argv)
     clr = imread("/home/malasiot/images/clothes/calibration/on_table/cap_3/cap_rgb_000009.png") ;
     depth = imread("/home/malasiot/images/clothes/calibration/on_table/cap_3/cap_depth_000009.png", -1) ;
 
+
     ObjectOnPlaneDetector objDet(depth, 525, 525, 640/2.0, 480/2) ;
+
+    ObjectOnPlaneDetector::trainColorClassifier(525, 525, 640/2.0, 480/2, "/home/malasiot/images/clothes/calibration/on_table/cap_3/", "/tmp/oo.bin");
 
     Eigen::Vector3d n ;
     double d ;
 
     if ( !objDet.findPlane(n, d) ) return 0 ;
 
-    vector<cv::Point> hull ;
+    vector<cv::Point> hull, hull2;
     cv::Mat dmap ;
-    cv::Mat mask = objDet.findObjectMask(n, d, 0.01, dmap, hull) ;
+    cv::Mat mask = objDet.findObjectMask(n, d, -0.01, dmap, hull) ;
+
+    cv::Mat mask2 = objDet.colorSegmentation(clr, mask) ;
+
+    cv::imwrite("/tmp/mask.png", mask2) ;
 
     RidgeDetector rdg ;
     vector<RidgeDetector::GraspCandidate> gsp ;
