@@ -74,7 +74,7 @@ private:
 	void loadForestFromFolder(string folder_name);
 	void loadNodeFromFile(treeNode *n, ifstream& f);
 	void deleteTreeNode(treeNode *n);
-	void GetBoundingBox(cv::Mat& mat, cv::Rect& rect);
+	void GetBoundingBox(cv::Mat& mat, cv::Rect& rect, vector<cv::Point>& contour);	
 	
 	treeNode* getLeaf(cv::Mat& img, treeNode* n);
 

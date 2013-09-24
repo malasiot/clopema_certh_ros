@@ -19,15 +19,13 @@ int main(int argc, char **argv) {
     armName = "r2";
 
     geometry_msgs::Pose pose ;
+    Eigen::Matrix3d orient ;
+    orient << 0, -1, 0,-1, 0, 0, 0, 0, -1; //vertical
+    //orient << ; //horizontal face down
     cout << "Gimme coords \n";
     cin >> pose.position.x >> pose.position.y >> pose.position.z ;
 
-    pose.position.x = 0 ;
-    pose.position.y = -1 ;
-    pose.position.z = 1 ;
-
-    //pose.orientation = eigenQuaterniondToTfQuaternion(verticalDownFaceFront);
-
+    pose.orientation = rotationMatrix3ToQuaternion(orient ) ;
     cout << "Quaternion = ( " << pose.orientation.x << ", "<< pose.orientation.y << ", "<< pose.orientation.z << ", "<< pose.orientation.w << " )" << endl ;
 
     moveArm(pose, armName) ;

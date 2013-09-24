@@ -39,6 +39,8 @@ bool rotateGripper(MoveRobot &cmove, const std::string &armName, double theta) ;
 
 bool addConeToCollisionModel(const std::string &armName, double length, double radius) ;
 bool addSphereToCollisionModel(const std::string &armName, double radius);
+bool addBoxToCollisionModel(float x, float y , float z, float sx, float sy , float sz) ;
+
 //bool addBoxToCollisionModel(const std::string &armName, double x, double y, double z );
 
 bool resetCollisionModel() ;

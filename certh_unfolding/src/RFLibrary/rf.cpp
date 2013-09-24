@@ -339,7 +339,7 @@ using namespace std;
 
 
 ////////////////----------------------------Detection functions-----------------------------------//////////////////////
-
+/*
 void RF::GetBoundingBox(cv::Mat& mat, cv::Rect& rect){	
 	cv::Mat rowSum;
 	cv::Mat colSum;
@@ -376,7 +376,26 @@ void RF::GetBoundingBox(cv::Mat& mat, cv::Rect& rect){
 	rect.width = w2-w1;
 	rect.height = h2-h1;
 }
+*/
+void RF::GetBoundingBox(cv::Mat& mat, cv::Rect& rect){
 
+	cv::Mat temp_mat;
+	mat.convertTo(temp_mat, CV_8UC1);
+	vector<vector<cv::Point> > contours;
+	vector<cv::Vec4i> hierarchy;
+	findContours( temp_mat, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
+	vector<cv::Rect> boundRect( contours.size() );
+	int maxArea = 0;
+	vector<vector<cv::Point> > contours_poly( contours.size() );
+	for( int i = 0; i < contours.size(); i++ ){
+		approxPolyDP( cv::Mat(contours[i]), contours_poly[i], 3, true );
+		boundRect[i] = cv::boundingRect( cv::Mat(contours_poly[i]) );
+		if(boundRect[i].width * boundRect[i].height > maxArea){
+			maxArea = boundRect[i].width * boundRect[i].height;
+			rect = boundRect[i];
+		}
+    }
+}
 
 RF::treeNode* RF::getLeaf(cv::Mat& img, treeNode* n){
 

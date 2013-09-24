@@ -16,6 +16,7 @@
 #include <arm_navigation_msgs/FilterJointTrajectoryWithConstraints.h>
 
 
+
 using namespace std ;
 
 namespace robot_helpers {
@@ -453,6 +454,62 @@ bool addSphereToCollisionModel(const std::string &armName, double radius)
 
 
     return true ;
+}
+
+
+bool addBoxToCollisionModel(float x, float y , float z, float sx, float sy , float sz){
+
+
+    ros::NodeHandle nh("~") ;
+
+    ros::service::waitForService("/environment_server/set_planning_scene_diff");
+    ros::ServiceClient get_planning_scene_client =
+    nh.serviceClient<arm_navigation_msgs::GetPlanningScene>("/environment_server/set_planning_scene_diff");
+
+    arm_navigation_msgs::GetPlanningScene::Request planning_scene_req;
+    arm_navigation_msgs::GetPlanningScene::Response planning_scene_res;
+
+    arm_navigation_msgs::AttachedCollisionObject att_object;
+
+    att_object.link_name = "r750_base";
+    att_object.touch_links.push_back("certh_floor");
+
+
+    att_object.object.id = "/box";
+    att_object.object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
+
+    att_object.object.header.frame_id = "base_link";
+    att_object.object.header.stamp = ros::Time::now();
+
+    arm_navigation_msgs::Shape object;
+
+    object.type = arm_navigation_msgs::Shape::BOX;
+    object.dimensions.resize(3);
+    object.dimensions[0] = sx;
+    object.dimensions[1] = sy;
+    object.dimensions[2] = sz;
+
+    geometry_msgs::Pose pose;
+
+    pose.position.x = x;
+    pose.position.y = y;
+    pose.position.z = z;
+
+    pose.orientation.x = 0;
+    pose.orientation.y = 0;
+    pose.orientation.z = 0;
+    pose.orientation.w = 1;
+
+    att_object.object.shapes.push_back(object);
+    att_object.object.poses.push_back(pose);
+
+    planning_scene_req.planning_scene_diff.attached_collision_objects.push_back(att_object);
+
+    if(!get_planning_scene_client.call(planning_scene_req, planning_scene_res)) return false;
+
+
+    return true ;
+
 }
 
 

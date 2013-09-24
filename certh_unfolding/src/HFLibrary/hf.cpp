@@ -49,7 +49,7 @@ void HF::splitSet(TrainSet& SetA, TrainSet& SetB, Test& test, TrainSet& trainSet
 	SetB.resize(trainSet.size());
 	samplesA = 0;
 	samplesB = 0;
-    for(int i=0; i<trainSet.size(); ++i){
+	for(int i=0; i<trainSet.size(); ++i){
 		SetA[i].resize(0);
 		SetB[i].resize(0);
 		for(int j=0; j<trainSet[i].size(); ++j){					
@@ -73,7 +73,7 @@ double HF::measureSplit(TrainSet& SetA, TrainSet& SetB, int measure_mode){
 	if( measure_mode == 0 ){				
 
 		double sizeA = 0;
-        for(int i=0; i<SetA.size(); ++i)
+		for(int i=0; i<SetA.size(); ++i)
 			sizeA += (double) SetA[i].size();
 
 		double sizeB = 0;
@@ -424,7 +424,7 @@ HF::treeNode* HF::getLeaf(cv::Mat& img, treeNode* n){
 	}		
 }
 
-
+/*
 void HF::GetBoundingBox(cv::Mat& mat, cv::Rect& rect){	
 	cv::Mat rowSum;
 	cv::Mat colSum;
@@ -460,13 +460,35 @@ void HF::GetBoundingBox(cv::Mat& mat, cv::Rect& rect){
 	rect.y = h1;
 	rect.width = w2-w1;
 	rect.height = h2-h1;
+}*/
+
+void HF::GetBoundingBox(cv::Mat& mat, cv::Rect& rect, vector<cv::Point>& contour){
+
+	cv::Mat temp_mat;
+	mat.convertTo(temp_mat, CV_8UC1);
+	vector<vector<cv::Point> > contours;
+	vector<cv::Vec4i> hierarchy;
+	findContours( temp_mat, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, cv::Point(0, 0) );
+	vector<cv::Rect> boundRect( contours.size() );
+	int maxArea = 0;
+	vector<vector<cv::Point> > contours_poly( contours.size() );
+	for( int i = 0; i < contours.size(); i++ ){
+		approxPolyDP( cv::Mat(contours[i]), contours_poly[i], 3, true );
+		boundRect[i] = cv::boundingRect( cv::Mat(contours_poly[i]) );
+		if(boundRect[i].width * boundRect[i].height > maxArea){
+			maxArea = boundRect[i].width * boundRect[i].height;
+			rect = boundRect[i];
+			contour = contours[i];
+		}
+    }
 }
 
 
 int HF::houghDetect(cv::Mat& dImg, cv::Mat& hImg, cv::Rect& hrect){									
 
 	cv::Rect rect;
-	GetBoundingBox(dImg, rect);
+	vector<cv::Point> contour;
+	GetBoundingBox(dImg, rect, contour);	
 	cv::Mat matIn = dImg(rect);		
 	cv::Mat matOut;
 	cv::bilateralFilter(matIn, matOut, -1, 13, 8, 4);
@@ -490,12 +512,24 @@ int HF::houghDetect(cv::Mat& dImg, cv::Mat& hImg, cv::Rect& hrect){
 		for(int j=0; j<leafs[i]->graspPList.size(); ++j){
 			int x = int( leafs[i]->graspPList[j].x * (double)rect.width + rect.x );
 			int y = int( leafs[i]->graspPList[j].y * (double)rect.height + rect.y );
-            if(matOut.at<float>(y,x) != 0){
-                hImg.at<float>(y, x) += leafs[i]->pfg;
-                meanx += leafs[i]->pfg * x;
-                meany += leafs[i]->pfg * y;
-                votes_weight_sum += leafs[i]->pfg;
-            }
+			if(dImg.at<float>(y, x) == 0){
+				float minDist = 100000000;
+				int new_x, new_y;
+				for(int k=0; k<contour.size(); ++k){
+					float dist = sqrt(static_cast<float>( (contour[k].x - x)*(contour[k].x - x) + (contour[k].y - y)*(contour[k].y - y) ) );
+					if(dist < minDist){
+						minDist = dist;
+						new_x = contour[k].x;
+						new_y = contour[k].y;
+					}
+				}
+				x = new_x;
+				y = new_y;
+			}
+			hImg.at<float>(y, x) += leafs[i]->pfg;
+			meanx += leafs[i]->pfg * x;
+			meany += leafs[i]->pfg * y;
+			votes_weight_sum += leafs[i]->pfg;
 		}		
 	}
 	meanx /= votes_weight_sum;
@@ -522,17 +556,17 @@ int HF::houghDetect(cv::Mat& dImg, cv::Mat& hImg, cv::Rect& hrect){
 	cv::Point minp, maxp;	
 	cv::minMaxLoc(gImg, &min, &max, &minp, &maxp, cv::Mat());
 	gImg /= max;
-    hrect.x = maxp.x-10; hrect.y = maxp.y-10; hrect.width = 20; hrect.height = 20;
-    cv::TermCriteria criteria(1, 10, 0.001);
-    cv::meanShift(dImg, hrect, criteria);
+	hrect.x = maxp.x-10; hrect.y = maxp.y-10; hrect.width = 20; hrect.height = 20;
+	cv::TermCriteria criteria(1, 2, 0.001);
+	cv::meanShift(dImg, hrect, criteria);
 		
 	hImg = gImg;
 
 	float nx = float(maxp.x-rect.x) / float(rect.width);
 	float ny = float(maxp.y-rect.y) / float(rect.height);
-    if(nx<0) nx = 0; if(nx>1) nx = 1;
-    if(ny<0) ny = 0; if(ny>1) ny = 1;
-    float xbar = floor(nx/0.125f);
+	if(nx<0) nx = 0; if(nx>1) nx = 1;
+	if(ny<0) ny = 0; if(ny>1) ny = 1;
+	float xbar = floor(nx/0.125f);
 	float ybar = floor(ny/0.125f);
 	if(xbar > 7) xbar = 7;
 	if(ybar > 7) ybar = 7;
@@ -722,7 +756,7 @@ void HF::loadForestFromFolder(string folder_name){
 	
 	for(int t=0; t<ntrees; ++t){
 		stringstream s;
-        s << folder_name.c_str() << "/tree" << t << ".dat";
+		s << folder_name.c_str() << "\\tree" << t << ".dat";		
 		ifstream f(s.str().c_str(), ios::in | ios::binary);
 
 		if(f.is_open()){														
@@ -736,4 +770,5 @@ void HF::loadForestFromFolder(string folder_name){
 
 }
 /////////////////////////////////////////////
+
 
