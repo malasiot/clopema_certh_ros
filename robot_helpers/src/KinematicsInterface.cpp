@@ -174,7 +174,26 @@ void KinematicsModel::getRobotMarkers(visualization_msgs::MarkerArray &markers)
     rgba.a = 0.5 ;
 
 
-    cm_->getRobotMarkersGivenState(*state_, markers, rgba, "robot_markers", ros::Duration(0.1), &link_names);
+    cm_->getRobotMarkersGivenState(*state_, markers, rgba, "robot_markers", ros::Duration(-1), &link_names);
+
+    rgba.r = 1 ;
+    rgba.g = 0 ;
+    rgba.b = 1 ;
+    rgba.a = 0.5 ;
+
+    cm_->getAttachedCollisionObjectMarkers(*state_, markers,
+                                           "attached_object_markers",
+                                           rgba, ros::Duration(-1),
+                                           false ) ;
+
+    rgba.r = 0 ;
+    rgba.g = 0 ;
+    rgba.b = 1 ;
+    rgba.a = 0.5 ;
+
+    cm_->getStaticCollisionObjectMarkers(markers,
+                                           "static_object_markers",
+                                           rgba, ros::Duration(-1) ) ;
 }
 
 
