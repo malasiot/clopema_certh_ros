@@ -15,24 +15,38 @@ int main(int argc, char **argv) {
     float tableHeight = 0.685 ; //0.695
 
     addBoxToCollisionModel(0, -1.1, tableHeight/2.0, 0.8, 0.8, tableHeight);
+
     geometry_msgs::Pose pose ;
 
-    pose.position.x =  0;
+
+    pose.position.x =  -0.2;
     pose.position.y =  -1.1 ;
-    pose.position.z = 0.732;
+    pose.position.z = 0.8;
+
+
+
+
     float a = 0.25 ;
     Eigen::Matrix3d orientation;
 
-    // front - face down
+// front - face down
 //    orientation << 0, 1, 0,
-//             sin(a), 0,  -cos(a),
-//            -cos(a), 0, -sin(a) ;
+//                 sin(a), 0,  -cos(a),
+//                -cos(a), 0, -sin(a) ;
+
 //        // left face down
-        orientation << sin(a), 0, -cos(a),
-                      0, -1, 0,
-                -cos(a), 0, -sin(a) ;
-   // orientation << 0, -1, 0,-1, 0, 0, 0, 0, -1;
+    orientation << sin(a), 0, -cos(a),
+                    0, -1, 0,
+                    -cos(a), 0, -sin(a) ;
+
     pose.orientation = rotationMatrix3ToQuaternion(orientation) ;
+
+    moveArm(pose, "r2");
+
+
+    pose.position.x =  0;
+    pose.position.y =  -1.1 ;
+    pose.position.z = 0.735;
 
     //Create plan
     clopema_arm_navigation::ClopemaMotionPlan mp;
@@ -52,9 +66,9 @@ int main(int argc, char **argv) {
     desired_pose.header.stamp = ros::Time::now();
     desired_pose.link_name =  "r2_ee";
     desired_pose.pose = pose;
-    desired_pose.absolute_position_tolerance.x = 0.002;
-    desired_pose.absolute_position_tolerance.y = 0.002;
-    desired_pose.absolute_position_tolerance.z = 0.002;
+    desired_pose.absolute_position_tolerance.x = 0.0002;
+    desired_pose.absolute_position_tolerance.y = 0.0002;
+    desired_pose.absolute_position_tolerance.z = 0.0002;
     desired_pose.absolute_roll_tolerance = 0.1;
     desired_pose.absolute_pitch_tolerance = 0.1;
     desired_pose.absolute_yaw_tolerance = 0.1;

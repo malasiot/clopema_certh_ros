@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
             rf_action = rf_actions[max_vector];
             cout << "Action: " << rf_action << endl;
             //flog << "Action: " << rf_action << endl;
-            //rf_action = 4;
+            //rf_action = 0;
             if(rf_action==6){
                 rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);
                 recogn_rotations ++ ;
