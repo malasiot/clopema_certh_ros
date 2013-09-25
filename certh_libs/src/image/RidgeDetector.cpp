@@ -1,4 +1,4 @@
-#include "RidgeDetector.h"
+#include <certh_libs/RidgeDetector.h>
 
 #include <cv.h>
 #include <highgui.h>
@@ -14,9 +14,11 @@
 #include <fstream>
 
 using namespace std ;
-using namespace certh_libs ;
+
 using namespace cv ;
 using namespace Eigen ;
+
+namespace certh_libs {
 
 static void nonMaximaSuppressionDirectional(const Mat& src, Mat& dst, const Mat &alpha_, const Mat &sigma_)
 {
@@ -365,4 +367,6 @@ void RidgeDetector::draw(cv::Mat &clr, const std::vector<GraspCandidate> &cand)
 
 
     }
+}
+
 }

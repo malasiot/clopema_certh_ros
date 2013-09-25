@@ -1,4 +1,5 @@
 #include <certh_libs/cvHelpers.h>
+#include "cvblob/cvBlob/cvblob.h"
 #include "psimpl.h"
 
 #if defined(_WIN32) && !defined(__CYGWIN32__)
@@ -532,4 +533,56 @@ bool sampleBilinearDepth(const cv::Mat &dim, float x, float y, float &z)
         return true ;
     }
 }
+
+
+cv::Mat findLargestBlob(const cv::Mat &mask_ref, vector<cv::Point> &hull)
+{
+    int w = mask_ref.cols, h = mask_ref.rows ;
+    cv::Mat planeMask = cv::Mat::zeros(h, w, CV_8UC1) ;
+
+    // find largest blob in image
+
+    cv::Mat_<uchar> mask_erode ;
+
+    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5));
+    cv::erode(mask_ref, mask_erode, element) ;
+
+    cvb::CvBlobs blobs ;
+    IplImage mask_erode_ipl = mask_erode ;
+
+    IplImage *labelImg = cvCreateImage(mask_erode.size(),IPL_DEPTH_LABEL,1);
+    cvb::cvLabel(&mask_erode_ipl, labelImg, blobs) ;
+
+    if ( blobs.size() == 0 ) return planeMask ;
+
+    cv::Mat labels(labelImg) ;
+
+    cvb::CvLabel gb = cvb::cvGreaterBlob(blobs) ;
+    cvb::cvFilterByLabel(blobs, gb) ;
+
+    cvb::CvBlobs::const_iterator it = blobs.begin() ;
+
+    cvb::CvBlob *blob = (*it).second ;
+
+    for(int y=blob->miny ; y<=blob->maxy ; y++)
+        for(int x=blob->minx ; x<=blob->maxx ; x++)
+        {
+            if ( labels.at<cvb::CvLabel>(y, x) == gb )
+                planeMask.at<uchar>(y, x) = 255 ;
+        }
+
+    cvb::CvContourPolygon *poly = cvb::cvConvertChainCodesToPolygon(&blob->contour) ;
+
+    vector<cv::Point> contour ;
+
+    for(int i=0 ; i<poly->size() ; i++ )
+        contour.push_back(cv::Point((*poly)[i].x, (*poly)[i].y)) ;
+
+    /// Find the convex hull object for each contour
+
+    cv::convexHull( cv::Mat(contour), hull, false );
+
+    cvReleaseImage(&labelImg);
+}
+
 }

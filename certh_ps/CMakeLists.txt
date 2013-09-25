@@ -18,7 +18,12 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+#uncomment if you have defined messages
+rosbuild_genmsg()
+#uncomment if you have defined services
+rosbuild_gensrv()
+
 rosbuild_add_boost_directories()
 
-rosbuild_add_executable(picking_up src/picking_up.cpp src/PickUp.cpp)
-rosbuild_add_executable(test_detector	src/test_detector.cpp)
+rosbuild_add_executable(psnode src/ps_node.cpp)
+

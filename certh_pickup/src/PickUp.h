@@ -1,16 +1,15 @@
 #ifndef PICKUP_H__
 #define PICKUP_H__
 
-#include "robot_helpers/Utils.h"
-#include "robot_helpers/Geometry.h"
-#include "camera_helpers/OpenNICapture.h"
-#include "clopema_motoros/SetGripperState.h"
-#include "ObjectOnPlaneDetector.h"
-#include "tf/transform_listener.h"
-#include "tf_conversions/tf_eigen.h"
+#include <robot_helpers/Utils.h>
+#include <robot_helpers/Geometry.h>
+#include <camera_helpers/OpenNICapture.h>
+#include <clopema_motoros/SetGripperState.h>
+#include <certh_libs/ObjectOnPlaneDetector.h>
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 #include <highgui.h>
-#include "RidgeDetector.h"
-
+#include <certh_libs/RidgeDetector.h>
 
 using namespace std ;
 using namespace robot_helpers ;
@@ -46,8 +45,8 @@ private:
     geometry_msgs::Quaternion findAngle(float theta, Eigen::Matrix4d calib);
 
     bool findClothHull( cv::Mat  &depth, cv::Mat &dmap, cv::Mat &mask, vector<cv::Point> &hull, image_geometry::PinholeCameraModel &cm  ) ;
-    bool findGraspCandidates( vector<RidgeDetector::GraspCandidate> &gsp, cv::Mat  &depth, image_geometry::PinholeCameraModel &cm ) ;
-    bool graspTargetCandidate( vector<RidgeDetector::GraspCandidate> &gsp, cv::Mat &depth, image_geometry::PinholeCameraModel &cm ) ;
+    bool findGraspCandidates( vector<certh_libs::RidgeDetector::GraspCandidate> &gsp, cv::Mat  &depth, image_geometry::PinholeCameraModel &cm ) ;
+    bool graspTargetCandidate( vector<certh_libs::RidgeDetector::GraspCandidate> &gsp, cv::Mat &depth, image_geometry::PinholeCameraModel &cm ) ;
     bool isGraspingSucceeded(float threshold) ;
 
     int openG2() ;

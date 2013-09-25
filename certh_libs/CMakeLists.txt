@@ -32,16 +32,26 @@ rosbuild_add_library(certh_libs_geometry
 	src/geometry/TriangleMesh2D.cpp
 	src/geometry/TriangleMeshTopology.cpp
 	src/geometry/Utils.cpp
+
+	src/geometry/ObjectOnPlaneDetector.cpp
 )
 
 target_link_libraries(certh_libs_geometry ${Eigen_LIBRARIES})
+rosbuild_link_boost(certh_libs_geometry system)
+
+add_subdirectory(src/image/cvblob)
 
 rosbuild_add_library(certh_libs_imageproc
 	src/image/cvHelpers.cpp
+	src/image/RidgeDetector.cpp
 )
+
+target_link_libraries(certh_libs_imageproc cvblob)
 
 rosbuild_add_library(certh_libs_misc 
 	src/misc/FileSystemHelpers.cpp
 )
+rosbuild_link_boost(certh_libs_geometry system filesystem regex)
+
 
 

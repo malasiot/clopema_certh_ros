@@ -1,5 +1,7 @@
 #include "PickUp.h"
-#include "clopema_motoros/WriteIO.h"
+#include <clopema_motoros/WriteIO.h>
+
+using namespace certh_libs ;
 
 PickUp::PickUp(string arm){
 
@@ -294,7 +296,6 @@ bool PickUp::graspTargetCandidate( vector<RidgeDetector::GraspCandidate> &gsp, c
         // depth to PC
         unsigned short zval = depth.at<ushort>(gsp[i].y, gsp[i].x) ;
 
-         ;
         cv::Point3d val = cm.projectPixelTo3dRay(cv::Point2d(gsp[i].x, gsp[i].y));
 
         val.x *= zval/1000.0 ;
