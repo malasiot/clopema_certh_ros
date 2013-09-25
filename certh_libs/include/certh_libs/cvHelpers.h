@@ -25,6 +25,10 @@ void edgeLinking(const cv::Mat_<uchar> &edges, std::vector< std::vector<cv::Poin
 bool sampleNearestNonZeroDepth(const cv::Mat &dim, int x, int y, ushort &z) ;
 bool sampleBilinearDepth(const cv::Mat &dim, float x, float y, float &z) ;
 
+// find largest connect component in binary image
+
+cv::Mat findLargestBlob(const cv::Mat &src, std::vector<cv::Point> &hull) ;
+
 }
 
 #endif

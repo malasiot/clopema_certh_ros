@@ -3,6 +3,8 @@
 
 #include <cv.h>
 
+namespace certh_libs {
+
 class RidgeDetector {
 public:
 
@@ -26,7 +28,6 @@ public:
         double alpha ;   // angle
         double strength ;
     };
-
 
     RidgeDetector() {}
     RidgeDetector(const Parameters &params_): params(params_) {}
@@ -67,17 +68,6 @@ private:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+} // namespace certh_libs
 
 #endif

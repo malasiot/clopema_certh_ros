@@ -20,22 +20,5 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_boost_directories()
 
-add_subdirectory(src/cvblob)
-
-rosbuild_add_library(pickup
-	src/RidgeDetector.cpp
-	src/RidgeDetector.h
-	src/ObjectOnPlaneDetector.cpp
-	src/ObjectOnPlaneDetector.h
-)
-
-target_link_libraries(pickup ${OpenCV_LIBS} cvblob)
-
-rosbuild_add_executable(pickup_node	src/pickup.cpp)
-target_link_libraries(pickup_node pickup)
-
-rosbuild_add_executable(picking_up src/picking_up.cpp src/utils.cpp)
-target_link_libraries(picking_up pickup)
-
+rosbuild_add_executable(picking_up src/picking_up.cpp src/PickUp.cpp)
 rosbuild_add_executable(test_detector	src/test_detector.cpp)
-target_link_libraries(test_detector pickup)

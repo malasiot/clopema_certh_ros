@@ -1,4 +1,5 @@
-#include "ObjectOnPlaneDetector.h"
+#include <certh_libs/ObjectOnPlaneDetector.h>
+#include <certh_libs/cvHelpers.h>
 
 #include <pcl/io/pcd_io.h>
 
@@ -13,7 +14,8 @@
 
 #include <highgui.h>
 #include <ml.h>
-#include "cvblob/cvBlob/cvblob.h"
+
+
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -21,6 +23,8 @@
 
 using namespace std ;
 using namespace Eigen ;
+
+namespace certh_libs {
 
 ObjectOnPlaneDetector::ObjectOnPlaneDetector(const CloudType &cloud): in_cloud_(cloud)
 {
@@ -158,7 +162,7 @@ cv::Mat ObjectOnPlaneDetector::findObjectMask(const Eigen::Vector3d &n, double d
     }
 
 
-    cv::Mat fgMask = getForegroundMask(mask, hull, 100) ;
+    cv::Mat fgMask = findLargestBlob(mask, hull) ;
 
     dmap_.copyTo(dmap, fgMask) ;
 
@@ -166,67 +170,6 @@ cv::Mat ObjectOnPlaneDetector::findObjectMask(const Eigen::Vector3d &n, double d
 
 }
 
-
-cv::Mat ObjectOnPlaneDetector::getForegroundMask(const cv::Mat &mask_ref, vector<cv::Point> &hull, int minArea)
-{
-    int w = mask_ref.cols, h = mask_ref.rows ;
-    cv::Mat planeMask = cv::Mat::zeros(h, w, CV_8UC1) ;
-
-    // find largest blob in image
-
-    cv::Mat_<uchar> mask_erode ;
-
-    cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5));
-    cv::erode(mask_ref, mask_erode, element) ;
-
-    cvb::CvBlobs blobs ;
-    IplImage mask_erode_ipl = mask_erode ;
-
-    IplImage *labelImg = cvCreateImage(mask_erode.size(),IPL_DEPTH_LABEL,1);
-    cvb::cvLabel(&mask_erode_ipl, labelImg, blobs) ;
-
-    cvb::cvFilterByArea(blobs, minArea, w*h);
-
-    if ( blobs.size() == 0 ) return planeMask ;
-
-    cv::Mat labels(labelImg) ;
-
-    cvb::CvLabel gb = cvb::cvGreaterBlob(blobs) ;
-    cvb::cvFilterByLabel(blobs, gb) ;
-
-    cvb::CvBlobs::const_iterator it = blobs.begin() ;
-
-    cvb::CvBlob *blob = (*it).second ;
-
-    for(int y=blob->miny ; y<=blob->maxy ; y++)
-        for(int x=blob->minx ; x<=blob->maxx ; x++)
-        {
-            if ( labels.at<cvb::CvLabel>(y, x) == gb )
-                planeMask.at<uchar>(y, x) = 255 ;
-        }
-
- //   cv::imwrite("/tmp/plane.png", planeMask) ;
-
-    // get the polygon of the blob and create a mask with the internal points
-
-    cvb::CvContourPolygon *poly = cvb::cvConvertChainCodesToPolygon(&blob->contour) ;
-
-    vector<cv::Point> contour ;
-
-    for(int i=0 ; i<poly->size() ; i++ )
-        contour.push_back(cv::Point((*poly)[i].x, (*poly)[i].y)) ;
-
-    /// Find the convex hull object for each contour
-
-    cv::convexHull( cv::Mat(contour), hull, false );
-
-    cvReleaseImage(&labelImg);
-
-  //  cv::imwrite("/tmp/planeMask.png", planeMask) ;
-
-    return planeMask ;
-
-}
 
 cv::Mat ObjectOnPlaneDetector::refineSegmentation(const cv::Mat &clr, const cv::Mat &fgMask, vector<cv::Point> &hull)
 {
@@ -247,7 +190,7 @@ cv::Mat ObjectOnPlaneDetector::refineSegmentation(const cv::Mat &clr, const cv::
     // Get the pixels marked as likely foreground
     cv::compare(result,cv::GC_PR_FGD, result, cv::CMP_EQ);
 
-    cv::Mat fgMask_ = getForegroundMask(result, hull, 100) ;
+    cv::Mat fgMask_ = findLargestBlob(result, hull) ;
 
     // Generate output image
     cv::Mat foreground(clr.size(),CV_8UC3,cv::Scalar(255,255,255));
@@ -258,128 +201,5 @@ cv::Mat ObjectOnPlaneDetector::refineSegmentation(const cv::Mat &clr, const cv::
     return fgMask_ ;
 }
 
-void ObjectOnPlaneDetector::trainColorClassifier(double fx, double fy, double cx, double cy, const string &dataFolder, const string &fileName)
-{
 
-
-    std::vector<cv::Vec3d> clrs ;
-
-    using namespace boost::filesystem ;
-
-    directory_iterator it(dataFolder), end ;
-
-    while ( it != end)
-    {
-        string img_path = (*it).path().filename().string() ;
-        string rgbPath, depthPath ;
-
-        if ( boost::algorithm::contains(img_path, "_rgb_") )
-        {
-            rgbPath = img_path ;
-            depthPath = boost::algorithm::replace_all_copy(img_path, "_rgb_", "_depth_") ;
-        }
-        else
-        {
-            depthPath = img_path ;
-            rgbPath = boost::algorithm::replace_all_copy(img_path, "_depth_", "_rgb_") ;
-
-        }
-
-        cv::Mat rgb = cv::imread(dataFolder + '/' + rgbPath) ;
-        cv::Mat depth = cv::imread(dataFolder + '/' + depthPath, -1) ;
-
-        ObjectOnPlaneDetector det(depth, fx, fy, cx, cy) ;
-
-        Vector3d n ;
-        double d ;
-
-        if ( det.findPlane(n, d) )
-        {
-            cv::Mat dmap ;
-            vector<cv::Point> hull ;
-
-            cv::Mat mask = det.findObjectMask(n, d, 0.01, dmap, hull) ;
-
-            // convert to Lab colorspace
-
-            cv::Mat im_lab ;
-            cv::cvtColor(rgb, im_lab,  CV_BGR2Lab);
-
-            int w = rgb.cols, h = rgb.rows ;
-
-            const int sampleStep = 8 ;
-
-            for(int i=0 ; i<h ; i+=sampleStep)
-                for(int j=0 ; j<w ; j+=sampleStep )
-                {
-
-                    cv::Vec3b val = im_lab.at<cv::Vec3b>(i, j) ;
-
-                    if (  mask.at<uchar>(i, j) == 0 ) continue ;
-
-#if _COLOR_2_
-                    cv::Vec2d s(val[1]-128.0, val[2]-128.0) ;
-#else
-                    cv::Vec3d s(val[0]-128, val[1]-128.0, val[2]-128.0) ;
-#endif
-                    clrs.push_back(s) ;
-                }
-
-
-        }
-
-
-
-        ++it ;
-
-    }
-
-    cv::Mat samples = cv::Mat(clrs).reshape(1) ;
-
-    cv::EM model ;
-
-    model.train(samples) ;
-
-    const cv::Mat& means = model.get<cv::Mat>("means");
-    const vector<cv::Mat>& covs  = model.get<vector<cv::Mat> >("covs");
-
-
-/*
-
-    cv::EM ps ;
-
-    ps.train()
-*/
-}
-
-cv::Mat ObjectOnPlaneDetector::colorSegmentation(const cv::Mat &clr, const cv::Mat &tableMask)
-{
-    int w = clr.cols, h = clr.rows ;
-
-    cv::Mat result(h, w, CV_8UC1) ;
-
-    for(int i=0 ; i<h ; i++)
-        for(int j=0 ; j<w ; j++)
-            result.at<uchar>(i, j) = tableMask.at<uchar>(i, j) ? cv::GC_PR_FGD : cv::GC_BGD ;
-
-    cv::Rect rectangle ;
-
-    cv::Mat bgModel,fgModel; // the models (internally used)
-
-    cv::grabCut(clr, result, rectangle, bgModel, fgModel, 10, cv::GC_INIT_WITH_MASK);
-
-    // Get the pixels marked as likely foreground
-    cv::compare(result,cv::GC_PR_FGD, result, cv::CMP_EQ);
-
-    vector<cv::Point> hull ;
-
-    cv::Mat fgMask_ = getForegroundMask(result, hull, 100) ;
-
-    // Generate output image
-    cv::Mat foreground(clr.size(),CV_8UC3,cv::Scalar(255,255,255));
-    clr.copyTo(foreground, fgMask_); // bg pixels not copied
-
-//    cv::imwrite("/tmp/seg.png", result) ;
-
-    return fgMask_ ;
 }
