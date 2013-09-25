@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <ros/single_subscriber_publisher.h>
 #include <certh_ps/PhotometricStereo.h>
+#include <iostream>
 
 bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::PhotometricStereo::Response &res) {
    return true;
