@@ -34,19 +34,23 @@ struct colors{
 };
 
 ret_all call_main(Mat,Mat);
-int choose_a_corner(a_corners ,vector<vector<int> > ,int ,vector<vector<int> >& ,vector<vector<Point> >&,vector<vector<bool> >& ,int& );
+int choose_a_corner(a_corners, depths ,vector<vector<int> > ,int ,vector<vector<int> >& ,vector<vector<Point> >&,vector<vector<bool> >& ,vector<vector <bool> > & , vector<vector<float> >& ,int& );
 
-bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& grasp_candidate, vector<vector<int> >& store, vector<vector<Point> >& location, vector<vector<bool> >& current_corner,int cx ){
+
+bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& grasp_candidate, vector<vector<int> >& store, vector<vector<Point> >& location, vector<vector<bool> >& current_corner,  vector<vector <bool> > & side, vector<vector<float> >& depthD, int cx ){
 	bool ret;
 	int i_stop=-1,k_stop=-1;
-	ret_all r=call_main( bgrImage, depthMap );
 
+	ret_all r=call_main( bgrImage, depthMap );
+	
+		
 		//i_stop shows the image where more than 6 votes for a point are gathered
 		//if there is no such a point yet, i_stop==-1
 		
-        i_stop=choose_a_corner(r.a_corn,r.junctions, th ,store,location,current_corner,k_stop);
+		i_stop=choose_a_corner(r.a_corn,r.d, r.junctions,th,store,location,current_corner, side, depthD,k_stop);
+		
 		cout<<"!";
-		if (i_stop!=-1 && location.at(i_stop).at(k_stop).x<cx && current_corner.at(i_stop).at(k_stop)==true){
+		if (i_stop!=-1 && location.at(i_stop).at(k_stop).x<cx && current_corner.at(i_stop).at(k_stop)==true && depthD.at(i_stop).at(k_stop)>3000){
 			
 			ret=true;
 			grasp_candidate.at(0)=i_stop;
@@ -57,8 +61,7 @@ bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& gr
 		}
 		else{
 			ret=false;
-			/*i_stop=-1;
-			k_stop=-1;*/
+			
 		}
 		
 		return ret;

@@ -12,8 +12,6 @@
 using namespace cv;
 using namespace std;
 
-typedef uint16_t char16_t;
-
 struct new_points{
 	vector<int> pntx;
 	vector<int> pnty;
@@ -46,6 +44,18 @@ struct a_corners{
 	vector<int> str_l_c;
 	vector<int> distant_c;
 };
+
+struct depths{
+	vector <float> difd_c;
+	vector <float> difd_s;
+	vector <float> difd_d;
+	vector<bool> side_c;
+	vector<bool> side_s;
+	vector<bool> side_d;
+
+};
+
+
 struct ret_all{
     vector<vector<int> > junctions;
     vector<vector<int> > detailed_edges;
@@ -54,7 +64,10 @@ struct ret_all{
     vector<vector<int> > edges_t;
     vector<vector<int> > table;
 	a_corners a_corn;
+	depths d;
 };
+typedef uint16_t char16_t;
+
 
 colors show_colors(int );
 void thinningGuoHall(Mat& );
@@ -68,7 +81,7 @@ int calc_closest_edge_side(vector<int>,vector<int>);
 void histo( Mat);
 int find_layer(vector<int>,vector<vector<int> > ,Mat,int, int,int,vector<int>,vector<vector<int> >);
 void find_top_layer(Mat,Mat);
-a_corners a_corner_check(vector<vector<int> > ,vector<vector<int> >,vector<vector<int> > ,Mat,Mat,vector<vector<int> >);
+a_corners a_corner_check(vector<vector<int> > ,vector<vector<int> >,vector<vector<int> >& ,Mat,Mat,vector<vector<int> >,depths&);
 
 void negative(Mat& im){
 	for (int i=0;i<im.rows;i++){
@@ -90,7 +103,7 @@ ret_all canny_image(int maxx,int minx,int maxy,int miny,Mat imagec,Mat imaged)
 {	//briskw edges=h depth eikona meta to canny,roi_dep2=depth image se 8bit,roi_dep se 16,
 	//roi_im h rgb
 	///
-    int orio=900;
+    int orio=950;
 	int ci=0,cj=0;
 int minel,maxel;
 //Mat imagec, imaged, gray;
@@ -126,7 +139,7 @@ Mat roi_dep2;
 			cj++;
 			
 			
-			gray.at<uchar>(i,j)=0;
+			//gray.at<uchar>(i,j)=0;
 			
 			roi_im1.at<uchar>(ci,cj)=gray.at<uchar>(i,j);
 			
@@ -142,7 +155,7 @@ Mat roi_dep2;
 			else
 			{   //an h timh einai panw apo ena orio (apo gyrw gyrw perioxes)
 				//dwse ths mia mikroterh timh pou exeis apofasisei
-                if (roi_dep1.at<char16_t>(ci,cj)>1400){
+                if (roi_dep1.at<char16_t>(ci,cj)>1450){
 					//roi_dep.at<char16_t>(ci,cj)=500;
 					roi_dep1.at<char16_t>(ci,cj)=0;//otidhpote panw apo 2000 einai thorybos
 					roi_im1.at<uchar>(ci,cj)=0;
@@ -171,7 +184,12 @@ Mat roi_dep2;
 			
 		}
 	}
-	
+	/*imshow("im1",roi_im);
+	waitKey();*/
+	Mat imc_depdif;
+	roi_im.copyTo(imc_depdif);
+	cvtColor(imc_depdif,imc_depdif,CV_GRAY2BGR);
+
 	//mayro perigramma 10 pixel gyrw gyrw
 	//gia na mh xtypaei
 	for (int i=0;i<11;i++){
@@ -220,6 +238,8 @@ Mat roi_dep2;
 	}
 
 	//imwrite("se16bit.png",roi_dep);
+	
+	
 
 	Mat displayim;
 	cvtColor(roi_im,displayim,CV_GRAY2BGR);
@@ -433,8 +453,8 @@ Mat roi_dep2;
 	
 	Mat iml1;
 	edges.copyTo(iml1);
-
-	a_corners r_a_c=a_corner_check(r_e_j.junctions,r_e_j.edges_t, r_e_j.edges_of_junct, iml1,roi_dep2,r_e_j.table);
+	depths d;
+	a_corners r_a_c=a_corner_check(r_e_j.junctions,r_e_j.edges_t, r_e_j.edges_of_junct, iml1,roi_dep2,r_e_j.table,d);
 
 	
 
@@ -460,6 +480,10 @@ Mat roi_dep2;
 	//imshow("disconnected junctions",disc_junctions);
 	//waitKey(0);
 
+
+	
+
+	////////////////////////////
 	ret_all r;
 	r.a_corn=r_a_c;
 	r.detailed_edges=r_e_j.detailed_edges;
@@ -468,8 +492,8 @@ Mat roi_dep2;
 	r.edges_t=r_e_j.edges_t;
 	r.junctions=r_e_j.junctions;
 	r.table=r_e_j.table;
+	r.d=d;
 	
-
 	return r;
 
 }

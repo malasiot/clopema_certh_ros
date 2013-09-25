@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
    // robot_helpers::setRobotSpeed(1) ;
 
     pick.graspClothFromTable();
-
+    pick.grabber->disconnect();
     resetCollisionModel() ;
     setServoPowerOff();
 

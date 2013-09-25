@@ -5,7 +5,7 @@
 
 using namespace cv;
 using namespace std;
-typedef uint16_t char16_t;
+
 //
 //struct a_corners{
 //	vector<int> certain_c;
@@ -36,7 +36,7 @@ struct true_pix{
     vector<vector<int> > detailed_edges;
     vector<vector<int> > edges_t;
 };
-
+typedef uint16_t char16_t;
 
 ret_all canny_image(int ,int ,int,int,Mat,Mat);
 true_pix true_pixels(vector<vector<int> > ,vector<vector<int> > ,vector<vector<int> > ,int ,int, int );
@@ -76,7 +76,7 @@ ret_all folds :: call_main( Mat bgrImage, Mat depthMap )
 					depthMap.at<char16_t>(k,l)=0;
 				}
 				//////////////////////////////////////////////////////////////////////////////
-                if (depthMap.at<char16_t>(k,l)<1400 && depthMap.at<char16_t>(k,l)>900){
+                if (depthMap.at<char16_t>(k,l)<1450 && depthMap.at<char16_t>(k,l)>950){
 					//zwgrafizei thn perioxh se mia rgb eikona
 					for (int c=0;c<2;c++){
 						gray_rgb.at<Vec3b>(k,l)[c]=0;
@@ -137,6 +137,9 @@ ret_all folds :: call_main( Mat bgrImage, Mat depthMap )
 	ret_all r=canny_image(maxx, minx,maxy,miny,bgrImage,depthMap);
 	
 	true_pix tr_p=true_pixels(r.junctions, r.detailed_edges, r.edges_t,minx,miny,maxx-minx);
+
+
+
 	ret_all r_all;
 	r_all.a_corn=r.a_corn;
 	r_all.detailed_edges=tr_p.detailed_edges;
@@ -145,24 +148,29 @@ ret_all folds :: call_main( Mat bgrImage, Mat depthMap )
 	r_all.edges_t=tr_p.edges_t;
 	r_all.junctions=tr_p.junctions;
 	r_all.table=r.table;
-	
+	r_all.d=r.d;
 	Mat DisplayIm;
 	bgrImage.copyTo(DisplayIm);
 	Mat Display_a_c;
 	bgrImage.copyTo(Display_a_c);
+
+	
+
+////////////////////////////////////////////////////////////////////////////////
+
 	//display junctions
-	///*for (int i=0;i<r_all.junctions.size();i++){
-	//	for (int o1=-3;o1<4;o1++){
-	//		for (int o2=-3;o2<4;o2++){
-	//			for (int c=0;c<3;c++){
-	//				DisplayIm.at<Vec3b>(r_all.junctions.at(i).at(1)+o1,r_all.junctions.at(i).at(0)+o2)[c]=255;
-	//			}
-	//		}
-	//	}
-	//}*/
+	/*for (int i=0;i<r_all.junctions.size();i++){
+		for (int o1=-3;o1<4;o1++){
+			for (int o2=-3;o2<4;o2++){
+				for (int c=0;c<3;c++){
+					DisplayIm.at<Vec3b>(r_all.junctions.at(i).at(1)+o1,r_all.junctions.at(i).at(0)+o2)[c]=255;
+				}
+			}
+		}
+	}*/
 	
 	
-	/*for (int i=0;i<r_all.detailed_edges.size();i=i+2){
+	for (int i=0;i<r_all.detailed_edges.size();i=i+2){
 		
 		if (r_all.detailed_edges.at(i).size()>0){
 		for (int j=0;j<r_all.detailed_edges.at(i).size()-1;j++){
@@ -171,7 +179,7 @@ ret_all folds :: call_main( Mat bgrImage, Mat depthMap )
 			line(Display_a_c, Point(r_all.detailed_edges.at(i).at(j),r_all.detailed_edges.at(i+1).at(j)), Point(r_all.detailed_edges.at(i).at(j+1),r_all.detailed_edges.at(i+1).at(j+1)), Scalar(rc.c0,rc.c1,rc.c2), 1, CV_AA);
 		}
 		}
-	}*/
+	}
 
 	/*for (int i=0;i<r_all.edges_t.size();i++){
 		if (r_all.edges_t.at(i).at(0)!=-90){
@@ -183,58 +191,58 @@ ret_all folds :: call_main( Mat bgrImage, Mat depthMap )
 	namedWindow("edges_t",0);
 	imshow("edges_t",Display_a_c);*/
 	
-	///*namedWindow("junctions",0);
-	//imshow("junctions",DisplayIm);*/
+	/*namedWindow("junctions",0);
+	imshow("junctions",DisplayIm);*/
 	
 	//display a-corners
-	//int jun;
-	//if (r_all.a_corn.certain_c.at(0)!=-1){
-	//	for (int i=0;i<r_all.a_corn.certain_c.size();i++){
-	//		jun=r_all.a_corn.certain_c.at(i);
-	//		for (int o1=-4;o1<5;o1++){
-	//			for (int o2=-4;o2<5;o2++){
-	//				for (int c=0;c<2;c++){
-	//					Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[c]=0;
-	//				}
-	//				Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[2]=255;
-	//			}
-	//		}
-	//	}
-	//}
-	//
-	//if (r_all.a_corn.distant_c.at(0)!=-1){
-	//	for (int i=0;i<r_all.a_corn.distant_c.size();i++){
-	//		jun=r_all.a_corn.distant_c.at(i);
-	//		for (int o1=-4;o1<5;o1++){
-	//			for (int o2=-4;o2<5;o2++){
-	//				Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[0]=255;
-	//				Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[1]=255;
-	//				Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[2]=0;
-	//			}
-	//		}
-	//	}
-	//}
-	//
-	//if (r_all.a_corn.str_l_c.at(0)!=-1){
-	//	for (int i=0;i<r_all.a_corn.str_l_c.size();i++){
-	//		jun=r_all.a_corn.str_l_c.at(i);
-	//		for (int o1=-4;o1<5;o1++){
-	//			for (int o2=-4;o2<5;o2++){
-	//				for (int c=1;c<3;c++){
-	//					Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[c]=0;
-	//				}
-	//				Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[0]=255;
-	//			}
-	//		}
-	//	}
-	//}
+	int jun;
+	if (r_all.a_corn.certain_c.at(0)!=-1){
+		for (int i=0;i<r_all.a_corn.certain_c.size();i++){
+			jun=r_all.a_corn.certain_c.at(i);
+			for (int o1=-4;o1<5;o1++){
+				for (int o2=-4;o2<5;o2++){
+					for (int c=0;c<2;c++){
+						Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[c]=0;
+					}
+					Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[2]=255;
+				}
+			}
+		}
+	}
+	
+	if (r_all.a_corn.distant_c.at(0)!=-1){
+		for (int i=0;i<r_all.a_corn.distant_c.size();i++){
+			jun=r_all.a_corn.distant_c.at(i);
+			for (int o1=-4;o1<5;o1++){
+				for (int o2=-4;o2<5;o2++){
+					Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[0]=255;
+					Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[1]=255;
+					Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[2]=0;
+				}
+			}
+		}
+	}
+	
+	if (r_all.a_corn.str_l_c.at(0)!=-1){
+		for (int i=0;i<r_all.a_corn.str_l_c.size();i++){
+			jun=r_all.a_corn.str_l_c.at(i);
+			for (int o1=-4;o1<5;o1++){
+				for (int o2=-4;o2<5;o2++){
+					for (int c=1;c<3;c++){
+						Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[c]=0;
+					}
+					Display_a_c.at<Vec3b>(r_all.junctions.at(jun).at(1)+o1,r_all.junctions.at(jun).at(0)+o2)[0]=255;
+				}
+			}
+		}
+	}
 
-	////cout<< "r_all.a_corn.certain_c.at(0)"<<r_all.a_corn.certain_c.at(0)<<" & "<<r_all.a_corn.distant_c.at(0)<<endl;
-	////cout<<" r_all.a_corn.str_l_c.at(0) "<<r_all.a_corn.str_l_c.at(0);
-	//namedWindow("folds",0);
-	//imshow("folds",Display_a_c);
+	//cout<< "r_all.a_corn.certain_c.at(0)"<<r_all.a_corn.certain_c.at(0)<<" & "<<r_all.a_corn.distant_c.at(0)<<endl;
+	//cout<<" r_all.a_corn.str_l_c.at(0) "<<r_all.a_corn.str_l_c.at(0);
+	namedWindow("folds",0);
+	imshow("folds",Display_a_c);
 
-	//waitKey(0);
+	waitKey(0);
 
     return r_all;
 }

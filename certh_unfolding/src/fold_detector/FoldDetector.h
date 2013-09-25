@@ -16,17 +16,28 @@ struct a_corners{
 	vector<int> distant_c;
 };
 
+struct depths{
+    vector <float> difd_c;
+    vector <float> difd_s;
+    vector <float> difd_d;
+    vector<bool> side_c;
+    vector<bool> side_s;
+    vector<bool> side_d;
+
+};
+
+
 struct ret_all{
     vector<vector<int> > junctions;
     vector<vector<int> > detailed_edges;
-	vector<int> disconnected;
+    vector<int> disconnected;
     vector<vector<int> > edges_of_junct;
     vector<vector<int> > edges_t;
     vector<vector<int> > table;
-	a_corners a_corn;
+    a_corners a_corn;
+    depths d;
 };
-
-extern void grasp_point(bool  , vector<double>& , vector<Eigen::Matrix4d>&  , vector<vector<int> >&  , vector<vector<Point> >&  , vector<vector<bool> >&  , int );
+extern void grasp_point(bool  , vector<double>& , vector<Eigen::Matrix4d>&  , vector<vector<int> >&  , vector<vector<Point> >&  , vector<vector<bool> >&  , vector<vector<bool> >& ,vector<vector<float> >& ,  int );
 //these functions are used for the detection of the corners that are created from a fold of the cloth(arrow junctions)
 /////call_main ///
 //this function detects the edges and junctions of the hanging cloth
@@ -56,27 +67,35 @@ public:
 
         current_corner.resize(1) ;
         current_corner.back().push_back(false) ;
+
+        sider.resize(1);
+        sider.back().push_back(false);
+
+        depthD.resize(1);
+        depthD.back().push_back(0.0);
     }
 
 	ret_all call_main(Mat,Mat);
 
-    bool fold_detector(Mat, Mat, int, vector<double>& , vector<vector<int> > &, vector<vector<Point> >& , vector<vector<bool> >& ,int );
+    bool fold_detector(Mat, Mat, int, vector<double>& , vector<vector<int> > &, vector<vector<Point> >& , vector<vector<bool> >& ,vector<vector<bool> >& ,vector<vector<float> >& , int );
 
     bool detect(const Mat &clr, const Mat &depth, int frame, vector<double> &graspCandidates, int cx ) {
-        bool res =  fold_detector(clr, depth, frame, graspCandidates, score, location, current_corner, cx) ;
+    bool res =  fold_detector(clr, depth, frame, graspCandidates, score, location, current_corner, sider, depthD, cx) ;
 
-        return res ;
+    return res ;
     }
 
     void select(bool detected, vector<double> &grasp_candidate, vector<Eigen::Matrix4d> &orientations, int cx)
     {
 
-       grasp_point (detected , grasp_candidate, orientations ,  score , location , current_corner , cx);
+       grasp_point (detected , grasp_candidate, orientations ,  score , location , current_corner , sider, depthD, cx);
     }
 
     vector<vector<int> > score ;
     vector<vector<Point> > location ;
     vector<vector<bool> > current_corner ;
+    vector<vector<bool> > sider;
+    vector<vector<float> > depthD;
 
 };
 

@@ -13,9 +13,20 @@ struct a_corners{
 	vector<int> distant_c;
 };
 
+struct depths{
+	vector <float> difd_c;
+	vector <float> difd_s;
+	vector <float> difd_d;
+	vector<bool> side_c;
+	vector<bool> side_s;
+	vector<bool> side_d;
+
+};
+
+
 //store:dinei tvn arithmo twn a-corners pou entopisthkan se sygkekrimena shmeia gia kathe configuration
 //location:dinei thn topothesia tvn a-corners, dhladh tis syntetagmenes tou junction sto opoio antistoixoun
-bool group_a_corners(vector<int> a_corner,vector<vector<int> > junctions,vector<vector<int> >& store,vector<vector<Point> >& location,vector<vector<bool> >& current_corner,int i,int ind,int& k_stop){
+bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_depthD, vector<vector<bool> >& side,vector<vector<float> >& depthD, vector<vector<int> > junctions,vector<vector<int> >& store,vector<vector<Point> >& location,vector<vector<bool> >& current_corner,int i,int ind,int& k_stop){
 		bool stop=false;
 		
 		//gia oles tis trexouses a-corners
@@ -39,6 +50,11 @@ bool group_a_corners(vector<int> a_corner,vector<vector<int> > junctions,vector<
 					else{
 						current_corner.at(i).at(0)=false;
 					}
+					
+					side.at(i).at(0)=c_side.at(j);
+					
+					depthD.at(i).at(0)=c_depthD.at(j);
+					
 				}
 				else{
 				
@@ -82,6 +98,11 @@ bool group_a_corners(vector<int> a_corner,vector<vector<int> > junctions,vector<
 				else{
 					current_corner.at(i).at(current_corner.at(i).size()-1)=false;
 				}
+				side.at(i).resize(side.at(i).size()+1);
+				side.at(i).at(side.at(i).size()-1)=c_side.at(j);
+				depthD.at(i).resize(depthD.at(i).size()+1);
+				depthD.at(i).at(depthD.at(i).size()-1)=c_depthD.at(j);
+
 			}
 			
 		}
@@ -92,7 +113,7 @@ bool group_a_corners(vector<int> a_corner,vector<vector<int> > junctions,vector<
 
 
 
-int choose_a_corner(a_corners a_corn,vector<vector<int> > junctions,int ind,vector<vector<int> >& store,vector<vector<Point> >& location,vector<vector<bool> >& current_corner,int& k_stop){
+int choose_a_corner(a_corners a_corn,depths d, vector<vector<int> > junctions,int ind,vector<vector<int> >& store,vector<vector<Point> >& location,vector<vector<bool> >& current_corner,vector<vector <bool> > & side, vector<vector<float> >& depthD,int& k_stop){
 	int start_point;
 	if (ind<10){start_point=0;}
 	else{start_point=ind-10;}
@@ -107,26 +128,32 @@ int choose_a_corner(a_corners a_corn,vector<vector<int> > junctions,int ind,vect
 		current_corner.resize(current_corner.size()+1);
 		vector<bool> b(1,false);
 		current_corner.at(current_corner.size()-1)=b;
+		side.resize(side.size()+1);
+		side.at(side.size()-1)=b;
+		depthD.resize(depthD.size()+1);
+		vector<float> fl(1,0.0);
+		depthD.at(depthD.size()-1)=fl;
 	}
-	
+	//cout<<"in";
 	//i_stop shows the image where more than 6 votes for a point are gathered
 	//if there is no such a point yet, i_stop==-1
 	int i_stop=-1;
 	//cout<<"start point"<<start_point<<" ind "<<ind<<endl;
 	for (int i=start_point;i<=ind;i++){
+		
 		//cout<<" ///// "<<endl;
-		bool s1=group_a_corners(a_corn.certain_c,junctions,store,location,current_corner,i,ind,k_stop);
+		bool s1=group_a_corners(a_corn.certain_c, d.side_c, d.difd_c, side,depthD,junctions,store,location,current_corner,i,ind,k_stop);
 		//cout<<"done1";
-		bool s2=group_a_corners(a_corn.distant_c,junctions,store,location,current_corner,i,ind,k_stop);
+		bool s2=group_a_corners(a_corn.distant_c,d.side_d, d.difd_d,side,depthD,junctions,store,location,current_corner,i,ind,k_stop);
 		//cout<<"done2";
-		bool s3=group_a_corners(a_corn.str_l_c,junctions,store,location,current_corner,i,ind,k_stop);	
+		bool s3=group_a_corners(a_corn.str_l_c,d.side_s, d.difd_s, side,depthD,junctions,store,location,current_corner,i,ind,k_stop);	
 		//cout<<"done3";
 		//cout<<endl<<" ///// "<<endl;
 		if (s1==true || s2==true ||s3==true){
 			i_stop=i;
 			break;
 		}
-
+	//cout<<"out";
 		
 	}
 	/*cout<<endl<<"--------"<<endl;

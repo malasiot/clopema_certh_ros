@@ -19,11 +19,21 @@ struct corner_depths{
 	bool layers3;
 };
 
+struct depths{
+	vector <float> difd_c;
+	vector <float> difd_s;
+	vector <float> difd_d;
+	vector<bool> side_c;
+	vector<bool> side_s;
+	vector<bool> side_d;
+
+};
+
 int calc_closest_edge_side(vector<int> ,vector<int>);
 corner_depths a_corner_depth(Mat ,Mat ,vector<int> );
 bool check_depths(float,corner_depths);
 
-vector<int> check_disconnected(vector<vector<int> > junctions,vector<vector<int> > edges,vector<vector<int> >& edges_of_junct,Mat im,Mat imd,vector<vector<int> > table){
+vector<int> check_disconnected(vector<vector<int> > junctions,vector<vector<int> > edges,vector<vector<int> >& edges_of_junct,Mat im,Mat imd,vector<vector<int> > table, depths& d){
 	Mat im1;
 	im.copyTo(im1);
 	vector<int> connected;
@@ -154,14 +164,27 @@ vector<int> check_disconnected(vector<vector<int> > junctions,vector<vector<int>
 								}
 								if (ok==true){
 									////////////////////////<-----------------------------------------------------------
+								/*	cout<<"???????"<<endl;
+									cout<<"EDW2"<<endl;
 									edges_of_junct.at(i).at(1)=up_ed;
 									edges_of_junct.at(i).at(2)=d_ed;
+									cout<<"EDGES OF JUNCT "<<edges_of_junct.at(i).at(0)<<" "<<edges_of_junct.at(i).at(1)<<" "<<edges_of_junct.at(i).at(2)<<endl;*/
+									
 									/////////////////////////////////
 									found1=true;
 									connected.push_back(l);
+									d.difd_d.push_back(abs(r.average.at(2)-r.average.at(0)));
+									if (side.at(0)>0){
+										d.side_d.push_back(true);
+									}
+									else{
+										d.side_d.push_back(false);
+									}
+
 									//cout<<"a corner"<<endl;
-									edges_of_junct.at(i).at(1)=edges_of_junct.at(l).at(0);
-									edges_of_junct.at(i).at(2)=edges_of_junct.at(l).at(1);
+									edges_of_junct.at(l).at(2)=edges_of_junct.at(i).at(0);
+									//edges_of_junct.at(i).at(1)=edges_of_junct.at(l).at(0);
+									//edges_of_junct.at(i).at(2)=edges_of_junct.at(l).at(1);
 								}
 							}
 							}//if candidates
@@ -217,6 +240,7 @@ vector<int> check_disconnected(vector<vector<int> > junctions,vector<vector<int>
 			//	cout<<"count= "<<count<<" other_l= "<<other_l<<endl;
 				//an yparxei mono 1 akoma akmh 
 				if (other_l!=-1 && count>14 && stop==false){
+					
 					//elegjkse thn klish ths eytheias  
 						//upologizw thn klish ths eutheias
 					float f1;
@@ -290,9 +314,18 @@ vector<int> check_disconnected(vector<vector<int> > junctions,vector<vector<int>
 						if (ok==true){
 							found1=true;
 							connected.push_back(i);
+							/////
+							d.difd_d.push_back(abs(rt.average.at(2)-rt.average.at(0)));
+							if (sidet>0){
+								d.side_d.push_back(true);
+							}
+							else{
+								d.side_d.push_back(false);
+							}
 							////////////////////////<-----------------------------------------------------------
 							edges_of_junct.at(i).at(1)=other_l;
 							edges_of_junct.at(i).at(2)=other_l;
+							//cout<<" EDGES OF JUNCT 1 "<<edges_of_junct.at(i).at(1)<< " "<<edges_of_junct.at(i).at(2)<<endl;
 							/////////////////////////////////
 							for (int o1=-3;o1<4;o1++){
 									for(int o2=-3;o2<4;o2++){
@@ -308,7 +341,7 @@ vector<int> check_disconnected(vector<vector<int> > junctions,vector<vector<int>
 			}
 		}
 	}
-
+	
 	if (found1==false){
 		connected.push_back(-1);
 	}

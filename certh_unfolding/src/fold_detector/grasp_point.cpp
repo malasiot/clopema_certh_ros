@@ -16,7 +16,7 @@ struct colors{
 
 colors show_colors(int);
 
-void grasp_point(bool detected , vector<double>& grasp_candidate, vector<Eigen::Matrix4d>& orientation, vector<vector<int> >& store , vector<vector<Point> >& location , vector<vector<bool> >& current_corner , int cx){
+void grasp_point(bool detected , vector<double>& grasp_candidate, vector<Eigen::Matrix4d>& orientation, vector<vector<int> >& store , vector<vector<Point> >& location , vector<vector<bool> >& current_corner , vector<vector<bool> >& side, vector<vector<float> >& depthD, int cx){
 
 
     folds f;

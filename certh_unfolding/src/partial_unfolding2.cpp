@@ -2,7 +2,7 @@
 #include "RotateAndGrab.h"
 #include <robot_helpers/Utils.h>
 #include <robot_helpers/Planners.h>
-
+#include "Unfold.h"
 #include <tf_conversions/tf_eigen.h>
 #include <certh_libs/cvHelpers.h>
 
@@ -142,13 +142,15 @@ int main(int argc, char **argv) {
     ros::Publisher marker_pub;
 
     ros::AsyncSpinner spinner(4) ;
+
     spinner.start() ;
 
     marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
 
     FoldDetectorAction action("r1") ;
 
-    action.init(Vector3d(0, -0.9, 1.6)) ;
+    action.init(Vector3d(-0.12, -0.83, 1.6)) ;
+
     action.rotate(-2*M_PI) ;
 
     Affine3d pose ;

@@ -25,10 +25,20 @@ struct a_corners{
 	vector<int> distant_c;
 };
 
+struct depths{
+	vector <float> difd_c;
+	vector <float> difd_s;
+	vector <float> difd_d;
+	vector<bool> side_c;
+	vector<bool> side_s;
+	vector<bool> side_d;
+
+};
+
 int calc_closest_edge_side(vector<int> ,vector<int>);
 corner_depths a_corner_depth(Mat ,Mat ,vector<int> );
 bool check_depths(float,corner_depths);
-vector<int> check_disconnected(vector<vector<int> >,vector<vector<int> >,vector<vector<int> >& ,Mat ,Mat ,vector<vector<int> > );
+vector<int> check_disconnected(vector<vector<int> >,vector<vector<int> >,vector<vector<int> >& ,Mat ,Mat ,vector<vector<int> > ,depths&);
 
 //prepei:!1) 3 akmes apo to idio junction, 2)na exei toulaxiston 1 akmh pou na "feygei" panw apo to junction,
 //3)1 akmh pou na 'feygei' katw apo to junction (eksairesh an eimaste sto pio xamhlo shmeio tou kremomenou royxoy),
@@ -37,7 +47,7 @@ vector<int> check_disconnected(vector<vector<int> >,vector<vector<int> >,vector<
 //to "katw" epipedo na einai pio bathia apo to "panw",7)h gwnia panw kai katw akmhs na einai mikroterh apo 180 moires kai
 //oxi konta sto orio
 
-a_corners a_corner_check(vector<vector<int> > junctions,vector<vector<int> > edges,vector<vector<int> > edges_of_junct,Mat im,Mat imd,vector<vector<int> > table){
+a_corners a_corner_check(vector<vector<int> > junctions,vector<vector<int> > edges,vector<vector<int> >& edges_of_junct,Mat im,Mat imd,vector<vector<int> > table, depths & d){
 
 	vector<int> certain_c;
 	vector<int> str_l_c;
@@ -131,6 +141,9 @@ a_corners a_corner_check(vector<vector<int> > junctions,vector<vector<int> > edg
 				else{
 				//elegxw pws einai moirasmena ta bathh
 					ok=check_depths(sidet,rt);
+					
+					///
+					
 				}
 				
 				if (ok==true){
@@ -144,6 +157,17 @@ a_corners a_corner_check(vector<vector<int> > junctions,vector<vector<int> > edg
 					}
 					a_c_detected=true;
 					str_l_c.push_back(ind);
+					/////////////// results ///////////////
+					//the depth difference and the side that the corner is "looking"
+					d.difd_s.push_back(abs(rt.average.at(2)-rt.average.at(0)));
+					if (sidet>0){
+						d.side_s.push_back(true);
+					}
+					else
+					{
+						d.side_s.push_back(false);
+					}
+					/////////////////////////////
 				}
 			}
 		}
@@ -468,7 +492,17 @@ a_corners a_corner_check(vector<vector<int> > junctions,vector<vector<int> > edg
 									
 								}
 							}
+							///////////// results /////////////////
 							certain_c.push_back(ind);
+							d.difd_c.push_back(abs(r.average.at(2)-r.average.at(0)));
+							if (side.at(0)>0){
+								d.side_c.push_back(true);
+							}
+							else{
+								d.side_c.push_back(false);
+							}
+							///////////////////////////////////////
+
 						}
 						else{
 							for (int o1=-5;o1<6;o1++){
@@ -479,7 +513,16 @@ a_corners a_corner_check(vector<vector<int> > junctions,vector<vector<int> > edg
 								im_cand.at<Vec3b>(junctions.at(ind).at(1)+o1,junctions.at(ind).at(0)+o2)[0]=255;
 								}
 							}
+							///////////////////////// results ///////////////
 								str_l_c.push_back(ind);
+								d.difd_s.push_back(abs(r.average.at(2)-r.average.at(0)));
+								if (side.at(0)>0){
+									d.side_s.push_back(true);
+								}
+								else{
+									d.side_s.push_back(false);
+								}
+							/////////////////
 						}
 					//}
 				//}
@@ -514,9 +557,12 @@ a_corners a_corner_check(vector<vector<int> > junctions,vector<vector<int> > edg
 
 	//}
 
-	//entopizei a-corners pou h eswterikh akmh htan ligo makria apo th gwnia (eg 3029)
-			vector<int> r_a=check_disconnected(junctions,edges,edges_of_junct,impos,imd,table);
 
+
+	//entopizei a-corners pou h eswterikh akmh htan ligo makria apo th gwnia (eg 3029)
+			vector<int> r_a=check_disconnected(junctions,edges,edges_of_junct,impos,imd,table,d);
+			
+				//cout<<" EDGES OF JUNCT 2"<<edges_of_junct.at(r_a.at(1)).at(1)<< " "<<edges_of_junct.at(r_a.at(1)).at(2)<<endl;
 		if (r_a.at(0)>=0){//an exei epistrepsei a-corner
 			for (int ll=0;ll<r_a.size();ll++){
 				for (int o1=-5;o1<6;o1++){

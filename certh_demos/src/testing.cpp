@@ -15,16 +15,13 @@ int main(int argc, char **argv) {
     float tableHeight = 0.685 ; //0.695
 
     addBoxToCollisionModel(0, -1.1, tableHeight/2.0, 0.8, 0.8, tableHeight);
-
+    attachBoxToXtionInCollisionModel("r2");
+    cin.ignore();
     geometry_msgs::Pose pose ;
-
 
     pose.position.x =  -0.2;
     pose.position.y =  -1.1 ;
     pose.position.z = 0.8;
-
-
-
 
     float a = 0.25 ;
     Eigen::Matrix3d orientation;

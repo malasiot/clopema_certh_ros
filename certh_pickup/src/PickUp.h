@@ -27,10 +27,10 @@ public:
     bool moveAboveTable( ) ;
     bool moveXtionAboveCloth() ;
     bool graspClothFromTable() ;
+    camera_helpers::OpenNICaptureRGBD *grabber;
 
 private:
 
-    camera_helpers::OpenNICaptureRGBD *grabber;
 
     Eigen::Vector3d parkingPose ;
 

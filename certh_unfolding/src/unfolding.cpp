@@ -631,7 +631,7 @@ int main(int argc, char **argv) {
     cout << "Recognition rotations: " << recogn_rotations << endl;
     cout << "----------------------" << endl;
 
-
+    rb.grabber->disconnect();
     //Set servo power off
         clopema_motoros::SetPowerOff soff;
         soff.request.force = false;
