@@ -28,7 +28,7 @@ namespace camera_helpers {
 class OpenNICaptureImpl {
 public:
     OpenNICaptureImpl(const std::string &prefix_): prefix(prefix_),
-        connected(false), dataReady(false) {
+        connected(false), dataReady(false),nh("~") {
 
         nh.setCallbackQueue( &callback_queue_ );
 
@@ -74,6 +74,7 @@ void OpenNICaptureImpl::spinThread()
         {
             break;
         }
+
         callback_queue_.callAvailable(ros::WallDuration(0.033f));
     }
 }
@@ -104,6 +105,7 @@ bool OpenNICaptureImpl::connect(ros::Duration timeout)
     }
 
 
+    connected = true ;
 
     return connected ;
 }
@@ -182,7 +184,7 @@ public:
         sync(sync_policies::ApproximateTime<Image, Image, CameraInfo>(10), rgb_sub, depth_sub, camera_sub)
     {
         sync.registerCallback(boost::bind(&OpenNICaptureImplRGBD::input_callback, this, _1, _2, _3));
-    }
+     }
 
 
     bool grab(cv::Mat &clr, cv::Mat &depth, ros::Time &t, image_geometry::PinholeCameraModel &cm)
@@ -213,9 +215,9 @@ private:
     {
         // Subscribe to rgb and depth streams
 
-        rgb_sub.subscribe(nh, "/" + prefix + "/rgb/image_rect_color", 1);
-        depth_sub.subscribe(nh, "/" + prefix + "/depth_registered/image_rect_raw", 1);
-        camera_sub.subscribe(nh, "/" + prefix + "/depth_registered/camera_info", 1);
+        rgb_sub.subscribe(nh, "/" + prefix + "/rgb/image_rect_color", 10);
+        depth_sub.subscribe(nh, "/" + prefix + "/depth_registered/image_rect_raw", 10);
+        camera_sub.subscribe(nh, "/" + prefix + "/depth_registered/camera_info", 10);
     }
 
     virtual void shutdown()
@@ -352,10 +354,10 @@ private:
 
     void setup()
     {
-        cloud_sub.subscribe(nh, "/" + prefix + "/depth_registered/points", 1);
-        rgb_sub.subscribe(nh, "/" + prefix + "/rgb/image_rect_color", 1);
-        depth_sub.subscribe(nh, "/" + prefix + "/depth_registered/image_rect_raw", 1);
-        camera_sub.subscribe(nh, "/" + prefix + "/depth_registered/camera_info", 1);
+        cloud_sub.subscribe(nh, "/" + prefix + "/depth_registered/points", 10);
+        rgb_sub.subscribe(nh, "/" + prefix + "/rgb/image_rect_color", 10);
+        depth_sub.subscribe(nh, "/" + prefix + "/depth_registered/image_rect_raw", 10);
+        camera_sub.subscribe(nh, "/" + prefix + "/depth_registered/camera_info", 10);
 
     }
 

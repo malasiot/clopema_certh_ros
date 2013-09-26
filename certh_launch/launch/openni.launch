@@ -54,7 +54,7 @@
   <!-- Start nodelet manager in top-level namespace -->
   <arg name="manager" value="$(arg camera)_nodelet_manager" />
   <arg name="debug" default="false" /> <!-- Run manager in GDB? -->
-  <include file="includes/openni_manager.launch">
+  <include file="$(find certh_launch)/launch/includes/openni_manager.launch">
     <arg name="name" value="$(arg manager)" />
     <arg name="debug" value="$(arg debug)" />
     <arg name="machine" value="$(arg machine)" />
@@ -65,7 +65,7 @@
 
     <!-- Load driver -->
     <include if="$(arg load_driver)"
-	     file="includes/openni_device.launch">
+	     file="$(find certh_launch)/launch/includes/openni_device.launch">
       <!-- Could really use some syntactic sugar for this -->
       <arg name="override"              value="$(arg override)" />
       <arg name="manager"               value="/$(arg manager)" /> <!-- Fully resolved -->
@@ -86,7 +86,7 @@
     </include>
 
     <!-- Load standard constellation of processing nodelets -->
-    <include file="includes/openni_processing.launch">
+    <include file="$(find certh_launch)/launch/includes/openni_processing.launch">
       <arg name="manager"               value="/$(arg manager)" /> <!-- Fully resolved -->
       <arg name="rgb"                   value="$(arg rgb)" />
       <arg name="ir"                    value="$(arg ir)" />

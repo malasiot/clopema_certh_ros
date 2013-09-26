@@ -20,7 +20,7 @@ Modified:   May 30, 2013
 
     <!-- Include CloPeMa openni launch file for kinect on the first arm. -->
     <group>
-        <include file="launch/openni.launch">
+        <include file="$(find certh_launch)/launch/openni.launch">
             <arg name="override"              value="$(arg override)"/>
             <arg name="machine"               value="kinect1"/>
             <arg name="camera"                value="xtion2"/>

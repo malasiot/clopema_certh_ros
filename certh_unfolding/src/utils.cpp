@@ -22,7 +22,7 @@ Unfold::Unfold(const string &armName, ros::Publisher markerPub){
    marker_pub  = markerPub;
    grabber = new camera_helpers::OpenNICaptureAll ("xtion3");
    grabber->connect();
-   ros::Duration(0.5).sleep() ;
+   ros::Duration(1).sleep() ;
    clothType = -1;
 }
 
@@ -884,7 +884,7 @@ bool Unfold::graspLowestPoint(bool lastMove, bool allwaysDrop){
         bottom = top;
         bottom.x()-=1;
 
-        while( grabber->grab(rgb, depth, pc, ts, cm) ) ;
+        while( !grabber->grab(rgb, depth, pc, ts, cm) ) ;
         if(findLowestPoint(pc, top, bottom, angle, p, n)== false)
 //            cout<< "Cant find lowest point"<< endl;
 

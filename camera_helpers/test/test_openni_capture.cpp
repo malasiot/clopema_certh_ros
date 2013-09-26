@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 
     image_geometry::PinholeCameraModel camera ;
 
-    if ( grabber.connect() )
+    if ( grabber.connect( ) )
     {
         std::cout << "start grabbing RGBD" << std::endl ;
 
@@ -52,6 +52,7 @@ int main(int argc, char *argv[])
 
                 cv::imwrite(str(boost::format("/tmp/rgb_%03d.png") % i), clr) ;
                 cv::imwrite(str(boost::format("/tmp/depth_%03d.png") % i), depth) ;
+                std::cout << "grab" << std::endl ;
             }
             else { std::cout << "ok" << std::endl ; }
 
