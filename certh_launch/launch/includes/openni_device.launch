@@ -1,0 +1,49 @@
+<!-- Launch the OpenNI device driver -->
+<launch>
+    <arg name="override" default="0"/>
+
+  <!-- Name of nodelet manager, must be fully resolved -->
+  <arg name="manager" />
+
+  <!-- Name of the machine -->
+  <arg name="machine" />
+
+  <!-- Driver parameters -->
+  <arg name="device_id" />
+  <arg name="rgb_frame_id" />
+  <arg name="depth_frame_id" />
+  <arg name="rgb_camera_info_url" />
+  <arg name="depth_camera_info_url" />
+  <arg name="depth_registration" />
+  <arg name="image_mode" />
+
+  <arg name="respawn" default="false" />
+  <arg     if="$(arg respawn)" name="bond" value="" />
+  <arg unless="$(arg respawn)" name="bond" value="--no-bond" />
+  
+  <!-- Remapping arguments -->
+  <arg name="rgb"              default="rgb" />
+  <arg name="ir"               default="ir" />
+  <arg name="depth"            default="depth" />
+  <arg name="depth_registered" default="depth_registered" />
+  <arg name="projector"        default="projector" />
+
+  <!-- Driver nodelet -->
+  <node pkg="openni_camera" type="openni_node" name="driver" 
+        respawn="true" machine="$(arg machine)" output="screen">
+    <param if="$(arg override)" name="device_id" value="$(arg device_id)" />
+    <param name="rgb_camera_info_url"   value="$(arg rgb_camera_info_url)" />
+    <param name="depth_camera_info_url" value="$(arg depth_camera_info_url)" />
+    <param name="rgb_frame_id"   value="$(arg rgb_frame_id)" />
+    <param name="depth_frame_id" value="$(arg depth_frame_id)" />
+    <param name="depth_registration" value="$(arg depth_registration)" />
+	<param name="image_mode" value="$(arg image_mode)" />
+
+    <remap from="ir" to="$(arg ir)" />
+    <remap from="rgb" to="$(arg rgb)" />
+    <remap from="depth" to="$(arg depth)" />
+    <remap from="depth_registered" to="$(arg depth_registered)" />
+    <remap from="projector" to="$(arg projector)" />
+  </node>
+
+</launch>

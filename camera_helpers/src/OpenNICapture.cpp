@@ -11,6 +11,9 @@
 #include <pcl/ros/conversions.h>
 #include <boost/thread.hpp>
 
+#include <ros/callback_queue.h>
+
+
 
 namespace enc = sensor_msgs::image_encodings;
 
@@ -25,7 +28,12 @@ namespace camera_helpers {
 class OpenNICaptureImpl {
 public:
     OpenNICaptureImpl(const std::string &prefix_): prefix(prefix_),
-        connected(false), dataReady(false), spinner(4) {}
+        connected(false), dataReady(false) {
+
+        nh.setCallbackQueue( &callback_queue_ );
+
+
+    }
 
     bool connect(ros::Duration timeout) ;
     void connect(boost::function<void ()> cb, ros::Duration timeout) ;
@@ -41,89 +49,84 @@ protected:
 
     void waitForConnection(ros::Duration t) ;
     void connectCb(boost::function<void ()> cb, ros::Duration t) ;
+    void spinThread() ;
 
     std::string prefix ;
 
     ros::NodeHandle nh;
 
     mutable boost::mutex image_lock ;
-    ros::AsyncSpinner spinner ;
+    mutable boost::timed_mutex data_ready ;
 
     bool connected, dataReady ;
+    ros::CallbackQueue callback_queue_;
+
+    boost::scoped_ptr<boost::thread> spin_thread_;
+    bool need_to_terminate_ ;
 
 };
 
-
-void OpenNICaptureImpl::waitForConnection(ros::Duration timeout)
+void OpenNICaptureImpl::spinThread()
 {
-
-    ros::Time start_time = ros::Time::now() ;
-
-    while (ros::ok())
+    while (nh.ok())
     {
-//        boost::unique_lock<boost::mutex> lock_ (image_lock) ;
-
-        ros::Duration(0.5).sleep() ;
-        if ( dataReady )
+        if (need_to_terminate_)
         {
-            connected = true ;
-            break ;
+            break;
         }
-/*
-        if ( timeout >= ros::Duration(0) )
-        {
-            ros::Time current_time = ros::Time::now();
-
-            if ( (current_time - start_time ) >= timeout )
-            {
-                connected = false ;
-                break ;
-            }
-
-            ros::Duration(0.02).sleep();
-
-         }
-         */
+        callback_queue_.callAvailable(ros::WallDuration(0.033f));
     }
 }
 
+
+
 bool OpenNICaptureImpl::connect(ros::Duration timeout)
 {
-    {
- //       boost::unique_lock<boost::mutex> lock_ (image_lock) ;
-
-        if ( connected ) disconnect() ;
-    }
+    if ( connected ) disconnect() ;
 
     setup() ;
 
-    // start spinner to get frames
+    data_ready.lock() ;
 
-    spinner.start() ;
-
-    // wait until data becomes available
-
- //   waitForConnection(timeout);
-
-    //return connected ;
-
-    return true ;
+    spin_thread_.reset( new boost::thread(boost::bind(&OpenNICaptureImpl::spinThread, this)) );
 
 
+    if ( timeout.toSec() == -1 )
+    {
+        boost::unique_lock<boost::timed_mutex> lock_ (data_ready) ;
+        connected = true ;
+    }
+    else
+    {
+
+        boost::unique_lock<boost::timed_mutex> lock_ (data_ready, timeout.toBoost()) ;
+        connected = lock_.owns_lock() ;
+    }
+
+
+
+    return connected ;
 }
 
 void OpenNICaptureImpl::connectCb(boost::function<void ()> cb, ros::Duration timeout)
 {
-
-    waitForConnection(timeout) ;
-
+    if ( timeout.toSec() == -1 )
     {
-        boost::unique_lock<boost::mutex> lock_ (image_lock) ;
-        if ( !connected ) {
-            disconnect() ;
-            return ;
-        }
+        boost::unique_lock<boost::timed_mutex> lock_ (data_ready) ;
+        connected = true ;
     }
+    else
+    {
+
+        boost::unique_lock<boost::timed_mutex> lock_ (data_ready, timeout.toBoost()) ;
+        connected = lock_.owns_lock() ;
+    }
+
+    if ( !connected ) {
+        disconnect() ;
+        return ;
+    }
+
 
     cb() ;
 
@@ -139,10 +142,9 @@ void OpenNICaptureImpl::connect(boost::function<void ()> cb, ros::Duration timeo
 
     setup() ;
 
+    data_ready.lock() ;
 
-    // start spinner to get frames
-
-    spinner.start() ;
+    spin_thread_.reset( new boost::thread(boost::bind(&OpenNICaptureImpl::spinThread, this)) );
 
     // start connection thread
 
@@ -153,13 +155,18 @@ void OpenNICaptureImpl::connect(boost::function<void ()> cb, ros::Duration timeo
 
 void OpenNICaptureImpl::disconnect()
 {
+
     boost::unique_lock<boost::mutex> lock_ (image_lock) ;
 
     if ( connected )
     {
         shutdown() ;
 
-        spinner.stop() ;
+        if (spin_thread_.get())
+        {
+            need_to_terminate_ = true;
+            spin_thread_->join();
+        }
     }
 
     connected = false ;
@@ -180,9 +187,9 @@ public:
 
     bool grab(cv::Mat &clr, cv::Mat &depth, ros::Time &t, image_geometry::PinholeCameraModel &cm)
     {
-        boost::unique_lock<boost::mutex> lock_ (image_lock) ;
-
         if ( !connected ) return false ;
+
+        boost::unique_lock<boost::mutex> lock_ (image_lock) ;
 
         if ( !tmp_rgb || !tmp_depth ) return false ;
 
@@ -228,11 +235,14 @@ private:
     void input_callback(const ImageConstPtr& rgb, const ImageConstPtr& depth, const CameraInfoConstPtr &camera)
     {
         boost::unique_lock<boost::mutex> lock_ (image_lock) ;
+
         // Store current images
         tmp_rgb = rgb ;
         tmp_depth = depth ;
         tmp_camera = camera ;
         dataReady = true ;
+
+        data_ready.unlock() ;
     }
 
 };
@@ -296,6 +306,8 @@ private:
         // Store current images
         tmp_cloud = cloud ;
         dataReady = true ;
+
+        data_ready.unlock() ;
     }
 
     sensor_msgs::PointCloud2ConstPtr tmp_cloud ;
@@ -373,6 +385,8 @@ private:
         tmp_cloud = cloud ;
         tmp_camera = camera ;
         dataReady = true ;
+
+        data_ready.unlock() ;
     }
 
 

@@ -53,6 +53,7 @@ int main(int argc, char *argv[])
                 cv::imwrite(str(boost::format("/tmp/rgb_%03d.png") % i), clr) ;
                 cv::imwrite(str(boost::format("/tmp/depth_%03d.png") % i), depth) ;
             }
+            else { std::cout << "ok" << std::endl ; }
 
             ros::Duration(1).sleep() ;
         }

@@ -13,11 +13,6 @@ Modified:   November 20, 2012 15:44
     <!-- Arguments -->
     <arg name="publish_tf"  default="true" />
   
-    <arg name="workspace"   default="false" />
-    <arg name="start_robot" default="false" />
-    <arg name="debug"       default="false" />
-   
-
     <!-- Include common CloPeMa configuration. -->
     <include file="$(find clopema_config)/launch/clopema.launch"/>
 
@@ -25,7 +20,7 @@ Modified:   November 20, 2012 15:44
 
     <!-- Include CloPeMa openni launch file for kinect on the first arm. -->
     <group>
-        <include file="$(find clopema_perception_launch)/launch/openni.launch">
+        <include file="openni.launch">
             <arg name="override"              value="$(arg override)"/>
             <arg name="machine"               value="clopema1"/>
             <arg name="camera"                value="xtion3"/>
@@ -34,30 +29,9 @@ Modified:   November 20, 2012 15:44
             <arg name="rgb_camera_info_url"   value="file://${ROS_HOME}/clopema_calibration/xtion3_rgb.yaml"/>
             <arg name="depth_camera_info_url" value="file://${ROS_HOME}/clopema_calibration/xtion3_depth.yaml"/>
             <arg name="publish_tf"            value="$(arg publish_tf)" />
-            <arg name="debug"                 value="$(arg debug)"/>
 			<arg name="depth_registration"    value="true" />
-		<arg name="image_mode"	      value="8"/>
+			<arg name="image_mode"	          value="8"/>
         </include>
     </group>
-
-    <!-- Extract workspace points and transform to base_link if required. -->
-    <group if="$(arg workspace)" ns="workspace_extraction">
-        <include file="$(find clopema_perception_launch)/launch/workspace_extraction_pipeline.launch" ns="depth">
-            <arg name="manager"      value="/xtion3_nodelet_manager"/>
-            <arg name="input_topic"  value="/xtion3/depth/points"/>
-            <arg name="output_topic" value="/workspace/points"/>
-            <arg name="machine"      value="clopema1"/>
-        </include>
-
-        <include file="$(find clopema_perception_launch)/launch/workspace_extraction_pipeline.launch" ns="depth_registered">
-            <arg name="manager"      value="/xtion3_nodelet_manager"/>
-            <arg name="input_topic"  value="/xtion3/depth_registered/points"/>
-            <arg name="output_topic" value="/workspace/points_registered"/>
-            <arg name="machine"      value="clopema1"/>
-        </include>
-
-    </group>
-
-    <include if="$(arg start_robot)" file="$(find clopema_launch)/launch/start_robot.launch"/>
 
 </launch>
