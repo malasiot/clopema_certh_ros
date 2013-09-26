@@ -36,7 +36,7 @@ Modified:   November 20, 2012 15:44
             <arg name="publish_tf"            value="$(arg publish_tf)" />
             <arg name="debug"                 value="$(arg debug)"/>
 			<arg name="depth_registration"    value="true" />
-
+		<arg name="image_mode"	      value="8"/>
         </include>
     </group>
 

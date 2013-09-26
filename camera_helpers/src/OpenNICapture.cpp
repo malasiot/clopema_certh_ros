@@ -61,14 +61,15 @@ void OpenNICaptureImpl::waitForConnection(ros::Duration timeout)
 
     while (ros::ok())
     {
-         boost::unique_lock<boost::mutex> lock_ (image_lock) ;
+//        boost::unique_lock<boost::mutex> lock_ (image_lock) ;
 
+        ros::Duration(0.5).sleep() ;
         if ( dataReady )
         {
             connected = true ;
             break ;
         }
-
+/*
         if ( timeout >= ros::Duration(0) )
         {
             ros::Time current_time = ros::Time::now();
@@ -82,13 +83,14 @@ void OpenNICaptureImpl::waitForConnection(ros::Duration timeout)
             ros::Duration(0.02).sleep();
 
          }
+         */
     }
 }
 
 bool OpenNICaptureImpl::connect(ros::Duration timeout)
 {
     {
-        boost::unique_lock<boost::mutex> lock_ (image_lock) ;
+ //       boost::unique_lock<boost::mutex> lock_ (image_lock) ;
 
         if ( connected ) disconnect() ;
     }
@@ -101,9 +103,11 @@ bool OpenNICaptureImpl::connect(ros::Duration timeout)
 
     // wait until data becomes available
 
-    waitForConnection(timeout);
+ //   waitForConnection(timeout);
 
-    return connected ;
+    //return connected ;
+
+    return true ;
 
 
 }
@@ -191,7 +195,8 @@ public:
 
         t = tmp_depth->header.stamp ;
 
-        return true ;
+        if ( clr.data == NULL || depth.data == NULL ) return false ;
+        else return true ;
     }
 
 

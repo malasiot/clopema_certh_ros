@@ -15,6 +15,7 @@ int main(int argc, char **argv) {
 
     pick.graspClothFromTable();
     pick.grabber->disconnect();
+    cout<< "grabber disconnected " << endl;
     resetCollisionModel() ;
     setServoPowerOff();
 
