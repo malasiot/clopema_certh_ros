@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle nh;
 
     ros::Publisher marker_pub;
-    marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);    
+    marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
     //system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./openXtion3.sh &");
     sleep(3);
     //cout << "Sleep ended" << endl;
@@ -94,9 +94,9 @@ int main(int argc, char **argv) {
     }
     fin.close();
     cout << "DONE" << endl;
-	
-	
-	cout << "Loading forest... ";
+
+
+    cout << "Loading forest... ";
     rf = new RF( "/home/akargakos/ROS/clopema_certh_ros/certh_unfolding/src/forests/rf_forest" );
     cout << " done." << endl;
 
@@ -114,6 +114,9 @@ int main(int argc, char **argv) {
     cv::moveWindow("rgb", 680, 0);
 
 
+    vector<cv::Mat> dImages(40);
+    int dImages_counter = 0;
+
 
     time_t start,end;
     int recogn_rotations;
@@ -124,7 +127,7 @@ int main(int argc, char **argv) {
     bool cloth_unfolded = false;
     cv::Mat depth2, rgb2;
     cv::Rect r;
-    pcl::PointCloud<pcl::PointXYZ> pc2;    
+    pcl::PointCloud<pcl::PointXYZ> pc2;
     while(!cloth_unfolded){
         rb.setClothType(-1);
 
@@ -146,6 +149,7 @@ int main(int argc, char **argv) {
             rgb2 = rgb;
             depth2 = cv::Mat::zeros(r.width, r.height, CV_32FC1);
             processDepth(depth, depth2, r);
+            dImages[dImages_counter++] = depth2.clone();
             int k=0;
             while(k<20){
                 imshow("depth", depth2);
@@ -159,23 +163,23 @@ int main(int argc, char **argv) {
             for(int i=0; i<6; ++i)
                 cout << RFout[i] << " ";
             cout << endl;
-            
+
 //            cv::Mat log_rgb = rgb2(r);
 //            frgb << log_rgb << endl;
 //            fdepth << depth2 << endl;
 
-			int prob_bar = floor(RFout[res]/0.2f);
-			if(prob_bar > 4) prob_bar = 4;			
-			int obs = res*5 + prob_bar;
-			
-			double denom = 0;            
-            for(int i=0; i<rf_num_states; ++i){                
+            int prob_bar = floor(RFout[res]/0.2f);
+            if(prob_bar > 4) prob_bar = 4;
+            int obs = res*5 + prob_bar;
+
+            double denom = 0;
+            for(int i=0; i<rf_num_states; ++i){
                 rf_belief[i] *= rf_obsprob[i][obs];
-				denom += rf_belief[i];
-			}
+                denom += rf_belief[i];
+            }
             cout << "Belief: ";
             for(int i=0; i<rf_num_states; ++i){
-				rf_belief[i] /= denom;
+                rf_belief[i] /= denom;
                 cout << "S" << i+1 << ": " << rf_belief[i] << "  ";
                 //flog << "S" << i+1 << ": " << rf_belief[i] << "  ";
             }
@@ -199,7 +203,7 @@ int main(int argc, char **argv) {
             //flog << "Action: " << rf_action << endl;
             //rf_action = 0;
             if(rf_action==6){
-                rb.rotateHoldingGripper(15.0f * 3.14f / 180.0f);
+                rb.rotateHoldingGripper(15.0f * M_PI / 180.0f);
                 recogn_rotations ++ ;
             }
         }
@@ -213,102 +217,112 @@ int main(int argc, char **argv) {
         stringstream shf;
         shf << "/home/akargakos/ROS/clopema_certh_ros/certh_unfolding/src/forests/hf" << rf_action;
         HF* hf = new HF( shf.str().c_str());
-				
+
 
         //Loading probability files
         cout << "Loading obsprob... ";
         int hf_num_states, hf_num_obs;
         fin.open((shf.str() + "/obsprob.txt").c_str());
-		fin >> hf_num_states >> hf_num_obs;
+        fin >> hf_num_states >> hf_num_obs;
         vector< vector<double> > hf_obsprob;
-		hf_obsprob.resize(hf_num_states);
-		for(int i=0; i<hf_num_states; ++i){
+        hf_obsprob.resize(hf_num_states);
+        for(int i=0; i<hf_num_states; ++i){
             hf_obsprob[i].resize(hf_num_obs);
-			for(int j=0; j<hf_num_obs; ++j)
-				fin >> hf_obsprob[i][j];				
-		}
-		fin.close();
-		cout << "DONE" << endl;
-		
-		cout << "Loading transprob... ";
-		fin.open((shf.str() + "/transprob.txt").c_str());	
+            for(int j=0; j<hf_num_obs; ++j)
+                fin >> hf_obsprob[i][j];
+        }
+        fin.close();
+        cout << "DONE" << endl;
+
+        cout << "Loading transprob... ";
+        fin.open((shf.str() + "/transprob.txt").c_str());
         vector< vector<double> > hf_transprob;
-		hf_transprob.resize(hf_num_states);
-		for(int i=0; i<hf_num_states; ++i){
+        hf_transprob.resize(hf_num_states);
+        for(int i=0; i<hf_num_states; ++i){
             hf_transprob[i].resize(hf_num_states);
-			for(int j=0; j<hf_num_states; ++j)
-				fin >> hf_transprob[i][j];
-		}
-		fin.close();
-		cout << "DONE" << endl;
-		
-		cout << "Loading policy file... ";
-		fin.open((shf.str() + "/out.policy").c_str());
-		int hf_num_vectors;
-		fin >> hf_num_vectors;
+            for(int j=0; j<hf_num_states; ++j)
+                fin >> hf_transprob[i][j];
+        }
+        fin.close();
+        cout << "DONE" << endl;
+
+        cout << "Loading policy file... ";
+        fin.open((shf.str() + "/out.policy").c_str());
+        int hf_num_vectors;
+        fin >> hf_num_vectors;
         vector< vector<double> > hf_vectors;
-		vector<int> hf_actions(hf_num_vectors);
+        vector<int> hf_actions(hf_num_vectors);
         hf_vectors.resize(hf_num_vectors);
         char c[18];
-		for(int i=0; i<hf_num_vectors; ++i){
+        for(int i=0; i<hf_num_vectors; ++i){
             hf_vectors[i].resize(hf_num_states);
             fin.read(c, 18);
-			fin >> hf_actions[i];
-			fin.read(c, 15);
-			for(int j=0; j<hf_num_states; ++j)
-				fin >> hf_vectors[i][j];
-			fin.read(c, 10);
-		}
-		fin.close();
-		cout << "DONE" << endl;	
-		
-		cout << "Loading initial probabilities... ";
-		fin.open((shf.str() + "/initprob.txt").c_str());
-		vector<double> hf_initprob(hf_num_states, 0);
-		for(int i=0; i<hf_num_states; ++i)
-			fin >> hf_initprob[i];
-		cout << "DONE" << endl;
-		fin.close();
-		
-		vector<double> hf_belief(hf_num_states, 0);
-		for(int i=0; i<hf_num_states; ++i)
-			hf_belief[i] = hf_initprob[i];
+            fin >> hf_actions[i];
+            fin.read(c, 15);
+            for(int j=0; j<hf_num_states; ++j)
+                fin >> hf_vectors[i][j];
+            fin.read(c, 10);
+        }
+        fin.close();
+        cout << "DONE" << endl;
+
+        cout << "Loading initial probabilities... ";
+        fin.open((shf.str() + "/initprob.txt").c_str());
+        vector<double> hf_initprob(hf_num_states, 0);
+        for(int i=0; i<hf_num_states; ++i)
+            fin >> hf_initprob[i];
+        cout << "DONE" << endl;
+        fin.close();
+
+        vector<double> hf_belief(hf_num_states, 0);
+        for(int i=0; i<hf_num_states; ++i)
+            hf_belief[i] = hf_initprob[i];
         //-------------------------
 
-		
+
+        int recogn_rot_angle = (dImages_counter-1)*15;
+        int cdI = 0;
+
         cv::Mat hImg;
-        cv::Rect hrect;               
-        double rot_angle = 0;        
+        cv::Rect hrect;
+        double rot_angle = 0;
         int hf_action = 64;
         bool first_error = true;
         while((hf_action == 64) && (rot_angle<360) ){
             cv::Mat depth, rgb;
             depth = cv::Mat::zeros(640, 480, CV_32FC1);
             pcl::PointCloud<pcl::PointXYZ> pc;
-            rb.grabFromXtion(rgb, depth, pc, r);
-            pc2 = pc;
-            rgb2 = rgb;
             depth2 = cv::Mat::zeros(r.width, r.height, CV_32FC1);
-            processDepth(depth, depth2, r);
             hImg = cv::Mat::zeros(530, 260, CV_32FC1);
-            int res = hf->houghDetect(depth2, hImg, hrect);
+            int res;
+            if(rot_angle > recogn_rot_angle){
+                rb.grabFromXtion(rgb, depth, pc, r);
+                pc2 = pc;
+                rgb2 = rgb;
+                processDepth(depth, depth2, r);
+                res = hf->houghDetect(depth2, hImg, hrect);
+            }
+            else
+                res = hf->houghDetect(dImages[cdI++], hImg, hrect);
 
 //            cv::Mat log_rgb = rgb2(r);
 //            ftxt << hImg << endl;
 //            frgb << log_rgb << endl;
 //            fdepth << depth2 << endl;
 
-            int k=0;
-            while(k<20){
-                cv::imshow("depth", depth2);
-                cv::imshow("hough", hImg);
-                cv::waitKey(1);
-                k++;
+            if(rot_angle > recogn_rot_angle){
+                int k=0;
+                while(k<20){
+                    cv::imshow("depth", depth2);
+                    cv::imshow("hough", hImg);
+                    cv::waitKey(1);
+                    k++;
+                }
             }
 
-			cout << "cur_bar: " << res%5 << "  xbar: " << (res/5)%8 << " ybar: " << (res/5)/8 << endl;
+            cout << "cur_bar: " << res%5 << "  xbar: " << (res/5)%8 << " ybar: " << (res/5)/8 << endl;
             //flog << "cur_bar: " << res%5 << "  xbar: " << (res/5)%8 << " ybar: " << (res/5)/8 << endl;
-			cout << "obs: " << res << endl;
+            cout << "obs: " << res << endl;
             //flog << "obs: " << res << endl;
 
             vector<double> belief_new(hf_num_states, 0);
@@ -317,9 +331,9 @@ int main(int argc, char **argv) {
                 double sum=0;
                 for(int j=0; j<hf_num_states; ++j)
                     sum += hf_transprob[j][i]*hf_belief[j];
-				belief_new[i] = hf_obsprob[i][res] * sum;
+                belief_new[i] = hf_obsprob[i][res] * sum;
                 denom += belief_new[i];
-			}
+            }
             for(int i=0; i<hf_num_states; ++i){
                 if(denom!=0)
                     hf_belief[i] = belief_new[i]/denom;
@@ -330,29 +344,37 @@ int main(int argc, char **argv) {
                         hf_belief[i] = 1;
                 }
             }
-				
+
             double max = -10000000000000;
-			int max_vector = -1;
-			for(int i=0; i<hf_num_vectors; ++i){
-				double v = 0;
-				for(int j=0; j<hf_num_states; ++j)
-					v += hf_vectors[i][j]*hf_belief[j];
-				if(max < v){
-					max = v;
-					max_vector = i;
-				}
-			}
-			
-            hf_action = hf_actions[max_vector];            
+            int max_vector = -1;
+            for(int i=0; i<hf_num_vectors; ++i){
+                double v = 0;
+                for(int j=0; j<hf_num_states; ++j)
+                    v += hf_vectors[i][j]*hf_belief[j];
+                if(max < v){
+                    max = v;
+                    max_vector = i;
+                }
+            }
+
+            hf_action = hf_actions[max_vector];
             cout << "Action: " << hf_action << endl;
             //flog << "Action: " << hf_action << endl;
             if(hf_action==64){
-                rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
-                rot_angle += 10;
+                if(rot_angle > recogn_rot_angle){
+                    rb.rotateHoldingGripper(10.0f * 3.14f / 180.0f);
+                    rot_angle += 10;
+                }
+                else
+                    rot_angle += 15;
+
                 if(rf_action == 1) sleep(0.5);
             }
             else{
                 //re-estimate
+                if(rot_angle < recogn_rot_angle)
+                    rb.rotateHoldingGripper(double(rot_angle - recogn_rot_angle) / 180.0f * M_PI);
+
                 sleep(5);
                 depth = cv::Mat::zeros(640, 480, CV_32FC1);
                 rb.grabFromXtion(rgb, depth, pc, r);
