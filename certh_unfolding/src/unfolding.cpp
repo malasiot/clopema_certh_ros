@@ -372,9 +372,10 @@ int main(int argc, char **argv) {
             }
             else{
                 //re-estimate
-                if(rot_angle < recogn_rot_angle)
-                    rb.rotateHoldingGripper(double(rot_angle - recogn_rot_angle) / 180.0f * M_PI);
-
+                if(rot_angle < recogn_rot_angle){
+                    rb.rotateHoldingGripper(double(rot_angle - recogn_rot_angle) / 180.0f * M_PI);                                        
+                }
+                recogn_rot_angle = -1;
                 sleep(5);
                 depth = cv::Mat::zeros(640, 480, CV_32FC1);
                 rb.grabFromXtion(rgb, depth, pc, r);
@@ -396,15 +397,15 @@ int main(int argc, char **argv) {
                     cv::waitKey(1);
                     k++;
                 }
-                bool rotate_cloth = hrect.x + hrect.width/2 > 260/2;
+                bool orientLeft = hrect.x + hrect.width/2 > 260/2;
                 bool grasp_ok;
                 bool finish = false;
                 if(rf_action==3)
                     finish = true;
                 if(rf_action == 4)
-                    grasp_ok = rb.graspPoint(pc2, x, y, finish, rotate_cloth, true);
+                    grasp_ok = rb.graspPoint(pc2, x, y, finish, orientLeft, true);
                 else
-                    grasp_ok = rb.graspPoint(pc2, x, y, finish, rotate_cloth);
+                    grasp_ok = rb.graspPoint(pc2, x, y, finish, orientLeft);
                 if(grasp_ok)
                     break;
                 else{
@@ -416,7 +417,7 @@ int main(int argc, char **argv) {
                         first_error = false;
 
                     if(rf_action == 1) sleep(0.5);
-                    if(rotate_cloth){
+                    if ((orientLeft && (rb.getHoldingArm() == "r2")) || (!orientLeft && (rb.getHoldingArm() == "r1"))){
                         rot_angle = 0;
                         for(int i=0; i<hf_num_states; ++i)
                             hf_belief[i] = hf_initprob[i];
