@@ -7,7 +7,7 @@
 #include <clopema_motoros/GetGripperState.h>
 #include <clopema_motoros/SetGripperState.h>
 
-#include <clopema_motoros/SetSpeed.h>
+//#include <clopema_motoros/SetSpeed.h>
 
 using namespace std ;
 
@@ -224,22 +224,22 @@ bool getGripperState(const std::string &armName, bool &open_)
 }
 
 
-bool setRobotSpeed(float speed)
-{
-    ros::service::waitForService("/set_robot_speed");
+//bool setRobotSpeed(float speed)
+//{
+//    ros::service::waitForService("/set_robot_speed");
 
-    clopema_motoros::SetSpeed::Request req ;
-    clopema_motoros::SetSpeed::Response res ;
+//    clopema_motoros::SetSpeed::Request req ;
+//    clopema_motoros::SetSpeed::Response res ;
 
-    req.speed = speed ;
+//    req.speed = speed ;
 
-    if (!ros::service::call("/set_robot_speed", req, res)) {
-        ROS_ERROR("Can't set robot speed.");
-        return false ;
-    }
-    else return true ;
+//    if (!ros::service::call("/set_robot_speed", req, res)) {
+//        ROS_ERROR("Can't set robot speed.");
+//        return false ;
+//    }
+//    else return true ;
 
-}
+//}
 
 
 } // namespace robot_helpers
