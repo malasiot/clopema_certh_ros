@@ -26,4 +26,4 @@ rosbuild_gensrv()
 rosbuild_add_boost_directories()
 
 rosbuild_add_executable(psnode src/ps_node.cpp src/utilities.cpp)
-rosbuild_add_executable(psclient src/ps_client.cpp)
+#rosbuild_add_executable(psclient src/ps_client.cpp)

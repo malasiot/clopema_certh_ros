@@ -25,7 +25,7 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
       cout << "Error opening camera." << endl;
       return -1;
     }
-  
+  wait(2);
   double rate = 30.0;
   cv::Mat frame; // current video frame
   cv::namedWindow("Extracted Frame");
@@ -71,7 +71,7 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
 
   // Initialize the Arduino
-  serialPort = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY | O_NDELAY);
+  serialPort = open("/dev/ttyUSB1", O_RDWR | O_NOCTTY | O_NDELAY);
   
   if (serialPort < 0) {
       cout << strerror(errno) << endl;
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
   cout << "Reset lights." << endl;
   
   // Set camera parameters
-  system("~/clopema/certh_ps/bin/cameraSettings.sh");
+  system("./cameraSettings.sh");
 
 
   //  PhotometricStereoServer server ;
