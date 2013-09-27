@@ -35,9 +35,10 @@ int main(int argc, char *argv[])
     //grabber2.connect(boost::bind( &grabpc, &grabber2 )) ;
 
     camera_helpers::OpenNICaptureRGBD grabber("xtion3") ;
+
     image_geometry::PinholeCameraModel camera ;
 
-    if ( grabber.connect() )
+    if ( grabber.connect( ) )
     {
         std::cout << "start grabbing RGBD" << std::endl ;
 
@@ -46,10 +47,14 @@ int main(int argc, char *argv[])
 
         for(int i=0 ; i<10 ; i++ )
         {
-            grabber.grab(clr, depth, ts, camera) ;
+            if ( grabber.grab(clr, depth, ts, camera) )
+            {
 
-            cv::imwrite(str(boost::format("/tmp/rgb_%03d.png") % i), clr) ;
-            cv::imwrite(str(boost::format("/tmp/depth_%03d.png") % i), depth) ;
+                cv::imwrite(str(boost::format("/tmp/rgb_%03d.png") % i), clr) ;
+                cv::imwrite(str(boost::format("/tmp/depth_%03d.png") % i), depth) ;
+                std::cout << "grab" << std::endl ;
+            }
+            else { std::cout << "ok" << std::endl ; }
 
             ros::Duration(1).sleep() ;
         }

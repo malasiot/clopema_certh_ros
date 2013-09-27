@@ -239,10 +239,10 @@ ret_all folds :: call_main( Mat bgrImage, Mat depthMap )
 
 	//cout<< "r_all.a_corn.certain_c.at(0)"<<r_all.a_corn.certain_c.at(0)<<" & "<<r_all.a_corn.distant_c.at(0)<<endl;
 	//cout<<" r_all.a_corn.str_l_c.at(0) "<<r_all.a_corn.str_l_c.at(0);
-	namedWindow("folds",0);
-	imshow("folds",Display_a_c);
+//	namedWindow("folds",0);
+//	imshow("folds",Display_a_c);
 
-	waitKey(0);
+//	waitKey(0);
 
     return r_all;
 }

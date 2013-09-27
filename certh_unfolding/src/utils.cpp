@@ -22,6 +22,7 @@ Unfold::Unfold(const string &armName, ros::Publisher markerPub){
    marker_pub  = markerPub;
    grabber = new camera_helpers::OpenNICaptureAll ("xtion3");
    grabber->connect();
+   ros::Duration(1).sleep() ;
    clothType = -1;
 }
 
@@ -844,7 +845,7 @@ void printPose(geometry_msgs::Pose p){
 //}
 
 //Finds and grasps the lowest point of a hanging cloth, flips the cloth and releases the moving arm
-bool Unfold::graspLowestPoint(bool lastMove){
+bool Unfold::graspLowestPoint(bool lastMove, bool allwaysDrop){
 
     moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
@@ -883,7 +884,7 @@ bool Unfold::graspLowestPoint(bool lastMove){
         bottom = top;
         bottom.x()-=1;
 
-        grabber->grab(rgb, depth, pc, ts, cm);
+        while( !grabber->grab(rgb, depth, pc, ts, cm) ) ;
         if(findLowestPoint(pc, top, bottom, angle, p, n)== false)
 //            cout<< "Cant find lowest point"<< endl;
 
@@ -944,6 +945,18 @@ bool Unfold::graspLowestPoint(bool lastMove){
     }
 
     setGripperStates( movingArm, false);
+
+    if(lastMove == true){
+        moveToCheckGrasping() ;
+        if(!confirmGrasping() ){
+            moveArm(movingArmPose(), movingArm) ;
+            setGripperStates(movingArm, true);
+            return false ;
+        }
+        showUnfolding();
+        return true ;
+    }
+
 
     if( !flipCloth() ){
         cout << "CANT FLIP CLOTH"<< endl;
@@ -1541,7 +1554,7 @@ bool Unfold::moveToCheckGrasping(){
 
 
 //Flips the cloth
-bool Unfold::flipCloth(){
+bool Unfold::flipCloth( bool allwaysDrop){
 
     geometry_msgs::Pose desPoseDown, desPoseUp;
     float radious = getArmsDistance();
@@ -1621,8 +1634,12 @@ bool Unfold::flipCloth(){
         desPoseUp.position = holdingArmPose().position;
         desPoseDown.position = desPoseUp.position;
         desPoseDown.position.z -= getArmsDistance();
+        if (allwaysDrop ==  true){
+            setGripperStates(movingArm,true);
+            return true ;
 
-        if( radious > 0.5){
+        }
+            if( radious > 0.5){
             if(radious < 0.65)
                addSphereToCollisionModel(movingArm, 0.2);
             else

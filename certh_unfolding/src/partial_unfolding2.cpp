@@ -72,13 +72,10 @@ public:
         // find the coordinates of the point in 3D in the correct frame
 
         ushort z ;
-        sampleNearestNonZeroDepth(imd, x, y, z) ;
+        if ( !sampleNearestNonZeroDepth(imd, x, y, z) ) return false ;
 
-        cv::Point3d p = cmodel.projectPixelTo3dRay(Point2d(x, y));
+        cv::Point3d p = cmodel.projectPixelTo3dRay(Point2d(y, x));
         p.x *= z/1000.0 ; p.y *= z/1000.0 ; p.z = z/1000.0 ;
-
-
-
 
         cv::rectangle(imc, cv::Rect(x-2, y-2, 5, 5), cv::Scalar(255, 0, 255), 2) ;
 
@@ -91,6 +88,8 @@ public:
         pose = camera_frame * Affine3d(orientations[idx])  ;
 
         pp = camera_frame * Vector3d(p.x, p.y, p.z)  ;
+
+        return true ;
     }
 
     int counter ;
@@ -156,32 +155,36 @@ int main(int argc, char **argv) {
     Affine3d pose ;
     Vector3d pp ;
 
-    action.selectGraspPoint(pose, pp) ;
-
-    MoveRobot rb ;
-    moveGripper(rb, "r1", pose.translation(), Quaterniond(pose.rotation())) ;
-
-    publishPointMarker(marker_pub, pp);
-
-    Vector3d dir(0.001, 0.99, 0) ;
-    dir.normalize() ;
-
-
-    KinematicsModel kmodel ;
-    kmodel.init() ;
-
-    GraspHangingPlanner gsp(kmodel, "r1") ;
-    trajectory_msgs::JointTrajectory traj ;
-
-
-    if ( gsp.plan(pp, dir, traj) )
+    if ( action.selectGraspPoint(pose, pp) )
     {
 
-        rb.execTrajectory(traj) ;
+        MoveRobot rb ;
+        moveGripper(rb, "r1", pose.translation(), Quaterniond(pose.rotation())) ;
 
+        publishPointMarker(marker_pub, pp);
+
+        cout << pp << endl ;
+        Vector3d dir(0.001, 0.99, 0) ;
+        dir.normalize() ;
+
+
+        KinematicsModel kmodel ;
+        kmodel.init() ;
+
+        GraspHangingPlanner gsp(kmodel, "r1") ;
+
+        gsp.cone_aperture = M_PI/20 ;
+        gsp.cone_length = 0.8 ;
+        gsp.offset = 0.1 ;
+
+        trajectory_msgs::JointTrajectory traj ;
+
+
+        if ( gsp.plan(pp, dir, traj) )
+           rb.execTrajectory(traj) ;
+
+        setServoPowerOff() ;
     }
-
-    setServoPowerOff() ;
 
     ros::spin() ;
 

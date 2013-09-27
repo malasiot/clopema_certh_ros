@@ -20,7 +20,7 @@ Modified:   May 30, 2013
 
     <!-- Include CloPeMa openni launch file for kinect on the first arm. -->
     <group>
-        <include file="$(find clopema_perception_launch)/launch/openni.launch">
+        <include file="$(find certh_launch)/launch/openni.launch">
             <arg name="override"              value="$(arg override)"/>
             <arg name="machine"               value="kinect1"/>
             <arg name="camera"                value="xtion2"/>
@@ -30,6 +30,8 @@ Modified:   May 30, 2013
             <arg name="depth_camera_info_url" value="file://${ROS_HOME}/clopema_calibration/xtion2/camera_ir.yaml"/>
             <arg name="publish_tf"            value="$(arg publish_tf)" />
             <arg name="debug"                 value="$(arg debug)"/>
+			<arg name="image_mode"	      value="2"/>
+
 			<arg name="depth_registration"    value="true" />
         </include>
     </group>

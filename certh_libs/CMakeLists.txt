@@ -50,8 +50,17 @@ target_link_libraries(certh_libs_imageproc cvblob)
 
 rosbuild_add_library(certh_libs_misc 
 	src/misc/FileSystemHelpers.cpp
+	src/misc/ApplicationSettings.cpp
 )
 rosbuild_link_boost(certh_libs_geometry system filesystem regex)
 
+add_subdirectory(src/alg)
+
+
+
+#####################################################
+
+rosbuild_add_executable(testrec test/testrec.cpp)
+target_link_libraries(testrec certh_libs_alg )
 
 

@@ -475,7 +475,7 @@ bool sampleNearestNonZeroDepth(const cv::Mat &dim, int x, int y, ushort &z)
         std::sort(dpts.begin(), dpts.end(), sorter) ;
     }
 
-    bool found = true ;
+    bool found = false ;
 
     for(int i=0 ; i<dpts.size() ; i++)
     {
