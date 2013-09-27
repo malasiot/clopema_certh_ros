@@ -236,13 +236,15 @@ private:
 
     void input_callback(const ImageConstPtr& rgb, const ImageConstPtr& depth, const CameraInfoConstPtr &camera)
     {
-        boost::unique_lock<boost::mutex> lock_ (image_lock) ;
+        {
+            boost::unique_lock<boost::mutex> lock_ (image_lock) ;
 
-        // Store current images
-        tmp_rgb = rgb ;
-        tmp_depth = depth ;
-        tmp_camera = camera ;
-        dataReady = true ;
+            // Store current images
+            tmp_rgb = rgb ;
+            tmp_depth = depth ;
+            tmp_camera = camera ;
+            dataReady = true ;
+        }
 
         data_ready.unlock() ;
     }
@@ -304,12 +306,15 @@ private:
 
     void input_callback(const PointCloud2ConstPtr& cloud)
     {
-        boost::unique_lock<boost::mutex> lock_ (image_lock) ;
-        // Store current images
-        tmp_cloud = cloud ;
-        dataReady = true ;
+        {
+            boost::unique_lock<boost::mutex> lock_ (image_lock) ;
 
-        data_ready.unlock() ;
+            // Store current images
+            tmp_cloud = cloud ;
+            dataReady = true ;
+
+            data_ready.unlock() ;
+        }
     }
 
     sensor_msgs::PointCloud2ConstPtr tmp_cloud ;
@@ -380,13 +385,16 @@ private:
 
     void input_callback(const ImageConstPtr &rgb, const ImageConstPtr &depth, const PointCloud2ConstPtr& cloud, const CameraInfoConstPtr &camera)
     {
-        boost::unique_lock<boost::mutex> lock_ (image_lock) ;
-        // Store current images
-        tmp_rgb = rgb ;
-        tmp_depth = depth ;
-        tmp_cloud = cloud ;
-        tmp_camera = camera ;
-        dataReady = true ;
+        {
+            boost::unique_lock<boost::mutex> lock_ (image_lock) ;
+
+            // Store current images
+            tmp_rgb = rgb ;
+            tmp_depth = depth ;
+            tmp_cloud = cloud ;
+            tmp_camera = camera ;
+            dataReady = true ;
+        }
 
         data_ready.unlock() ;
     }

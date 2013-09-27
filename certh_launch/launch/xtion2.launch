@@ -22,7 +22,7 @@ Modified:   May 30, 2013
     <group>
         <include file="$(find certh_launch)/launch/openni.launch">
             <arg name="override"              value="$(arg override)"/>
-            <arg name="machine"               value="kinect1"/>
+            <arg name="machine"               value="clopema2"/>
             <arg name="camera"                value="xtion2"/>
             <arg name="device_id"             value="$(arg device_id)" if="$(arg override)"/>
             <arg name="link"                  value="r2_link_6" />
