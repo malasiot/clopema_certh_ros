@@ -550,16 +550,18 @@ bool attachBoxToXtionInCollisionModel(string armName){
     arm_navigation_msgs::Shape object;
 
     object.type = arm_navigation_msgs::Shape::BOX;
+
     object.dimensions.resize(3);
     object.dimensions[0] = 0.2;
-    object.dimensions[1] = 0.7;
+    object.dimensions[1] = 0.6;
     object.dimensions[2] = 0.2;
 
     geometry_msgs::Pose pose;
 
     pose.position.x = 0.0;
-    pose.position.y = -0.05;
+    pose.position.y = -0.6;
     pose.position.z = 0.0;
+
     pose.orientation.x = 0;
     pose.orientation.y = 0;
     pose.orientation.z = 0;
@@ -572,10 +574,10 @@ bool attachBoxToXtionInCollisionModel(string armName){
 
     if(!get_planning_scene_client.call(planning_scene_req, planning_scene_res)) return false;
 
-
     return true ;
 
 }
+
 //bool addBoxToCollisionModel(const std::string &armName, double x, double y, double z ){
 
 //    std::string arm2Name;
