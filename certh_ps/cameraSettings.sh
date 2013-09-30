@@ -60,7 +60,7 @@ echo
 v4l2-ctl --list-ctrls-menus
 
 # Set video format 
-v4l2-ctl --set-fmt-video width=1280,height=800,pixelformat=0
+v4l2-ctl --set-fmt-video width=640,height=480,pixelformat=0
 
 # Display video format
 echo

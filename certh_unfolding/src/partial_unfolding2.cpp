@@ -47,10 +47,6 @@ public:
             grasp_candidate = grasp_cand_ ;
         }
 
-
-        cout << detected << endl ;
-        cout << grasp_cand_[0] << ' ' << grasp_cand_[1] << ' ' << grasp_cand_[2] << endl ;
-
        counter ++ ;
     }
 
@@ -59,7 +55,12 @@ public:
         if ( !found )
         {
             grasp_candidate.resize(3) ;
-            folds_.select(found, grasp_candidate, orientations, cx) ;
+
+            if (!folds_.select(found, grasp_candidate, orientations, cx)){
+
+                detectHorizontalEdge(grasp_candidate, cx, orientations.size()-1);
+
+            }
         }
 
         int idx = grasp_candidate[0] ;
@@ -74,12 +75,13 @@ public:
         ushort z ;
         if ( !sampleNearestNonZeroDepth(imd, x, y, z) ) return false ;
 
-        cv::Point3d p = cmodel.projectPixelTo3dRay(Point2d(y, x));
+        cv::Point3d p = cmodel.projectPixelTo3dRay(Point2d(x, y));
         p.x *= z/1000.0 ; p.y *= z/1000.0 ; p.z = z/1000.0 ;
 
         cv::rectangle(imc, cv::Rect(x-2, y-2, 5, 5), cv::Scalar(255, 0, 255), 2) ;
 
-        cv::imwrite("/tmp/gsp.png", imc) ;
+
+        cv::imwrite("/tmp/results/gsp.png", imc) ;
 
         Affine3d camera_frame ;
         tf::StampedTransform tr = robot_helpers::getTranformation(camera + "_rgb_optical_frame") ;
@@ -174,8 +176,8 @@ int main(int argc, char **argv) {
         GraspHangingPlanner gsp(kmodel, "r1") ;
 
         gsp.cone_aperture = M_PI/20 ;
-        gsp.cone_length = 0.8 ;
-        gsp.offset = 0.1 ;
+        gsp.cone_length = 0.1 ;
+        gsp.offset = 0 ;
 
         trajectory_msgs::JointTrajectory traj ;
 
