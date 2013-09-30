@@ -358,6 +358,7 @@ int main(int argc, char **argv) {
             }
 
             hf_action = hf_actions[max_vector];
+            if(res%5 >= 3) hf_action = -1;
             cout << "Action: " << hf_action << endl;
             //flog << "Action: " << hf_action << endl;
             if(hf_action==64){
@@ -398,6 +399,12 @@ int main(int argc, char **argv) {
                     k++;
                 }
                 bool orientLeft = hrect.x + hrect.width/2 > 260/2;
+
+                if(orientLeft)
+                    cout << "Grasp Orientation: Left" << endl;
+                else
+                    cout << "Grasp Orientation: Right" << endl;
+
                 bool grasp_ok;
                 bool finish = false;
                 if(rf_action==3)
@@ -585,6 +592,7 @@ int main(int argc, char **argv) {
             }
 
             hf_action = hf2_actions[max_vector];
+            if(res%5 >= 3) hf_action = -1;
             cout << "Action: " << hf_action << endl;
             //flog << "Action: " << hf_action << endl;
             if(hf_action==64){
@@ -614,8 +622,14 @@ int main(int argc, char **argv) {
                     cv::waitKey(1);
                     k++;
                 }
-                bool rotate_cloth = hrect.x + hrect.width/2 > 260/2;
-                bool grasp_ok = rb.graspPoint(pc2, x, y, true, rotate_cloth);
+                bool orientLeft = hrect.x + hrect.width/2 > 260/2;
+
+                if(orientLeft)
+                    cout << "Grasp Orientation: Left" << endl;
+                else
+                    cout << "Grasp Orientation: Right" << endl;
+
+                bool grasp_ok = rb.graspPoint(pc2, x, y, true, orientLeft);
                 if(grasp_ok)
                     break;
                 else{
@@ -626,7 +640,7 @@ int main(int argc, char **argv) {
                     else
                         first_error = false;
 
-                    if(rotate_cloth){
+                    if(orientLeft){
                         rot_angle = 0;
                         for(int i=0; i<hf_num_states; ++i)
                             hf2_belief[i] = hf2_initprob[i];
