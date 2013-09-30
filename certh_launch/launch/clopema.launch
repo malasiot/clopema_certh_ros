@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+
+<launch>
+    <!-- Machines describes the addresses and names of the used ROS machines. -->
+    <machine name="clopema1" address="127.0.0.1" user="$(optenv USER ros)" default="true" env-loader="/home/ros/env.sh"/>
+	<machine name="clopema2" address="clopema2" user="clopema" default="false" env-loader="/home/clopema/env.sh"/>
+    <machine name="kinect1" address="127.0.0.1" user="$(optenv USER ros)" default="true" env-loader="/home/ros/env.sh"/>
+
+
+	<!-- dynamically set parameters. Call updatedevs.sh when you reboot or add new devices -->
+
+	<include file="$(find certh_launch)/launch/devices.launch" />
+
+    <arg name="r3_xtion_port" auto="true" value="$(find clopema_launch)/scripts/findusb.sh 1d27 clopema@clopema2)"/>
+	<arg name="r2_xtion_port" auto="true" value="$(find clopema_launch)/scripts/findusb.sh 1d27)"/>
+    <arg name="r1_xtion_port" auto="true" value="2@10"/>
+
+    <arg name="robot_ip" value="192.168.0.101"/>
+
+    <arg name="r1_gripper_inverted" value="true"/>
+    <arg name="r2_gripper_inverted" value="true"/>
+
+    <arg name="rosi_use_ros_time" default="true"/>
+
+    <param name="/io_interface/robot_ip" value="$(arg robot_ip)"/>
+    <param name="/motion_interface_dual/robot_ip" value="$(arg robot_ip)"/>
+    <param name="/robot_state/robot_ip" value="$(arg robot_ip)"/>
+
+    <param name="/r1_gripper/inverted" value="$(arg r1_gripper_inverted)"/>
+    <param name="/r2_gripper/inverted" value="$(arg r2_gripper_inverted)"/>
+    <param name="/motoros/use_ros_time" value="$(arg rosi_use_ros_time)"/>
+</launch>
