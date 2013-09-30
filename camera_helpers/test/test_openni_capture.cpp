@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 
     //grabber2.connect(boost::bind( &grabpc, &grabber2 )) ;
 
-    camera_helpers::OpenNICaptureRGBD grabber("xtion3") ;
+    camera_helpers::OpenNICaptureRGBD grabber("xtion2") ;
 
     image_geometry::PinholeCameraModel camera ;
 
