@@ -10,6 +10,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 set(ROS_BUILD_TYPE Debug)
 
 rosbuild_init()
+rosbuild_gensrv()
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -20,10 +21,13 @@ rosbuild_add_boost_directories()
 
 rosbuild_add_library(camera_helpers 
 	src/OpenNICapture.cpp 
+	src/OpenNIServiceClient.cpp
 #	src/robot_head.cpp 
 	src/depth_filter.cpp)
-
 rosbuild_link_boost(camera_helpers signals)
+
+rosbuild_add_executable(openni_service src/OpenNIService.cpp)
+rosbuild_link_boost(openni_service signals)
 
 #rosbuild_add_executable(robot_head_virtual src/robot_head_virtual.cpp)
 
