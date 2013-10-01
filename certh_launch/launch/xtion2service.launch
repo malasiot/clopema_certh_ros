@@ -5,6 +5,6 @@
 	<include file="$(find clopema_config)/launch/clopema.launch"/>
 
     <node pkg="camera_helpers" type="openni_service" name="openni_service" 
-        respawn="true" machine="clopema1" output="screen" args="xtion2" />
+        respawn="true" machine="clopema1" output="screen" args="xtion3" />
 
 </launch>

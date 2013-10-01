@@ -10,8 +10,9 @@
 using namespace Eigen ;
 using namespace std ;
 using namespace robot_helpers ;
+using namespace camera_helpers ;
 
-RotateAndGrab::RotateAndGrab(const string &camera_, const string &arm_): cap(camera_), camera(camera_), arm(arm_) {
+RotateAndGrab::RotateAndGrab(const string &camera_, const string &arm_): camera(camera_), arm(arm_) {
     cmove.setServoMode(false);
 }
 
@@ -19,7 +20,8 @@ void RotateAndGrab::init(const Vector3d &pos)
 {
     moveGripper(cmove, arm, pos, lookAt(Vector3d(0, 0, -1), 0)) ;
 
-    cap.connect() ;
+    openni::connect(camera) ;
+
     cmove.actionStarted.connect(boost::bind(&RotateAndGrab::startCapture, this)) ;
     cmove.actionCompleted.connect(boost::bind(&RotateAndGrab::stopCapture, this)) ;
 }
@@ -31,6 +33,8 @@ void RotateAndGrab::rotate(double theta)
     while (!captureStoped ) ;
 
     capture_thread.join() ;
+
+    openni::disconnect(camera) ;
 }
 
 void RotateAndGrab::startCapture()
@@ -58,7 +62,7 @@ void RotateAndGrab::doCapture()
             ros::Time ts ;
             image_geometry::PinholeCameraModel cm;
 
-            if ( cap.grab(clr, depth, ts, cm) )
+            if ( openni::grab(camera, clr, depth, ts, cm) )
             {
 
                 tf::StampedTransform transform;

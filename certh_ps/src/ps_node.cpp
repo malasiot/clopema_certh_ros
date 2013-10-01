@@ -14,6 +14,7 @@ using namespace std;
 using namespace cv;
 
 int serialPort;
+cv::VideoCapture *capture;
 
 bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::PhotometricStereo::Response &res) {
 
@@ -27,23 +28,14 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
 		"05\n", "00\n", "06\n", "00\n", "07\n", "00\n", "08\n", "00\n"};
 
   system("v4l2-ctl -c focus_auto=1"); // turn auto-focus on
+  write(serialPort, "0\n", 2); 
   write(serialPort, "1\n", 2); // turn on the first LED for auto-focus
-  sleep(1);
-  // Open the camera
-  cv::VideoCapture capture(0);
-
-  // check if video successfully opened
-  if (!capture.isOpened())
-    {
-      cout << "Error opening camera." << endl;
-      return -1;
-    }
   
   int i;
   // wait for 3 seconds to focus 
   for(i = 0; i < 90; i++) {
     // read next frame if any
-    if (!capture.read(frame))
+    if (!capture->read(frame))
       break;
     cv::imshow("Preview", frame);
     // introduce a delay or press key to stop
@@ -58,7 +50,7 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
     //write(serialPort, "0\n", 2);
     write(serialPort, leds[i].c_str(), 3);
     // read next frame if any
-    if (!capture.read(frame))
+    if (!capture->read(frame))
       break;
     cv::imshow("Extracted Frame", frame);
     cv::imwrite(leds[i].substr(0, leds[i].size()-1) + ".jpg", frame);
@@ -71,7 +63,7 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
   // Close the video file.
   // Not required since called by destructor
   // cv::destroyAllWindows();
-  capture.release(); frame.release();
+  capture->release(); frame.release();
   
   res.a = 16;
 
@@ -85,7 +77,7 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
 
   // Initialize the Arduino
-  serialPort = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY | O_NDELAY);
+  serialPort = open("/dev/ttyUSB1", O_RDWR | O_NOCTTY | O_NDELAY);
   
   if (serialPort < 0) {
       cout << strerror(errno) << endl;
@@ -103,6 +95,17 @@ int main(int argc, char **argv)
   // Set camera parameters
   system("./cameraSettings.sh");
   //ros::Duration(5).sleep();
+  
+  // Open the camera
+  capture = new cv::VideoCapture(0);
+
+  // check if video successfully opened
+  if (!capture->isOpened())
+    {
+      cout << "Error opening camera." << endl;
+      return -1;
+    }
+  
 
   //PhotometricStereoServer server;
   

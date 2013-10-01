@@ -5,6 +5,7 @@
 #include "Unfold.h"
 #include <sstream>
 #include <time.h>
+#include <camera_helpers/OpenNIServiceClient.h>
 
 using namespace std;
 
@@ -359,6 +360,7 @@ int main(int argc, char **argv) {
 
             hf_action = hf_actions[max_vector];
             if(res%5 >= 3) hf_action = -1;
+            if(res%5 == 0) hf_action = 64;
             cout << "Action: " << hf_action << endl;
             //flog << "Action: " << hf_action << endl;
             if(hf_action==64){
@@ -593,6 +595,7 @@ int main(int argc, char **argv) {
 
             hf_action = hf2_actions[max_vector];
             if(res%5 >= 3) hf_action = -1;
+            if(res%5 == 0) hf_action = 64;
             cout << "Action: " << hf_action << endl;
             //flog << "Action: " << hf_action << endl;
             if(hf_action==64){
@@ -668,7 +671,7 @@ int main(int argc, char **argv) {
     cout << "Recognition rotations: " << recogn_rotations << endl;
     cout << "----------------------" << endl;
 
-    rb.grabber->disconnect();
+    camera_helpers::openni::disconnect(rb.camera);
     //Set servo power off
         clopema_motoros::SetPowerOff soff;
         soff.request.force = false;

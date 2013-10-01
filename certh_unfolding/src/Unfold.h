@@ -28,6 +28,7 @@
 #include <fstream>
 #include <ros/ros.h>
 #include <camera_helpers/OpenNICapture.h>
+#include <camera_helpers/OpenNIServiceClient.h>
 
 
 #include <cv.h>
@@ -54,12 +55,9 @@ private:
     string movingArm;
     int clothType; //0 shirt ,1 trousers, 2 shorts1, 3 shorts2, 4 T-shirt1, 5 T-shirt2
     ros::Publisher marker_pub;
-public:
-    camera_helpers::OpenNICaptureAll  *grabber;
-
 
 public:
-
+    string camera ;
 
     void setClothType( int type);
     string getHoldingArm();

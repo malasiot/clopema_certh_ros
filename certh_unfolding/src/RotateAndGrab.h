@@ -4,7 +4,7 @@
 #include <Eigen/Geometry>
 #include <string>
 #include <robot_helpers/Robot.h>
-#include <camera_helpers/OpenNICapture.h>
+#include <camera_helpers/OpenNIServiceClient.h>
 
 class RotateAndGrab {
 public:
@@ -26,7 +26,6 @@ protected:
     void stopCapture() ;
 
     robot_helpers::MoveRobot cmove ;
-    camera_helpers::OpenNICaptureRGBD cap ;
 
     std::string camera, arm ;
     bool captureStoped ;

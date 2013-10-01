@@ -10,7 +10,7 @@
   <depend package="std_msgs"/>
 
   <depend package="certh_libs"/>
-  <depend package="robot_helpers"/>
+  <!--depend package="robot_helpers"/-->
   <depend package="camera_helpers"/>
  
 </package>

@@ -15,15 +15,18 @@
 
 using namespace std;
 using namespace robot_helpers;
+using namespace camera_helpers ;
 
 Unfold::Unfold(const string &armName, ros::Publisher markerPub){
 
    setHoldingArm(armName);
    marker_pub  = markerPub;
-   grabber = new camera_helpers::OpenNICaptureAll ("xtion3");
-   grabber->connect();
+   camera = "xtion3" ;
+   openni::connect( camera ) ;
+
    ros::Duration(1).sleep() ;
    clothType = -1;
+
 }
 
 Unfold::~Unfold() {
@@ -859,9 +862,11 @@ bool Unfold::graspLowestPoint(bool lastMove, bool allwaysDrop){
     vector <geometry_msgs::Pose> poses;
     Eigen::Vector4d targetP;
     Eigen::Matrix4d rotMat;
+    int counter = 0;
 
     while(!grasp){
 
+        counter++;
         cv::Mat rgb, depth;
         pcl::PointCloud<pcl::PointXYZ> pc;
         cv::Mat R = cv::Mat(4, 4, CV_32FC1, cv::Scalar::all(0));
@@ -884,7 +889,7 @@ bool Unfold::graspLowestPoint(bool lastMove, bool allwaysDrop){
         bottom = top;
         bottom.x()-=1;
 
-        while( !grabber->grab(rgb, depth, pc, ts, cm) ) ;
+        while( !openni::grab(camera, rgb, depth, pc, ts, cm) ) ;
         if(findLowestPoint(pc, top, bottom, angle, p, n)== false)
 //            cout<< "Cant find lowest point"<< endl;
 
@@ -906,6 +911,13 @@ bool Unfold::graspLowestPoint(bool lastMove, bool allwaysDrop){
         desPose.position.y = targetP.y() + rotMat(1, 0) * 0.02 - rotMat(1, 2) * 0.04;
         desPose.position.z = targetP.z() + rotMat(2, 0) * 0.02 - rotMat(2, 2) * 0.04;
 
+
+        cout << endl << "Lowest Point: " << targetP << endl;
+        if(targetP.z() < 0.56 || counter > 4){
+            while(!graspMiddle());
+            counter = 0 ;
+            continue;
+        }
         st= getTranformation(holdingArm + "_ee");
 
        // grasp lowest point
@@ -1466,7 +1478,7 @@ bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::Po
     ros::Time ts(0);
     image_geometry::PinholeCameraModel cm;
 
-    if(!grabber->grab(rgb, depth, pc, ts, cm)){
+    if(!openni::grab( camera, rgb, depth, pc, ts, cm)){
         cout<<"cant grab!  " << endl;
         return false;
     }
@@ -1484,7 +1496,7 @@ bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::Po
     image_geometry::PinholeCameraModel cm;
 
 
-    if(!grabber->grab(rgb, depth, pc, ts, cm)){
+    if(!openni::grab(camera, rgb, depth, pc, ts, cm)){
         cout<<"cant grab!  " << endl;
         return false;
     }
@@ -1499,7 +1511,7 @@ bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::Po
     }
 
     for(int i=0; i<9; ++i){
-        if(!grabber->grab(rgb, depth, pc, ts, cm)){
+        if(!openni::grab(camera, rgb, depth, pc, ts, cm)){
             cout<<"cant grab!  " << endl;
             return false;
         }
@@ -1938,7 +1950,7 @@ std::vector <Unfold::grabRGBD> Unfold::grabRGBD360() {
 
         rotateGripper( 0.09 , holdingArm) ;
 
-        grabber->grab(rgb, depth, pc, ts, cm);
+        openni::grab(camera, rgb, depth, pc, ts, cm);
 
         image.rgb = rgb ;
         image.depth = depth ;
@@ -2001,7 +2013,7 @@ bool Unfold::findMiddlePoint(const pcl::PointCloud<pcl::PointXYZ> &depth, int &x
         step = -1;
     }
 
-    int j= 640/3 ;
+    int j= int(640.0f/(2.5f)) ;
     int i;
     for( i=start ; i != end ; i+=step)
     {
@@ -2025,10 +2037,10 @@ bool Unfold::findMiddlePoint(const pcl::PointCloud<pcl::PointXYZ> &depth, int &x
 
     pcl::PointXYZ p_ = depth.at(j,i) ;
 
-    int ox, oy ;
+    int ox = j, oy = i + 10*step ;
 
     // find densest point cluster in a 3cm sphere around the detected point
-    findMeanShiftPoint(depth, j, i, ox, oy, 0.03) ;
+    //findMeanShiftPoint(depth, j, i, ox, oy, 0.03) ;
 
     x= ox ;
     y= oy ;
