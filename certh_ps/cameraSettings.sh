@@ -47,10 +47,10 @@ v4l2-ctl -c pan_absolute=0
 v4l2-ctl -c tilt_absolute=0
 
 # Set focus_auto (bool): default=0
-v4l2-ctl -c focus_auto=0
+# v4l2-ctl -c focus_auto=0
 
 # Set  focus_absolute (int): min=0 max=40 step=1 default=0
-v4l2-ctl -c focus_absolute=36
+# v4l2-ctl -c focus_absolute=36
 
 # Set zoom_absolute (int): min=0 max=10 step=1 default=0
 v4l2-ctl -c zoom_absolute=0

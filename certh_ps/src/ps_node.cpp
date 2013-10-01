@@ -15,6 +15,9 @@ using namespace cv;
 int serialPort;
 
 bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::PhotometricStereo::Response &res) {
+  
+  system("v4l2-ctl -c focus_auto=1"); // turn auto-focus on
+  write(serialPort, "1\n", 2); // turn on the first LED for auto-focus
 
   // Open the camera
   cv::VideoCapture capture(0);
@@ -25,6 +28,9 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
       cout << "Error opening camera." << endl;
       return -1;
     }
+ 
+  sleep(3); // wait to focus
+  system("v4l2-ctl -c focus_auto=0"); // turn auto-focus off
 
   double rate = 30.0;
   cv::Mat frame; // current video frame
@@ -40,6 +46,14 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
   cv::waitKey(delay);
   capture.read(frame);
   cv::waitKey(delay);
+  capture.read(frame);
+  cv::waitKey(delay);
+  capture.read(frame);
+  cv::waitKey(delay); 
+  capture.read(frame);
+  cv::waitKey(delay);
+  capture.read(frame);
+  cv::waitKey(delay);
 
   // for all frames in video
   for(i=0; i < 8; i++) {
@@ -51,8 +65,9 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
     cv::imshow("Extracted Frame", frame);
     cv::imwrite(leds[i].substr(0, leds[i].size()-1) + ".png", frame);
     // introduce a delay or press key to stop
-    if (cv::waitKey(delay) > 0)
-      break;
+    //if (cv::waitKey(delay) > 0)
+    //  break;
+    sleep(1);
   }
 
   write(serialPort, "0\n", 2); // turn off LEDs
@@ -85,7 +100,7 @@ int main(int argc, char **argv)
       cout << "Error opening serial port." << endl;
       return -1;
     }
-  write(serialPort, "0", 2);
+  write(serialPort, "0\n", 2);
   cout << "Reset lights." << endl;
   
   // Set camera parameters
