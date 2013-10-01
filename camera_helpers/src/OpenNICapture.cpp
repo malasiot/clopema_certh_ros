@@ -35,6 +35,7 @@ public:
 
     }
 
+
     bool connect(ros::Duration timeout) ;
     void connect(boost::function<void ()> cb, ros::Duration timeout) ;
     virtual void disconnect() ;

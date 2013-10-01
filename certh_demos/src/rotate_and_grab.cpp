@@ -2,6 +2,7 @@
 
 #include <robot_helpers/Robot.h>
 #include <robot_helpers/Utils.h>
+#include <robot_helpers/Geometry.h>
 
 #include <camera_helpers/OpenNICapture.h>
 #include <pcl/io/pcd_io.h>
@@ -12,87 +13,97 @@
 
 using namespace std;
 using namespace robot_helpers ;
+using namespace Eigen ;
 
-bool captureStoped ;
-boost::mutex captureMutex ;
-boost::condition_variable finished ;
+class RotateAndGrab {
+public:
 
-int counter = 0 ;
+    RotateAndGrab(const std::string &camera_, const std::string &arm_) ;
+    ~RotateAndGrab() ;
 
-// set the robot speed to 1.3 for ~200 pics
-void stopCapture()
+    void init(const Vector3d &pos) ;
+
+    void rotate(double theta) ;
+
+protected:
+
+    virtual void process(const cv::Mat &clr, const cv::Mat &depth, const image_geometry::PinholeCameraModel &cm,
+                         const ros::Time &ts, Eigen::Affine3d &tip_pose_in_camera_frame) {}
+
+
+    void startCapture() ;
+    void doCapture() ;
+    void stopCapture() ;
+
+    camera_helpers::OpenNICaptureRGBD *cap ;
+
+    std::string camera, arm ;
+    bool captureStoped ;
+    boost::mutex mutex ;
+    boost::thread capture_thread ;
+    int counter ;
+    MoveRobot cmove ;
+};
+
+
+RotateAndGrab::RotateAndGrab(const string &camera_, const string &arm_):  camera(camera_), arm(arm_) {
+  cmove.setServoMode(false);
+  cap = new camera_helpers::OpenNICaptureRGBD(camera) ;
+}
+
+void RotateAndGrab::init(const Vector3d &pos)
 {
-    cout << "done" << endl ;
 
-    boost::unique_lock<boost::mutex> lock_ ;
-    captureStoped = true ;
-    finished.notify_all();
+    moveGripper(cmove, arm, pos, lookAt(Vector3d(0, 0, -1), 0)) ;
 
-    //Set servo power off
-    clopema_motoros::SetPowerOff soff;
-    soff.request.force = false;
-    ros::service::waitForService("/joint_trajectory_action/set_power_off");
-    if (!ros::service::call("/joint_trajectory_action/set_power_off", soff)) {
-        ROS_ERROR("Can't call service set_power_off");
-    }
+cap->connect() ;
+
+    cout << "connected" << endl ;
+
+    cmove.actionStarted.connect(boost::bind(&RotateAndGrab::startCapture, this)) ;
+    cmove.actionCompleted.connect(boost::bind(&RotateAndGrab::stopCapture, this)) ;
 
 }
 
-void doCapture(camera_helpers::OpenNICaptureAll *grabber)
+void RotateAndGrab::rotate(double theta)
+{
+    rotateGripper(cmove, arm, theta) ;
+
+    while (!captureStoped ) ;
+
+    capture_thread.join() ;
+}
+
+void RotateAndGrab::startCapture()
+{
+    captureStoped = false ;
+    counter = 0 ;
+    capture_thread = boost::thread(boost::bind(&RotateAndGrab::doCapture, this)) ;
+}
+
+void RotateAndGrab::doCapture()
 {
     bool _stoped = false ;
 
-    ofstream cap_data("/tmp/rot/cap.txt") ;
-
-    tf::TransformListener listener(ros::Duration(1.0));
 
     do {
 
         {
-            boost::unique_lock<boost::mutex> lock_ ;
+            boost::mutex::scoped_lock lock_(mutex) ;
             _stoped = captureStoped ;
         }
 
         if ( !_stoped )
         {
-
             cv::Mat clr, depth ;
-            pcl::PointCloud<pcl::PointXYZ> pc ;
             ros::Time ts ;
             image_geometry::PinholeCameraModel cm;
 
-            string rgbFileName = "/tmp/rot/" + str(boost::format("cap_rgb_%06d.png") % counter) ;
-            string depthFileName = "/tmp/rot/" + str(boost::format("cap_depth_%06d.png") % counter) ;
-            string cloudFileName = "/tmp/rot/" + str(boost::format("cap_cloud_%06d.pcd") % counter) ;
-            if ( grabber->grab(clr, depth, pc, ts, cm) )
+            if ( cap->grab(clr, depth, ts, cm) )
             {
 
-                cout << counter << endl ;
-
-                tf::StampedTransform transform;
-
-                Eigen::Affine3d pose ;
-
-                try {
-                    listener.waitForTransform("xtion3_rgb_optical_frame","r1_ee", ts, ros::Duration(1) );
-                    listener.lookupTransform("xtion3_rgb_optical_frame","r1_ee", ts, transform);
-
-//                    listener.waitForTransform("r1_ee", "base_link", ts, ros::Duration(1) );
-//                    listener.lookupTransform("r1_ee", "base_link", ts, transform);
-
-                    cv::imwrite(rgbFileName, clr) ;
-                    cv::imwrite(depthFileName, depth) ;
-                    pcl::io::savePCDFileBinary(cloudFileName, pc) ;
-                    tf::TransformTFToEigen(transform, pose);
-
-                    cap_data << counter << endl << pose.matrix() << endl ;
-
-                    counter ++ ;
-
-                } catch (tf::TransformException ex) {
-                    ROS_INFO("%s",ex.what());
-                }
-
+                cout << counter++ << endl ;
+                ros::Duration(0.5).sleep() ;
 
             }
 
@@ -102,33 +113,26 @@ void doCapture(camera_helpers::OpenNICaptureAll *grabber)
 
 }
 
-
-void startCapture(camera_helpers::OpenNICaptureAll *grabber)
+void RotateAndGrab::stopCapture()
 {
-    captureStoped = false ;
-    boost::thread capture_thread(boost::bind(doCapture, grabber)) ;
+    boost::mutex::scoped_lock lock_(mutex) ;
+    captureStoped = true ;
+
 
 }
 
-int main(int argc, char **argv) {
-    ros::init(argc, argv, "move_rotate_grab");
-    ros::NodeHandle nh;
+RotateAndGrab::~RotateAndGrab()
+{
+    cap->disconnect() ;
+    delete cap ;
+}
 
-    MoveRobot cmove ;
-    cmove.setServoMode(false);
+int main(int argc, char *argv[])
+{
+    ros::init(argc, argv, "rotate_and_grab_example");
+    ros::NodeHandle nh ;
 
-  // moveHome() ;
-    moveGripperPointingDown(cmove, "r1", 0, -0.7, 1.5) ;
-
-
-
-    camera_helpers::OpenNICaptureAll cap("xtion3") ;
-    cap.connect() ;
-    cmove.actionStarted.connect(boost::bind(&startCapture, &cap)) ;
-    cmove.actionCompleted.connect(&stopCapture) ;
-
-    rotateGripper(cmove, "r1", 2*M_PI) ;
-
-    while (!captureStoped ) ;
-
+    RotateAndGrab rg("xtion2", "r2") ;
+    rg.init(Vector3d(0, -0.9, 1.2)) ;
+    rg.rotate(M_PI/6) ;
 }

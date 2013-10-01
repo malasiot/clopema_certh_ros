@@ -1,0 +1,6 @@
+---
+std_msgs/Time ts
+sensor_msgs/Image clr
+sensor_msgs/Image depth
+sensor_msgs/CameraInfo camera
+
