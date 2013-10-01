@@ -18,6 +18,7 @@ PickUp::PickUp(string arm){
 }
 
 PickUp::~PickUp() {
+    grabber->disconnect() ;
 
 }
 
@@ -343,9 +344,11 @@ bool PickUp::graspTargetCandidate( vector<RidgeDetector::GraspCandidate> &gsp, c
 }
 
 
-bool PickUp::graspClothFromTable(){
+bool PickUp::graspClothFromTable(const ros::Duration &dur){
 
     bool grasp = false;
+
+    ros::Time ts0 = ros::Time::now() + dur ;
 
     while (!grasp){
 
@@ -361,6 +364,8 @@ bool PickUp::graspClothFromTable(){
 
         if ( isGraspingSucceeded(60000.0))
             grasp = true;
+
+        if ( ros::Time::now() > ts0 ) break ;
     }
 
     moveHomeArm( armName);

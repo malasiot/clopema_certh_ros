@@ -25,7 +25,8 @@ public:
 
     bool moveAboveTable( ) ;
     bool moveXtionAboveCloth() ;
-    bool graspClothFromTable() ;
+    bool graspClothFromTable(const ros::Duration &dur = ros::Duration(100)) ;
+
     camera_helpers::OpenNICaptureRGBD *grabber;
 
 private:
