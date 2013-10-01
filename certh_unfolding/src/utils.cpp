@@ -971,7 +971,7 @@ bool Unfold::graspLowestPoint(bool lastMove, bool allwaysDrop){
 }
 
 //Finds and grasps the given point of a hanging cloth, flips it and releases the moving arm
-bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove, bool orientLeft, bool orientUp  ){
+bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove, bool orientLeft, bool orientUp , bool alwaysDrop ){
 
     float deep = 0.03 ;
     float far = 0.1 ;
@@ -1109,15 +1109,15 @@ bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y
     if(lastMove == true){
         moveToCheckGrasping() ;
         if(!confirmGrasping() ){
-            moveArm(movingArmPose(), movingArm) ;
             setGripperStates(movingArm, true);
+            moveArm(movingArmPose(), movingArm) ;           
             return false ;
         }
         showUnfolding();
         return true ;
     }
 
-    if( !flipCloth() ){
+    if( !flipCloth( alwaysDrop) ){
         cout << "CANT FLIP CLOTH"<< endl;
         moveArm(movingArmPose(), movingArm) ;
         setGripperStates(movingArm, true);
@@ -1565,9 +1565,10 @@ bool Unfold::flipCloth( bool allwaysDrop){
     moveToCheckGrasping() ;
     bool grasp = confirmGrasping() ;
     cout << "grasping = " << grasp  << endl ;
-    if(!grasp)
+    if(!grasp){
+        setGripperStates(movingArm, true) ;
         return false;
-
+    }
 ////////////////////NEW///////////////////
 
     if( (clothType == 0) || (clothType == 2) || (clothType == 3)  || (clothType == 4) ) {
@@ -1949,117 +1950,90 @@ std::vector <Unfold::grabRGBD> Unfold::grabRGBD360() {
     return images ;
 }
 
-
-//bool captureStoped ;
-//boost::mutex captureMutex ;
-//boost::condition_variable finished ;
-
-//int counter = 0 ;
-
-//std::vector <Unfold::grabRGBD> Unfold::rotateAndGrab(){
-
-//    MoveRobot cmove ;
-//    cmove.setServoMode(false);
-
-//    moveGripperPointingDown(cmove, "r1", 0, -0.7, 1.5) ;
-
-//    cmove.actionStarted.connect(boost::bind(&Unfold::startCapture, this)) ;
-// //   cmove.actionCompleted.connect(boost::bind(&Unfold::stopCapture, this)) ;
-
-//    rotateGripper(cmove, holdingArm, 2*M_PI) ;
-
-//    while (!captureStoped ) ;
+bool Unfold::graspMiddle(){
 
 
-//}
+    moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
-//void Unfold::stopCapture()
-//{
-//    cout << "done" << endl ;
+    setGripperStates(movingArm , true);
 
-//    boost::unique_lock<boost::mutex> lock_ ;
-//    captureStoped = true ;
-//    finished.notify_all();
+    cv::Mat rgb, depth ;
+    pcl::PointCloud <pcl::PointXYZ> pc ;
+    cv::Rect r ;
+    grabFromXtion(rgb, depth, pc, r) ;
+    int x,y;
+    findMiddlePoint(pc,x, y );
+    bool orientLeft ;
+    if (holdingArm == "r2")
+        orientLeft = false;
+    else
+        orientLeft = true ;
 
-//    //Set servo power off
-//    clopema_motoros::SetPowerOff soff;
-//    soff.request.force = false;
-//    ros::service::waitForService("/joint_trajectory_action/set_power_off");
-//    if (!ros::service::call("/joint_trajectory_action/set_power_off", soff)) {
-//        ROS_ERROR("Can't call service set_power_off");
-//    }
+    cv::rectangle(rgb, cv::Rect(x-2, y-2, 5, 5), cv::Scalar(255, 0, 255), 2) ;
+    cv::imwrite("/tmp/middle.png", rgb) ;
 
-//}
-
-
-
-//void Unfold::doCapture()
-//{
-//    bool _stoped = false ;
-
-//    ofstream cap_data("/tmp/rot/cap.txt") ;
-
-//    tf::TransformListener listener(ros::Duration(1.0));
-
-//    do {
-
-//        {
-//            boost::unique_lock<boost::mutex> lock_ ;
-//            _stoped = captureStoped ;
-//        }
-
-//        if ( !_stoped )
-//        {
-
-//            cv::Mat clr, depth ;
-//            pcl::PointCloud<pcl::PointXYZ> pc ;
-//            ros::Time ts ;
-//            image_geometry::PinholeCameraModel cm;
-
-//            string rgbFileName = "/tmp/rot/" + str(boost::format("cap_rgb_%06d.png") % counter) ;
-//            string depthFileName = "/tmp/rot/" + str(boost::format("cap_depth_%06d.png") % counter) ;
-//            string cloudFileName = "/tmp/rot/" + str(boost::format("cap_cloud_%06d.pcd") % counter) ;
-//            if ( grabber->grab(clr, depth, pc, ts, cm) )
-//            {
-
-//                cout << counter << endl ;
-
-//                tf::StampedTransform transform;
-
-//                Eigen::Affine3d pose ;
-
-//                try {
-//                    listener.waitForTransform("xtion3_rgb_optical_frame","r1_ee", ts, ros::Duration(1) );
-//                    listener.lookupTransform("xtion3_rgb_optical_frame","r1_ee", ts, transform);
-
-////                    listener.waitForTransform("r1_ee", "base_link", ts, ros::Duration(1) );
-////                    listener.lookupTransform("r1_ee", "base_link", ts, transform);
-
-//                    cv::imwrite(rgbFileName, clr) ;
-//                    cv::imwrite(depthFileName, depth) ;
-//                    pcl::io::savePCDFileBinary(cloudFileName, pc) ;
-//                    tf::TransformTFToEigen(transform, pose);
-
-//                    cap_data << counter << endl << pose.matrix() << endl ;
-
-//                    counter ++ ;
-
-//                } catch (tf::TransformException ex) {
-//                    ROS_INFO("%s",ex.what());
-//                }
+    return graspPoint(pc, x, y, false, orientLeft,false,  true);
 
 
-//            }
+}
 
-//        }
+bool Unfold::findMiddlePoint(const pcl::PointCloud<pcl::PointXYZ> &depth, int &x , int &y)
+{
 
-//    } while ( !_stoped ) ;
+    int w = depth.width, h = depth.height ;
 
-//}
+    int max_y = -1 ;
+    int best_j = -1, best_i = -1 ;
 
-//void Unfold::startCapture()
-//{
-//    captureStoped = false ;
-//    boost::thread capture_thread(boost::bind(&Unfold::doCapture, this)) ;
+    bool found = false ;
 
-//}
+    double maxv = -DBL_MAX ;
+    int start, end, step ;
+
+    if(holdingArm == "r1"){
+        start = 0 ;
+        end = 480 ;
+        step = 1 ;
+    }
+    else{
+        start = 479 ;
+        end = -1 ;
+        step = -1;
+    }
+
+    int j= 640/3 ;
+    int i;
+    for( i=start ; i != end ; i+=step)
+    {
+
+        pcl::PointXYZ val = depth.at(j, i) ;
+
+        if ( !pcl_isfinite(val.z) ) continue ;
+
+        Eigen::Vector3d p(val.x, val.y, val.z) ;
+
+        // test whether the point lies within the cone
+
+        if (  val.z > 1 && val.z < 1.5){
+            found = true ;
+            break ;
+        }
+
+    }
+
+    if ( !found ) return false ;
+
+    pcl::PointXYZ p_ = depth.at(j,i) ;
+
+    int ox, oy ;
+
+    // find densest point cluster in a 3cm sphere around the detected point
+    findMeanShiftPoint(depth, j, i, ox, oy, 0.03) ;
+
+    x= ox ;
+    y= oy ;
+
+    return true ;
+
+}
+

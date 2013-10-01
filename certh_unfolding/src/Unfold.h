@@ -183,7 +183,7 @@ public:
     void robustPlane3DFit(vector<Eigen::Vector3d> &x, Eigen::Vector3d  &c, Eigen::Vector3d &u);
 
     bool graspLowestPoint(bool lastMove = false , bool allwaysDrop = false );
-    bool graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove = false, bool orientLeft = true, bool orientUp = false );
+    bool graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove = false, bool orientLeft = true, bool orientUp = false, bool alwaysDrop = false );
     bool flipCloth(bool allwaysDrop = false);
     bool moveToCheckGrasping() ;
 
@@ -199,6 +199,8 @@ public:
     bool grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc );
     bool grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, cv::Rect & r);
 
+    bool findMiddlePoint(const pcl::PointCloud<pcl::PointXYZ> &depth, int &x , int &y) ;
+    bool graspMiddle() ;
 
 
     //------- DIMITRA--------

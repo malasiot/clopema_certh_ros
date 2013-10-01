@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <opencv2/opencv.hpp>
 
 #include "utilities.h"
@@ -15,10 +16,19 @@ using namespace cv;
 int serialPort;
 
 bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::PhotometricStereo::Response &res) {
-  
+
+  double rate = 30.0;
+  cv::Mat frame; // current video frame
+  cv::namedWindow("Extracted Frame");
+
+  //Delay between each frame in ms corresponds to frame rate
+  int delay = 1000 / rate;
+  string leds[] = {"01\n", "00\n", "02\n", "00\n", "03\n", "00\n", "04\n", "00\n",
+		"05\n", "00\n", "06\n", "00\n", "07\n", "00\n", "08\n", "00\n"};
+
   system("v4l2-ctl -c focus_auto=1"); // turn auto-focus on
   write(serialPort, "1\n", 2); // turn on the first LED for auto-focus
-
+  sleep(1);
   // Open the camera
   cv::VideoCapture capture(0);
 
@@ -28,52 +38,39 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
       cout << "Error opening camera." << endl;
       return -1;
     }
- 
-  sleep(3); // wait to focus
+  
+  int i;
+  // wait for 3 seconds to focus 
+  for(i = 0; i < 90; i++) {
+    // read next frame if any
+    if (!capture.read(frame))
+      break;
+    cv::imshow("Preview", frame);
+    // introduce a delay or press key to stop
+    if (cv::waitKey(delay) > 0)
+      break;
+  }
+
   system("v4l2-ctl -c focus_auto=0"); // turn auto-focus off
 
-  double rate = 30.0;
-  cv::Mat frame; // current video frame
-  cv::namedWindow("Extracted Frame");
-
-  //Delay between each frame in ms corresponds to frame rate
-  int delay = 1000 / rate;
-  string leds[] = {"1\n", "2\n", "3\n", "4\n", "5\n", "6\n", "7\n", "8\n"};
-  int i = 0;
-    
-  // throw away the first 2 frames
-  capture.read(frame);
-  cv::waitKey(delay);
-  capture.read(frame);
-  cv::waitKey(delay);
-  capture.read(frame);
-  cv::waitKey(delay);
-  capture.read(frame);
-  cv::waitKey(delay); 
-  capture.read(frame);
-  cv::waitKey(delay);
-  capture.read(frame);
-  cv::waitKey(delay);
-
   // for all frames in video
-  for(i=0; i < 8; i++) {
-    write(serialPort, "0\n", 2);
-    write(serialPort, leds[i].c_str(), 2);
+  for(i=0; i < 16; i++) {
+    //write(serialPort, "0\n", 2);
+    write(serialPort, leds[i].c_str(), 3);
     // read next frame if any
     if (!capture.read(frame))
       break;
     cv::imshow("Extracted Frame", frame);
-    cv::imwrite(leds[i].substr(0, leds[i].size()-1) + ".png", frame);
+    cv::imwrite(leds[i].substr(0, leds[i].size()-1) + ".jpg", frame);
     // introduce a delay or press key to stop
-    //if (cv::waitKey(delay) > 0)
-    //  break;
-    sleep(1);
+    if (cv::waitKey(delay) > 0)
+      break;
   }
 
   write(serialPort, "0\n", 2); // turn off LEDs
   // Close the video file.
   // Not required since called by destructor
-  cv::destroyAllWindows();
+  // cv::destroyAllWindows();
   capture.release(); frame.release();
   
   res.a = 16;
