@@ -914,7 +914,8 @@ bool Unfold::graspLowestPoint(bool lastMove, bool allwaysDrop){
 
         cout << endl << "Lowest Point: " << targetP << endl;
         if(targetP.z() < 0.56 || counter > 4){
-            while(!graspMiddle());
+            while(!graspMiddle())
+                rotateHoldingGripper(30.0f/180.0f * M_PI);
             counter = 0 ;
             continue;
         }
@@ -1965,7 +1966,7 @@ std::vector <Unfold::grabRGBD> Unfold::grabRGBD360() {
 bool Unfold::graspMiddle(){
 
 
-    moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
+    //moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
     setGripperStates(movingArm , true);
 
