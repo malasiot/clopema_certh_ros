@@ -27,7 +27,8 @@ using namespace std;
 //store:dinei tvn arithmo twn a-corners pou entopisthkan se sygkekrimena shmeia gia kathe configuration
 //location:dinei thn topothesia tvn a-corners, dhladh tis syntetagmenes tou junction sto opoio antistoixoun
 bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_depthD, vector<vector<bool> >& side,vector<vector<float> >& depthD, vector<vector<int> > junctions,vector<vector<int> >& store,vector<vector<Point> >& location,vector<vector<bool> >& current_corner,int i,int ind,int& k_stop,ret_all r, vector<vector< int> > & radius, vector<vector <Point> > & Points,Mat imc){
-		bool stop=false;
+    cout<<"arxh"<<endl;
+    bool stop=false;
 		Point pp;
 		//gia oles tis trexouses a-corners
 		for (int j=0;j<a_corner.size() && a_corner.at(0)!=-1;j++){
@@ -45,7 +46,7 @@ bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_
 					location.at(i).at(0)=p;
 					exists=true;
 					if (i==ind){
-						current_corner.at(i).at(0)=true;
+                        current_corner.at(i).at(0)=true;
 					}
 					else{
 						current_corner.at(i).at(0)=false;
@@ -54,7 +55,8 @@ bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_
 					side.at(i).at(0)=c_side.at(j);
 					
 					depthD.at(i).at(0)=c_depthD.at(j);
-					radius.at(i).at(0) = normalPoint(a_corner.at(j), r, c_side.at(j), imc, pp);
+                    radius.at(i).at(0) = normalPoint(a_corner.at(j), r, c_side.at(j), imc, pp);
+
 					Points.at(i).at(0) = pp;
 				}
 				else{
@@ -110,6 +112,7 @@ bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_
 			}
 			
 		}
+        cout<<"Telos"<<endl;
 		return stop;
 }
 
@@ -118,7 +121,8 @@ bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_
 
 
 int choose_a_corner(a_corners a_corn,depths d, vector<vector<int> > junctions,int ind,vector<vector<int> >& store,vector<vector<Point> >& location,vector<vector<bool> >& current_corner,vector<vector <bool> > & side, vector<vector<float> >& depthD,int& k_stop,ret_all r, vector<vector< int> > & radius, vector<vector <Point> > & Points, Mat imc){
-	int start_point;
+
+    int start_point;
 	if (ind<10){start_point=0;}
 	else{start_point=ind-10;}
 	if (ind>0){
@@ -143,6 +147,7 @@ int choose_a_corner(a_corners a_corn,depths d, vector<vector<int> > junctions,in
 		Points.resize(Points.size()+1);
 		Points.at(Points.size()-1)=P;
 	}
+
 	//cout<<"in";
 	//i_stop shows the image where more than 6 votes for a point are gathered
 	//if there is no such a point yet, i_stop==-1
@@ -165,6 +170,7 @@ int choose_a_corner(a_corners a_corn,depths d, vector<vector<int> > junctions,in
 	//cout<<"out";
 		
 	}
+
 	/*cout<<endl<<"--------"<<endl;
 	for (int i=start_point;i<=ind;i++){
 		for (int j=0;j<store.at(i).size();j++){
@@ -179,5 +185,16 @@ int choose_a_corner(a_corners a_corn,depths d, vector<vector<int> > junctions,in
 	}
 	
 	cout<<"---------"<<endl;*/
+    cout<<endl<<"////////////////"<<endl;
+    for (int i=0;i<Points.at(Points.size()-1).size();i++){
+        cout<< Points.at(Points.size()-1).at(i).x<<" ";
+    }
+    cout<<endl;
+    for (int i=0;i<Points.at(Points.size()-1).size();i++){
+        cout<< store.at(Points.size()-1).at(i)<<" ";
+
+    }
+    cout<<endl<<"//////////"<<endl;
+
 	return i_stop;
 }

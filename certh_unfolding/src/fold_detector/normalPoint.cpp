@@ -128,7 +128,7 @@ Point search_area(int corner, ret_all r, bool side, Mat bin, vector<int> vec, ve
 	bool found=false;
 	while (ri>0 && found==false){
 		ri--;
-		cout<<ri<<" ";
+        //cout<<ri<<" ";
 		for (int xx=istartx+ri; xx<istopx-ri && found==false;xx++){
 			for (int yy=istarty; yy<istopy-ri;yy++){
 				//bin.at<uchar>(yy,xx)=255;
@@ -481,11 +481,11 @@ int normalPoint(int corner, ret_all r, bool side, Mat imc, Point & P){
 			bin.at<uchar>(P.y+o1,P.x+o2)=255;
 		}
 	}
-	cout<<"side "<<side;
-	cout<<" R= "<<r0;
-	namedWindow("final winner",0);
-	imshow("final winner", bin);
-	waitKey();
+//	cout<<"side "<<side;
+//	cout<<" R= "<<r0;
+//	namedWindow("final winner",0);
+//	imshow("final winner", bin);
+//	waitKey();
 	return r0;
 
 }

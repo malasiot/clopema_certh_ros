@@ -131,7 +131,7 @@ int main(int argc, char **argv)
     }
     string camera = argv[1] ;
 
-    ros::init(argc, argv, "openni_service" + camera );
+    ros::init(argc, argv, "openni_service"  );
 
 
 

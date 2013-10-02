@@ -42,11 +42,11 @@ public:
         vector<double> grasp_cand_(3) ;
         bool detected = folds_.detect( clr, depth, counter, grasp_cand_, p.x );
 
-        if ( detected ) {
-            found = true ;
-            grasp_candidate = grasp_cand_ ;
-            isACorner=true;
-        }
+//        if ( detected ) {
+//            found = true ;
+//            grasp_candidate = grasp_cand_ ;
+//            isACorner=true;
+//        }
 
        counter ++ ;
     }
@@ -57,7 +57,7 @@ public:
         {
             grasp_candidate.resize(3) ;
 
-            if( folds_.select(found, grasp_candidate, orientations, cx, orientLeft))
+            if( folds_.select(found, grasp_candidate, orientations, cx, orientLeft,radius , Points))
                     isACorner = true ;
             else
             {
@@ -103,6 +103,8 @@ public:
     folds folds_ ;
     vector<Matrix4d> orientations ;
     vector<double> grasp_candidate ;
+    vector<vector<int > > radius;
+    vector<vector<Point> > Points;
     Affine3d pose ;
     int cx ;
     image_geometry::PinholeCameraModel cmodel  ;
@@ -166,6 +168,7 @@ int main(int argc, char **argv) {
     {
 
         MoveRobot rb ;
+        rb.setServoMode(false);
         moveGripper(rb, "r1", pose.translation(), Quaterniond(pose.rotation())) ;
 
         publishPointMarker(marker_pub, pp);
@@ -173,6 +176,7 @@ int main(int argc, char **argv) {
         cout << pp << endl ;
         Vector3d dir(0.001, 0.99, 0) ;
         dir.normalize() ;
+
 
 
         KinematicsModel kmodel ;

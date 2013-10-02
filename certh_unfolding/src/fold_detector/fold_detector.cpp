@@ -47,15 +47,15 @@ bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& gr
 		//i_stop shows the image where more than 6 votes for a point are gathered
 		//if there is no such a point yet, i_stop==-1
 		
-		i_stop=choose_a_corner(r.a_corn,r.d, r.junctions,th,store,location,current_corner, side, depthD,k_stop);
+        i_stop=choose_a_corner(r.a_corn,r.d, r.junctions,th,store,location,current_corner, side, depthD,k_stop, r, radius, Points, bgrImage);
 		
-		cout<<"!";
+        cout<<"!!!!!"<<endl;
 		if (i_stop!=-1 && location.at(i_stop).at(k_stop).x<cx && current_corner.at(i_stop).at(k_stop)==true && depthD.at(i_stop).at(k_stop)>3000 && radius.at(i_stop).at(k_stop)>2){
 			
 			ret=true;
 			grasp_candidate.at(0)=i_stop;
-			grasp_candidate.at(1)=location.at(i_stop).at(k_stop).x;
-			grasp_candidate.at(2)=location.at(i_stop).at(k_stop).y;
+            grasp_candidate.at(1)=location.at(i_stop).at(k_stop).x;
+            grasp_candidate.at(2)=location.at(i_stop).at(k_stop).y;
             cout<<" SIDE "<<side.at(i_stop).at(k_stop);
             //cout<<"COORDINATES "<<grasp_candidate.at(1)<<" "<<grasp_candidate.at(2)<<endl;
             //cout<<"i_stop "<<i_stop<<endl;
