@@ -1,34 +1,34 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-//test
+#include "FoldDetector.h"
 #include <iostream>
 //#include <string>
 
 using namespace cv;
 using namespace std;
 
-struct a_corners{
-	vector<int> certain_c;
-	vector<int> str_l_c;
-	vector<int> distant_c;
-};
-
-struct depths{
-	vector <float> difd_c;
-	vector <float> difd_s;
-	vector <float> difd_d;
-	vector<bool> side_c;
-	vector<bool> side_s;
-	vector<bool> side_d;
-
-};
+//struct a_corners{
+//	vector<int> certain_c;
+//	vector<int> str_l_c;
+//	vector<int> distant_c;
+//};
+//
+//struct depths{
+//	vector <float> difd_c;
+//	vector <float> difd_s;
+//	vector <float> difd_d;
+//	vector<bool> side_c;
+//	vector<bool> side_s;
+//	vector<bool> side_d;
+//
+//};
 
 
 //store:dinei tvn arithmo twn a-corners pou entopisthkan se sygkekrimena shmeia gia kathe configuration
 //location:dinei thn topothesia tvn a-corners, dhladh tis syntetagmenes tou junction sto opoio antistoixoun
-bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_depthD, vector<vector<bool> >& side,vector<vector<float> >& depthD, vector<vector<int> > junctions,vector<vector<int> >& store,vector<vector<Point> >& location,vector<vector<bool> >& current_corner,int i,int ind,int& k_stop){
+bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_depthD, vector<vector<bool> >& side,vector<vector<float> >& depthD, vector<vector<int> > junctions,vector<vector<int> >& store,vector<vector<Point> >& location,vector<vector<bool> >& current_corner,int i,int ind,int& k_stop,ret_all r, vector<vector< int> > & radius, vector<vector <Point> > & Points,Mat imc){
 		bool stop=false;
-		
+		Point pp;
 		//gia oles tis trexouses a-corners
 		for (int j=0;j<a_corner.size() && a_corner.at(0)!=-1;j++){
 			bool exists=false;
@@ -54,7 +54,8 @@ bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_
 					side.at(i).at(0)=c_side.at(j);
 					
 					depthD.at(i).at(0)=c_depthD.at(j);
-					
+					radius.at(i).at(0) = normalPoint(a_corner.at(j), r, c_side.at(j), imc, pp);
+					Points.at(i).at(0) = pp;
 				}
 				else{
 				
@@ -102,7 +103,10 @@ bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_
 				side.at(i).at(side.at(i).size()-1)=c_side.at(j);
 				depthD.at(i).resize(depthD.at(i).size()+1);
 				depthD.at(i).at(depthD.at(i).size()-1)=c_depthD.at(j);
-
+				radius.at(i).resize(radius.at(i).size()+1);
+				radius.at(i).at(radius.at(i).size()-1)=normalPoint(a_corner.at(j), r, c_side.at(j), imc, pp);
+				Points.at(i).resize(Points.at(i).size()+1);
+				Points.at(i).at(Points.at(i).size()-1)=pp;
 			}
 			
 		}
@@ -113,7 +117,7 @@ bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_
 
 
 
-int choose_a_corner(a_corners a_corn,depths d, vector<vector<int> > junctions,int ind,vector<vector<int> >& store,vector<vector<Point> >& location,vector<vector<bool> >& current_corner,vector<vector <bool> > & side, vector<vector<float> >& depthD,int& k_stop){
+int choose_a_corner(a_corners a_corn,depths d, vector<vector<int> > junctions,int ind,vector<vector<int> >& store,vector<vector<Point> >& location,vector<vector<bool> >& current_corner,vector<vector <bool> > & side, vector<vector<float> >& depthD,int& k_stop,ret_all r, vector<vector< int> > & radius, vector<vector <Point> > & Points, Mat imc){
 	int start_point;
 	if (ind<10){start_point=0;}
 	else{start_point=ind-10;}
@@ -133,6 +137,11 @@ int choose_a_corner(a_corners a_corn,depths d, vector<vector<int> > junctions,in
 		depthD.resize(depthD.size()+1);
 		vector<float> fl(1,0.0);
 		depthD.at(depthD.size()-1)=fl;
+		vector<int> vi(1, 0);
+		radius.resize(radius.size()+1);
+		radius.at(radius.size()-1)=vi;
+		Points.resize(Points.size()+1);
+		Points.at(Points.size()-1)=P;
 	}
 	//cout<<"in";
 	//i_stop shows the image where more than 6 votes for a point are gathered
@@ -142,11 +151,11 @@ int choose_a_corner(a_corners a_corn,depths d, vector<vector<int> > junctions,in
 	for (int i=start_point;i<=ind;i++){
 		
 		//cout<<" ///// "<<endl;
-		bool s1=group_a_corners(a_corn.certain_c, d.side_c, d.difd_c, side,depthD,junctions,store,location,current_corner,i,ind,k_stop);
+		bool s1=group_a_corners(a_corn.certain_c, d.side_c, d.difd_c, side,depthD,junctions,store,location,current_corner,i,ind,k_stop, r,radius,Points,imc);
 		//cout<<"done1";
-		bool s2=group_a_corners(a_corn.distant_c,d.side_d, d.difd_d,side,depthD,junctions,store,location,current_corner,i,ind,k_stop);
+		bool s2=group_a_corners(a_corn.distant_c,d.side_d, d.difd_d,side,depthD,junctions,store,location,current_corner,i,ind,k_stop, r,radius,Points,imc);
 		//cout<<"done2";
-		bool s3=group_a_corners(a_corn.str_l_c,d.side_s, d.difd_s, side,depthD,junctions,store,location,current_corner,i,ind,k_stop);	
+		bool s3=group_a_corners(a_corn.str_l_c,d.side_s, d.difd_s, side,depthD,junctions,store,location,current_corner,i,ind,k_stop, r,radius,Points,imc);	
 		//cout<<"done3";
 		//cout<<endl<<" ///// "<<endl;
 		if (s1==true || s2==true ||s3==true){

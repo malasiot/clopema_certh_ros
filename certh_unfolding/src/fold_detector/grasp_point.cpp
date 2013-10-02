@@ -17,7 +17,7 @@ struct colors{
 
 colors show_colors(int);
 
-bool grasp_point(bool detected , vector<double>& grasp_candidate, vector<Eigen::Matrix4d>& orientation, vector<vector<int> >& store , vector<vector<Point> >& location , vector<vector<bool> >& current_corner , vector<vector<bool> >& side, vector<vector<float> >& depthD, int cx, bool &orientLeft){
+bool grasp_point(bool detected , vector<double>& grasp_candidate, vector<Eigen::Matrix4d>& orientation, vector<vector<int> >& store , vector<vector<Point> >& location , vector<vector<bool> >& current_corner , vector<vector<bool> >& side, vector<vector<float> >& depthD, int cx, bool &orientLeft,vector<vector< int> > & radius, vector<vector <Point> > & Points){
 
 
     folds f;
@@ -31,7 +31,7 @@ bool grasp_point(bool detected , vector<double>& grasp_candidate, vector<Eigen::
 		for (int k=0;k<store.size();k++){
 			for (int l=0;l<store.at(k).size();l++){
 				
-				if (max<store.at(k).at(l) && location.at(k).at(l).x<cx ){
+				if (max<store.at(k).at(l) && location.at(k).at(l).x<cx && depthD.at(k).at(l)>35 && radius.at(k).at(l)>2){
 					//make sure that the point is detected to this particular image
 					if (current_corner.at(k).at(l)==true){
 						max=store.at(k).at(l);
