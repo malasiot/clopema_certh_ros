@@ -35,10 +35,13 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "unfolding");
     ros::NodeHandle nh;
 
+    system("/home/akargakos/ROS/clopema_certh_ros/certh_pickup/bin/./picking_up");
     ros::Publisher marker_pub;
+
     marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
-    //system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./openXtion3.sh &");
-    sleep(3);
+    system("rosrun camera_helpers openni_service xtion3 &") ;
+
+    ros::Duration(3).sleep() ;
     //cout << "Sleep ended" << endl;
 
    // graspFromFloor("r2");

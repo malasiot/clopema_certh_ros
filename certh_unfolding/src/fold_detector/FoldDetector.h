@@ -92,6 +92,7 @@ public:
 
         if ( grasp_point (detected , grasp_candidate, orientations ,  score , location , current_corner , sider, depthD, cx, orientLeft));
             return true;
+
         return false;
     }
 
