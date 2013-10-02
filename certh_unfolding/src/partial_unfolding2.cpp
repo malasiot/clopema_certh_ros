@@ -45,23 +45,27 @@ public:
         if ( detected ) {
             found = true ;
             grasp_candidate = grasp_cand_ ;
+            isACorner=true;
         }
 
        counter ++ ;
     }
 
-    bool selectGraspPoint(Affine3d &pose, Vector3d &pp)
+    bool selectGraspPoint(Affine3d &pose, Vector3d &pp, bool & orientLeft)
     {
         if ( !found )
         {
             grasp_candidate.resize(3) ;
 
-            if (!folds_.select(found, grasp_candidate, orientations, cx)){
-
-                detectHorizontalEdge(grasp_candidate, cx, orientations.size()-1);
-
+            if( folds_.select(found, grasp_candidate, orientations, cx, orientLeft))
+                    isACorner = true ;
+            else
+            {
+                 bool orientarion = detectHorizontalEdge(grasp_candidate, cx, orientations.size()-1);
+                 isACorner = false;
             }
         }
+
 
         int idx = grasp_candidate[0] ;
         int x = grasp_candidate[1] ;
@@ -102,6 +106,7 @@ public:
     Affine3d pose ;
     int cx ;
     image_geometry::PinholeCameraModel cmodel  ;
+    bool isACorner;
 };
 
 
@@ -156,8 +161,8 @@ int main(int argc, char **argv) {
 
     Affine3d pose ;
     Vector3d pp ;
-
-    if ( action.selectGraspPoint(pose, pp) )
+    bool  orientLeft;
+    if ( action.selectGraspPoint(pose, pp, orientLeft) )
     {
 
         MoveRobot rb ;

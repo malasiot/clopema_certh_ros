@@ -17,7 +17,7 @@ struct colors{
 
 colors show_colors(int);
 
-bool grasp_point(bool detected , vector<double>& grasp_candidate, vector<Eigen::Matrix4d>& orientation, vector<vector<int> >& store , vector<vector<Point> >& location , vector<vector<bool> >& current_corner , vector<vector<bool> >& side, vector<vector<float> >& depthD, int cx){
+bool grasp_point(bool detected , vector<double>& grasp_candidate, vector<Eigen::Matrix4d>& orientation, vector<vector<int> >& store , vector<vector<Point> >& location , vector<vector<bool> >& current_corner , vector<vector<bool> >& side, vector<vector<float> >& depthD, int cx, bool &orientLeft){
 
 
     folds f;
@@ -46,6 +46,7 @@ bool grasp_point(bool detected , vector<double>& grasp_candidate, vector<Eigen::
             grasp_candidate.at(1)=location.at(kmax).at(lmax).x;
             grasp_candidate.at(2)=location.at(kmax).at(lmax).y;
             cout<<" SIDE "<<side.at(kmax).at(lmax);
+            orientLeft = side.at(kmax).at(lmax);
             ///////depict
             cv::Mat winnerPic = cv::imread(str(boost::format("/tmp/cap_rgb_%d.png") % grasp_candidate.at(0)), -1) ;
             cv::Mat winnerPicd = cv::imread(str(boost::format("/tmp/cap_depth_%d.png") % grasp_candidate.at(0)), -1) ;

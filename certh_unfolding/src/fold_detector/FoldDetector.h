@@ -37,8 +37,8 @@ struct ret_all{
     a_corners a_corn;
     depths d;
 };
-extern bool grasp_point(bool  , vector<double>& , vector<Eigen::Matrix4d>&  , vector<vector<int> >&  , vector<vector<Point> >&  , vector<vector<bool> >&  , vector<vector<bool> >& ,vector<vector<float> >& ,  int );
-extern void detectHorizontalEdge( vector<double>& , int, int );
+extern bool grasp_point(bool  , vector<double>& , vector<Eigen::Matrix4d>&  , vector<vector<int> >&  , vector<vector<Point> >&  , vector<vector<bool> >&  , vector<vector<bool> >& ,vector<vector<float> >& ,  int ,bool & );
+extern bool detectHorizontalEdge( vector<double>& , int,int );
 
 //these functions are used for the detection of the corners that are created from a fold of the cloth(arrow junctions)
 /////call_main ///
@@ -87,10 +87,10 @@ public:
     return res ;
     }
 
-    bool select(bool detected, vector<double> &grasp_candidate, vector<Eigen::Matrix4d> &orientations, int cx)
+    bool select(bool detected, vector<double> &grasp_candidate, vector<Eigen::Matrix4d> &orientations, int cx, bool & orientLeft)
     {
 
-        if ( grasp_point (detected , grasp_candidate, orientations ,  score , location , current_corner , sider, depthD, cx));
+        if ( grasp_point (detected , grasp_candidate, orientations ,  score , location , current_corner , sider, depthD, cx, orientLeft));
             return true;
         return false;
     }
