@@ -35,10 +35,13 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "unfolding");
     ros::NodeHandle nh;
 
+    system("/home/akargakos/ROS/clopema_certh_ros/certh_pickup/bin/./picking_up");
     ros::Publisher marker_pub;
+
     marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
-    //system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./openXtion3.sh &");
-    sleep(3);
+    system("rosrun camera_helpers openni_service xtion3 &") ;
+
+    ros::Duration(3).sleep() ;
     //cout << "Sleep ended" << endl;
 
    // graspFromFloor("r2");
@@ -671,16 +674,7 @@ int main(int argc, char **argv) {
     cout << "Recognition rotations: " << recogn_rotations << endl;
     cout << "----------------------" << endl;
 
-    camera_helpers::openni::disconnect(rb.camera);
-    //Set servo power off
-        clopema_motoros::SetPowerOff soff;
-        soff.request.force = false;
-        ros::service::waitForService("/joint_trajectory_action/set_power_off");
-        if (!ros::service::call("/joint_trajectory_action/set_power_off", soff)) {
-            ROS_ERROR("Can't call service set_power_off");
-            return -1;
-        }
-
+    setServoPowerOff(true) ;
        // system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./killXtion3.sh");
         //sleep(10) ;
     return 0;

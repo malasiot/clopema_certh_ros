@@ -1,7 +1,9 @@
 #include "PickUp.h"
 #include <clopema_motoros/WriteIO.h>
+#include <camera_helpers/OpenNIServiceClient.h>
 
 using namespace certh_libs ;
+using namespace camera_helpers ;
 
 PickUp::PickUp(string arm){
 
@@ -9,16 +11,13 @@ PickUp::PickUp(string arm){
     armName = arm ;
     defaultDist = 1.0 ;
     defaultTableHeight = 0.75 ;
-
     camera = ( armName == "r1" ) ? "xtion1" : "xtion2" ;
-
-    grabber = new camera_helpers::OpenNICaptureRGBD (camera) ;
-    grabber->connect() ;
+    camera_helpers::openni::connect(camera) ;
     ros::Duration(0.3).sleep() ;
 }
 
 PickUp::~PickUp() {
-    grabber->disconnect() ;
+   camera_helpers::openni::disconnect(camera) ;
 
 }
 
@@ -144,7 +143,7 @@ bool PickUp::moveXtionAboveCloth(){
     ros::Time ts ;
     image_geometry::PinholeCameraModel cm ;
 
-    if(!grabber->grab(rgb, depth, ts, cm) ){
+    if(!openni::grab(camera, rgb, depth, ts, cm) ){
        cout << " Can't grab image above table!" << endl ;
        return false ;
     }
@@ -186,7 +185,7 @@ bool PickUp::findGraspCandidates( vector<RidgeDetector::GraspCandidate> &gsp, cv
     ros::Time ts ;
 
 
-    if(!grabber->grab(rgb, depth, ts, cm) ){
+    if(!openni::grab(camera, rgb, depth, ts, cm) ){
        cout << " Can't grab image above table!" << endl ;
        return false ;
     }
@@ -252,7 +251,7 @@ bool PickUp::isGraspingSucceeded(float threshold){
     ros::Time ts ;
     image_geometry::PinholeCameraModel cm ;
 
-    if(!grabber->grab(rgb, depth,  ts, cm)){
+    if(!openni::grab(camera, rgb, depth,  ts, cm)){
         cout<<" Cant grab image!!  " << endl ;
         return false ;
     }
@@ -367,8 +366,6 @@ bool PickUp::graspClothFromTable(const ros::Duration &dur){
 
         if ( ros::Time::now() > ts0 ) break ;
     }
-
-    moveHomeArm( armName);
 
     return false ;
 

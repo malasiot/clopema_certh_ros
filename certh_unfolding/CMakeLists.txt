@@ -51,6 +51,7 @@ rosbuild_add_executable(partial_unfold2
     src/fold_detector/normal_distance.cpp
     src/fold_detector/grasp_point.cpp
     src/fold_detector/detectHorizontalEdge.cpp
+    src/fold_detector/normalPoint.cpp
 )
 rosbuild_link_boost(partial_unfold2 signals)
 

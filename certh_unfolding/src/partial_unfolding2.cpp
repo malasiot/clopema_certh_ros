@@ -42,26 +42,30 @@ public:
         vector<double> grasp_cand_(3) ;
         bool detected = folds_.detect( clr, depth, counter, grasp_cand_, p.x );
 
-        if ( detected ) {
-            found = true ;
-            grasp_candidate = grasp_cand_ ;
-        }
+//        if ( detected ) {
+//            found = true ;
+//            grasp_candidate = grasp_cand_ ;
+//            isACorner=true;
+//        }
 
        counter ++ ;
     }
 
-    bool selectGraspPoint(Affine3d &pose, Vector3d &pp)
+    bool selectGraspPoint(Affine3d &pose, Vector3d &pp, bool & orientLeft)
     {
         if ( !found )
         {
             grasp_candidate.resize(3) ;
 
-            if (!folds_.select(found, grasp_candidate, orientations, cx)){
-
-                detectHorizontalEdge(grasp_candidate, cx, orientations.size()-1);
-
+            if( folds_.select(found, grasp_candidate, orientations, cx, orientLeft,radius , Points))
+                    isACorner = true ;
+            else
+            {
+                 bool orientarion = detectHorizontalEdge(grasp_candidate, cx, orientations.size()-1);
+                 isACorner = false;
             }
         }
+
 
         int idx = grasp_candidate[0] ;
         int x = grasp_candidate[1] ;
@@ -99,9 +103,12 @@ public:
     folds folds_ ;
     vector<Matrix4d> orientations ;
     vector<double> grasp_candidate ;
+    vector<vector<int > > radius;
+    vector<vector<Point> > Points;
     Affine3d pose ;
     int cx ;
     image_geometry::PinholeCameraModel cmodel  ;
+    bool isACorner;
 };
 
 
@@ -156,11 +163,12 @@ int main(int argc, char **argv) {
 
     Affine3d pose ;
     Vector3d pp ;
-
-    if ( action.selectGraspPoint(pose, pp) )
+    bool  orientLeft;
+    if ( action.selectGraspPoint(pose, pp, orientLeft) )
     {
 
         MoveRobot rb ;
+        rb.setServoMode(false);
         moveGripper(rb, "r1", pose.translation(), Quaterniond(pose.rotation())) ;
 
         publishPointMarker(marker_pub, pp);
@@ -168,6 +176,7 @@ int main(int argc, char **argv) {
         cout << pp << endl ;
         Vector3d dir(0.001, 0.99, 0) ;
         dir.normalize() ;
+
 
 
         KinematicsModel kmodel ;

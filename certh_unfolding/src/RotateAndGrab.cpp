@@ -28,6 +28,7 @@ void RotateAndGrab::init(const Vector3d &pos)
 
 void RotateAndGrab::rotate(double theta)
 {
+    cmove.setServoMode(false);
     rotateGripper(cmove, arm, theta) ;
 
     while (!captureStoped ) ;

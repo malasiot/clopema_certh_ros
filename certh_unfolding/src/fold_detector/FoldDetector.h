@@ -37,9 +37,9 @@ struct ret_all{
     a_corners a_corn;
     depths d;
 };
-extern bool grasp_point(bool  , vector<double>& , vector<Eigen::Matrix4d>&  , vector<vector<int> >&  , vector<vector<Point> >&  , vector<vector<bool> >&  , vector<vector<bool> >& ,vector<vector<float> >& ,  int );
-extern void detectHorizontalEdge( vector<double>& , int, int );
-
+extern bool grasp_point(bool  , vector<double>& , vector<Eigen::Matrix4d>&  , vector<vector<int> >&  , vector<vector<Point> >&  , vector<vector<bool> >&  , vector<vector<bool> >& ,vector<vector<float> >& ,  int ,bool &,vector<vector<int> >&, vector<vector<Point> >& );
+extern bool detectHorizontalEdge( vector<double>& , int,int );
+extern int normalPoint(int , ret_all , bool , Mat , Point & );
 //these functions are used for the detection of the corners that are created from a fold of the cloth(arrow junctions)
 /////call_main ///
 //this function detects the edges and junctions of the hanging cloth
@@ -75,23 +75,32 @@ public:
 
         depthD.resize(1);
         depthD.back().push_back(0.0);
+		radius.resize(1);
+        radius.back().push_back(0);
+		Points.resize(1);
+        Points.back().push_back(Point(0,0));
+
+
     }
 
 	ret_all call_main(Mat,Mat);
 
-    bool fold_detector(Mat, Mat, int, vector<double>& , vector<vector<int> > &, vector<vector<Point> >& , vector<vector<bool> >& ,vector<vector<bool> >& ,vector<vector<float> >& , int );
+    bool fold_detector(Mat, Mat, int, vector<double>& , vector<vector<int> > &, vector<vector<Point> >& , vector<vector<bool> >& ,vector<vector<bool> >& ,vector<vector<float> >& , int , vector<vector< int> > & , vector<vector <Point> > &);
 
     bool detect(const Mat &clr, const Mat &depth, int frame, vector<double> &graspCandidates, int cx ) {
-    bool res =  fold_detector(clr, depth, frame, graspCandidates, score, location, current_corner, sider, depthD, cx) ;
+        bool res =  fold_detector(clr, depth, frame, graspCandidates, score, location, current_corner, sider, depthD, cx, radius, Points) ;
 
-    return res ;
+        return res ;
     }
 
-    bool select(bool detected, vector<double> &grasp_candidate, vector<Eigen::Matrix4d> &orientations, int cx)
+    bool select(bool detected, vector<double> &grasp_candidate, vector<Eigen::Matrix4d> &orientations, int cx, bool & orientLeft,vector< vector <int> > & radius, vector<vector<Point> > & Points)
     {
 
-        if ( grasp_point (detected , grasp_candidate, orientations ,  score , location , current_corner , sider, depthD, cx));
+        if ( grasp_point (detected , grasp_candidate, orientations ,  score , location , current_corner , sider, depthD, cx, orientLeft, radius, Points));
+
+
             return true;
+
         return false;
     }
 
@@ -100,7 +109,8 @@ public:
     vector<vector<bool> > current_corner ;
     vector<vector<bool> > sider;
     vector<vector<float> > depthD;
-
+	vector<vector< int> >  radius;
+	vector<vector <Point> > Points;
 };
 
 #endif
