@@ -6,6 +6,7 @@
 #include <sstream>
 #include <time.h>
 #include <camera_helpers/OpenNIServiceClient.h>
+#include <certh_unfolding/unfold.h>
 
 using namespace std;
 
@@ -30,18 +31,12 @@ void processDepth(cv::Mat depth, cv::Mat& depth2, cv::Rect r){
     }
 }
 
-int main(int argc, char **argv) {
+bool do_unfolding(certh_unfolding::unfold::Request &req, certh_unfolding::unfold::Response &res ) {
 
-    ros::init(argc, argv, "unfolding");
-    ros::NodeHandle nh;
-
-    system("/home/akargakos/ROS/clopema_certh_ros/certh_pickup/bin/./picking_up");
     ros::Publisher marker_pub;
 
-    marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
-    system("rosrun camera_helpers openni_service xtion3 &") ;
 
-    ros::Duration(3).sleep() ;
+
     //cout << "Sleep ended" << endl;
 
    // graspFromFloor("r2");
@@ -681,3 +676,18 @@ int main(int argc, char **argv) {
 
 
 }
+
+
+int main(int argc, char **argv)
+{
+    ros::init(argc, argv, "unfold_hanging_cloth");
+
+    ros::NodeHandle nh("~");
+
+    // Register the service with the master
+    ros::ServiceServer server = nh.advertiseService("unfold", &do_unfolding);
+
+    ros::spin() ;
+
+}
+
