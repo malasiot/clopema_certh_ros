@@ -20,50 +20,55 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
 
   double rate = 30.0;
   cv::Mat frame; // current video frame
-  cv::namedWindow("Extracted Frame");
 
   //Delay between each frame in ms corresponds to frame rate
   int delay = 1000 / rate;
-  string leds[] = {"01\n", "00\n", "02\n", "00\n", "03\n", "00\n", "04\n", "00\n",
-		"05\n", "00\n", "06\n", "00\n", "07\n", "00\n", "08\n", "00\n"};
 
   system("v4l2-ctl -c focus_auto=1"); // turn auto-focus on
-  write(serialPort, "0\n", 2); 
-  write(serialPort, "1\n", 2); // turn on the first LED for auto-focus
+  //  system("v4l2-ctl -c exposure_auto=3"); // turn auto-exposure on
+
+  write(serialPort, "0", 1); 
+  write(serialPort, "1", 1); // turn on the first LED for auto-focus
   
-  int i;
+  int i, j;
+  stringstream ss;
+  
   // wait for 3 seconds to focus 
   for(i = 0; i < 90; i++) {
     // read next frame if any
     if (!capture->read(frame))
       break;
-    cv::imshow("Preview", frame);
+    //    cv::imshow("Preview", frame);
     // introduce a delay or press key to stop
     if (cv::waitKey(delay) > 0)
       break;
   }
-
   system("v4l2-ctl -c focus_auto=0"); // turn auto-focus off
-
+  //  system("v4l2-ctl -c exposure_auto=1"); // turn auto-exposure off
+  
   // for all frames in video
-  for(i=0; i < 16; i++) {
-    //write(serialPort, "0\n", 2);
-    write(serialPort, leds[i].c_str(), 3);
-    // read next frame if any
-    if (!capture->read(frame))
-      break;
-    cv::imshow("Extracted Frame", frame);
-    cv::imwrite(leds[i].substr(0, leds[i].size()-1) + ".jpg", frame);
-    // introduce a delay or press key to stop
-    if (cv::waitKey(delay) > 0)
-      break;
-  }
+  for(i=0; i < 8; i++) {
+    write(serialPort, "0", 1);
+    ss << i + 1;
+    write(serialPort, ss.str().c_str(), 1);
+    //    ss.str(std::string());
+    //    ss.clear();
+    for(j = 0; j < 5; j++) {
+      // read next frame if any
+      if (!capture->read(frame))
+	break;
+      //    cv::imshow("Extracted Frame", frame);
+      //    cv::imwrite(leds[i].substr(0, leds[i].size()-1) + ".jpg", frame);
+      //ss << i*8 + j;
 
-  write(serialPort, "0\n", 2); // turn off LEDs
-  // Close the video file.
-  // Not required since called by destructor
-  // cv::destroyAllWindows();
-  capture->release(); frame.release();
+    // introduce a delay or press key to stop
+      if (cv::waitKey(delay) > 0)
+	break;
+    }
+    cv::imwrite(ss.str() + ".jpg", frame);
+    ss.str(std::string());
+    ss.clear();
+  }
   
   res.a = 16;
 
@@ -77,8 +82,7 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
 
   // Initialize the Arduino
-  serialPort = open("/dev/ttyUSB1", O_RDWR | O_NOCTTY | O_NDELAY);
-  
+  serialPort = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY | O_NDELAY);
   if (serialPort < 0) {
       cout << strerror(errno) << endl;
     }
@@ -89,7 +93,7 @@ int main(int argc, char **argv)
       cout << "Error opening serial port." << endl;
       return -1;
     }
-  write(serialPort, "0\n", 2);
+  write(serialPort, "0", 1);
   cout << "Reset lights." << endl;
   
   // Set camera parameters
