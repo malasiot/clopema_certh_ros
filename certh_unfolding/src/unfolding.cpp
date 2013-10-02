@@ -674,16 +674,7 @@ int main(int argc, char **argv) {
     cout << "Recognition rotations: " << recogn_rotations << endl;
     cout << "----------------------" << endl;
 
-    camera_helpers::openni::disconnect(rb.camera);
-    //Set servo power off
-        clopema_motoros::SetPowerOff soff;
-        soff.request.force = false;
-        ros::service::waitForService("/joint_trajectory_action/set_power_off");
-        if (!ros::service::call("/joint_trajectory_action/set_power_off", soff)) {
-            ROS_ERROR("Can't call service set_power_off");
-            return -1;
-        }
-
+    setServoPowerOff(true) ;
        // system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./killXtion3.sh");
         //sleep(10) ;
     return 0;

@@ -30,6 +30,7 @@ Unfold::Unfold(const string &armName, ros::Publisher markerPub){
 }
 
 Unfold::~Unfold() {
+    openni::disconnect(camera ) ;
 }
 
 //Sets the cloth type

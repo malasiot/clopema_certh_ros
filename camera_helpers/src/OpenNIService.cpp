@@ -125,14 +125,17 @@ public:
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "openni_service");
-
     if ( argc < 2 ) {
         ROS_ERROR("No camera specified") ;
         return 0 ;
     }
-
     string camera = argv[1] ;
+
+    ros::init(argc, argv, "openni_service" + camera );
+
+
+
+    
 
     ros::NodeHandle nh("~") ;
 
