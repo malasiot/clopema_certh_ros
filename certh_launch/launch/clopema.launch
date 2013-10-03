@@ -11,10 +11,6 @@
 
 	<include file="$(find certh_launch)/launch/devices.launch" />
 
-    <arg name="r3_xtion_port" auto="true" value="$(find clopema_launch)/scripts/findusb.sh 1d27 clopema@clopema2)"/>
-	<arg name="r2_xtion_port" auto="true" value="$(find clopema_launch)/scripts/findusb.sh 1d27)"/>
-    <arg name="r1_xtion_port" auto="true" value="2@10"/>
-
     <arg name="robot_ip" value="192.168.0.101"/>
 
     <arg name="r1_gripper_inverted" value="true"/>

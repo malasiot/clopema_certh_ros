@@ -133,6 +133,6 @@ int main(int argc, char *argv[])
     ros::NodeHandle nh ;
 
     RotateAndGrab rg("xtion2", "r2") ;
-    rg.init(Vector3d(0, -0.9, 1.2)) ;
+    rg.init(Vector3d(0.0, -1.2, 0.8)) ;
     rg.rotate(M_PI/6) ;
 }

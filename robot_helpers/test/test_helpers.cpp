@@ -288,7 +288,7 @@ bool attachBoxToCollisionModel(arm_navigation_msgs::AttachedCollisionObject &att
     return true ;
 }
 
-bool attachTableToCollisionModel(arm_navigation_msgs::CollisionObject &col_object)
+bool attachTableToCollisionModel(arm_navigation_msgs::CollisionObject &col_object, const Vector3d &center, double sx, double sy)
 {
     col_object.id = "table";
     col_object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
@@ -298,9 +298,9 @@ bool attachTableToCollisionModel(arm_navigation_msgs::CollisionObject &col_objec
 
     geometry_msgs::Pose pose;
 
-    pose.position.x = 0;
-    pose.position.y = -1;
-    pose.position.z = 0.72;
+    pose.position.x = center.x();
+    pose.position.y = center.y();
+    pose.position.z = center.z() ;
     pose.orientation.x = 0;
     pose.orientation.y = 0;
     pose.orientation.z = 0;
@@ -311,8 +311,8 @@ bool attachTableToCollisionModel(arm_navigation_msgs::CollisionObject &col_objec
     object.type = arm_navigation_msgs::Shape::BOX;
 
     object.dimensions.resize(3);
-    object.dimensions[0] = 1.2;
-    object.dimensions[1] = 1.5;
+    object.dimensions[0] = sx;
+    object.dimensions[1] = sy;
     object.dimensions[2] = 0.02;
 
     col_object.shapes.push_back(object);
@@ -338,21 +338,38 @@ int main(int argc, char *argv[])
     arm_navigation_msgs::CollisionObject col_object ;
 
 
-    attachTableToCollisionModel(col_object) ;
-    attachBoxToCollisionModel(att_object, "r2") ;
+    attachTableToCollisionModel(col_object, Vector3d(0, -0.8, 0.72), 0.8, 0.8) ;
+    attachBoxToCollisionModel(att_object, "r1") ;
 
 
-    arm_navigation_msgs::PlanningScene scene ;
-    scene.attached_collision_objects.push_back(att_object) ;
-    scene.collision_objects.push_back(col_object) ;
+    ros::service::waitForService("/environment_server/set_planning_scene_diff");
+      ros::ServiceClient get_planning_scene_client =
+        nh_.serviceClient<arm_navigation_msgs::GetPlanningScene>("/environment_server/set_planning_scene_diff");
+
+      arm_navigation_msgs::GetPlanningScene::Request planning_scene_req;
+      arm_navigation_msgs::GetPlanningScene::Response planning_scene_res;
+
+
+  //  planning_scene_req.planning_scene_diff.attached_collision_objects.push_back(att_object) ;
+  planning_scene_req.planning_scene_diff.collision_objects.push_back(col_object) ;
+
+
+    if(!get_planning_scene_client.call(planning_scene_req, planning_scene_res)) {
+       ROS_WARN("Can't get planning scene");
+       return -1;
+     }
 
     MoveRobot mv ;
-    moveHome(mv) ;
- //   moveGripper(mv, "r1", Vector3d(0.0, -1.0, 1.5),  lookAt(Eigen::Vector3d(0, 0, -1),0)) ;
 
 
+
+     moveGripper(mv, "r2", Vector3d(0.3, -1.2, 0.8),  lookAt(Eigen::Vector3d(-0.5, 0, -0.2), -M_PI/2)) ;
+
+      moveGripper(mv, "r1", Vector3d(0.3, -0.8, 0.8),  lookAt(Eigen::Vector3d(-0.5, -0.5, -0.2), -M_PI/2)) ;
+
+    while(1) ;
         KinematicsModel kmodel ;
-        kmodel.init(scene) ;
+        kmodel.init() ;
 
         planSingle(kmodel) ;
 

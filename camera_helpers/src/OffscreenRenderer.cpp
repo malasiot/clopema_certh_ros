@@ -6,7 +6,7 @@
 #include <GL/glu.h>
 #include <GL/glut.h>
 
-#include <kinematics_base/kinematics_base.h>
+
 #include <arm_navigation_msgs/GetPlanningScene.h>
 #include <planning_environment/models/model_utils.h>
 #include <planning_environment/models/collision_models.h>
@@ -20,22 +20,24 @@
 #include <cv.h>
 #include <highgui.h>
 
-#include <robot_helpers/Utils.h>
+
 #include <set>
 
+#include <camera_helpers/OffscreenRenderService.h>
+
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+
 using namespace std ;
-
-#define WIDTH 400
-#define HEIGHT 400
-
 
 class CollisionModelRenderer {
 public:
     CollisionModelRenderer(): padding(0.001) {}
     ~CollisionModelRenderer() ;
 
-    bool init() ;
-    cv::Mat render(const sensor_msgs::CameraInfoConstPtr &cinfo, const tf::Transform &tf) ;
+    bool init(const image_geometry::PinholeCameraModel &cm_ ) ;
+    cv::Mat render(const tf::Transform &tf) ;
 
     void ignoreLink(const string &link) {
         ignored.insert(link) ;
@@ -43,12 +45,12 @@ public:
 
 private:
 
-    bool initMesa(int width, int height) ;
+    bool initMesa() ;
     void deinitMesa() ;
-    void initGL(const sensor_msgs::CameraInfoConstPtr &cinfo, const tf::Transform &tf) ;
+    void initGL(const tf::Transform &tf) ;
 
     void renderObjects() ;
-    cv::Mat readBuffer(int width, int height) ;
+    cv::Mat readBuffer() ;
 
     GLfloat *buffer;
     OSMesaContext ctx ;
@@ -57,14 +59,16 @@ private:
 
     set<string> ignored ;
 
+
     boost::shared_ptr<planning_environment::CollisionModels> cm_ ;
     planning_models::KinematicState *state_ ;
 
-
+    int width, height ;
+    float fy ;
 
 };
 
-cv::Mat CollisionModelRenderer::readBuffer(int width, int height)
+cv::Mat CollisionModelRenderer::readBuffer()
 {
     const GLfloat *ptr = buffer;
 
@@ -81,12 +85,6 @@ cv::Mat CollisionModelRenderer::readBuffer(int width, int height)
                 res[i][j] = 255 ;
             else
                 res[i][j] = 0 ;
-
-
-           // r = (int) (ptr[i+0] * 255.0);
-          //  g = (int) (ptr[i+1] * 255.0);
-          //  b = (int) (ptr[i+2] * 255.0);
-
         }
 
     }
@@ -94,7 +92,7 @@ cv::Mat CollisionModelRenderer::readBuffer(int width, int height)
     return res ;
 }
 
-bool CollisionModelRenderer::initMesa(int width, int height)
+bool CollisionModelRenderer::initMesa()
 {
     /* Create an RGBA-mode context */
  #if OSMESA_MAJOR_VERSION * 100 + OSMESA_MINOR_VERSION >= 305
@@ -115,23 +113,12 @@ bool CollisionModelRenderer::initMesa(int width, int height)
 
 void CollisionModelRenderer::deinitMesa()
 {
-
-
-    //cv::Mat buf = readBuffer(buffer, WIDTH, HEIGHT) ;
-
-   // cv::imwrite("/tmp/oo.png", buf) ;
-
-    /* free the image buffer */
     free( buffer );
-
-    /* destroy the context */
     OSMesaDestroyContext( ctx );
-
 }
 
 
-
-void CollisionModelRenderer::initGL(const sensor_msgs::CameraInfoConstPtr &cinfo, const tf::Transform &tf)
+void CollisionModelRenderer::initGL(const tf::Transform &tf)
 {
     glClearColor(0.0, 0.0, 0.0, 0.0) ;
 
@@ -143,65 +130,26 @@ void CollisionModelRenderer::initGL(const sensor_msgs::CameraInfoConstPtr &cinfo
 
     glMatrixMode(GL_PROJECTION);
 
-    const double fieldOfView = M_PI / 4.0;
     const double zNear = 0.001 ;
     const double zFar = 100.0 ;
 
-    float width = cinfo->width ;
-    float height = cinfo->height ;
-
-    image_geometry::PinholeCameraModel cm ;
-    cm.fromCameraInfo(cinfo) ;
-
-    double fovy = 2 * atan( cinfo->height / cm.fy()/2.0)  ;
-
+    double fovy = 2 * atan( height / fy/2.0)  ;
 
     gluPerspective( fovy * 180/M_PI, (double)width / height, zNear, zFar );
     // viewing transformation
 
     glMatrixMode(GL_MODELVIEW) ;
     glLoadIdentity();
-/*
-    GLdouble m[16] = {  0, 1, 0, 0,
-                        1, 0, 0, 0,
-                        0, 0, -1, 0,
-                        0, 0, 0, 1 };
-  */
+
     GLdouble m[16] = {  1,  0, 0, 0,
                         0, -1, 0, 0,
                         0, 0, -1, 0,
                         0, 0, 0, 1 };
 
-    gluLookAt(0, 0.5, 1.3, 0, -5, 1.3, 0, 0, 1) ;
-
-return ;
-    glGetDoublev(GL_MODELVIEW_MATRIX, m);
-
     glLoadMatrixd(m) ;
-/*
-   // GLdouble m[16] = { 1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1 };
-    GLdouble m[16] = { 1, 0, 0, 0,
-                       0, 0, 1, 0,
-                       0, -1, 0, 0,
-                       0, 0, 0, 1 };
-    glMultMatrixd(m) ;
-
-
-    glMultMatrixd(m) ;
-*/
-
-    //gluLookAt(0, 0.5, 1.3, 0, -5, 1.3, 0, 0, 1) ;
-
-
-
-    //glGetDoublev(GL_MODELVIEW_MATRIX, m);
-
-            tf.getOpenGLMatrix(m);
-            glMultMatrixd(m) ;
-
-
 
     tf.getOpenGLMatrix(m);
+    glMultMatrixd(m) ;
 }
 
 static void renderBox(double sx, double sy, double sz)
@@ -253,8 +201,6 @@ static void renderMesh(const shapes::Mesh *mesh)
         int v2 = mesh->triangles[3*i+1] ;
         int v3 = mesh->triangles[3*i+2] ;
 
-
-
         glVertex3d( mesh->vertices[3*v1],  mesh->vertices[3*v1+1], mesh->vertices[3*v1+2]);
         glVertex3d( mesh->vertices[3*v2],  mesh->vertices[3*v2+1], mesh->vertices[3*v2+2]);
         glVertex3d( mesh->vertices[3*v3],  mesh->vertices[3*v3+1], mesh->vertices[3*v3+2]);
@@ -271,33 +217,24 @@ static void renderCollisionBody(const shapes::Shape *shape, double scale, double
     switch (shape->type)
     {
         case shapes::SPHERE:
+        case shapes::CYLINDER:
             break;
         case shapes::BOX:
         {
             const double *size = static_cast<const shapes::Box*>(shape)->size;
 
             renderBox(size[0] * scale/2 + padding, size[1] * scale/2 + padding, size[2] * scale/2  + padding) ;
+
+
         }
         break;
-        case shapes::CYLINDER:
-        {
-            double r2 = static_cast<const shapes::Cylinder*>(shape)->radius * scale + padding;
-//            btshape = dynamic_cast<btCollisionShape*>(new btCylinderShapeZ(btVector3(r2, r2, static_cast<const shapes::Cylinder*>(shape)->length * scale / 2.0 + padding)));
-        }
-        break;
+
         case shapes::MESH:
         {
             const shapes::Mesh *mesh = static_cast<const shapes::Mesh*>(shape);
 
             renderMesh(mesh) ;
-  /*
-            for (unsigned int i = 0 ; i < mesh->vertexCount ; ++i)
-                btmesh->addPoint(btVector3(mesh->vertices[3*i], mesh->vertices[3*i + 1], mesh->vertices[3*i + 2]));
 
-            btmesh->setLocalScaling(btVector3(scale, scale, scale));
-            btmesh->setMargin(padding + 0.0001); // we need this to be positive
-            btshape = dynamic_cast<btCollisionShape*>(btmesh);
-            */
         }
         break ;
 
@@ -347,20 +284,31 @@ void CollisionModelRenderer::renderObjects()
 
 }
 
-bool CollisionModelRenderer::init()
+bool CollisionModelRenderer::init(const image_geometry::PinholeCameraModel &cmodel)
 {
-    ros::service::waitForService("/environment_server/set_planning_scene_diff");
+
+    ros::service::waitForService("/environment_server/get_planning_scene");
 
     arm_navigation_msgs::GetPlanningScene planning_scene;
 
-    if (!ros::service::call("/environment_server/set_planning_scene_diff", planning_scene)) {
+    if (!ros::service::call("/environment_server/get_planning_scene", planning_scene)) {
         ROS_ERROR("Can't get planning scene");
         return false ;
     }
 
-
-    cm_.reset(new planning_environment::CollisionModels("robot_description")) ;
+    cm_.reset(new planning_environment::CollisionModels("/robot_description")) ;
     state_ = cm_->setPlanningScene(planning_scene.response.planning_scene);
+
+    width = cmodel.width() ;
+    height = cmodel.height() ;
+    fy = cmodel.fy() ;
+
+    ros::NodeHandle nh("~") ;
+
+    string ignored_ ;
+    nh.getParam("ignore_links", ignored_) ;
+
+    boost::split(ignored, ignored_, boost::is_any_of(";/ "));
 
     return true ;
 
@@ -373,75 +321,85 @@ CollisionModelRenderer::~CollisionModelRenderer()
     cm_->revertPlanningScene(state_);
 }
 
-cv::Mat CollisionModelRenderer::render(const sensor_msgs::CameraInfoConstPtr &cinfo, const tf::Transform &tf)
+cv::Mat CollisionModelRenderer::render(const tf::Transform &tf)
 {
-    int w = cinfo->width, h = cinfo->height ;
-
-    initMesa(w, h) ;
-    initGL(cinfo, tf) ;
+    initMesa() ;
+    initGL(tf) ;
     renderObjects() ;
-    cv::Mat im = readBuffer(w, h) ;
+    cv::Mat im = readBuffer() ;
     deinitMesa() ;
 
     return im ;
 }
 
 CollisionModelRenderer *grdr ;
-string link_name = "xtion3_rgb_optical_frame";
+string link_name ;
+ros::ServiceServer server ;
+ros::Subscriber camera_sub ;
 
 
-void camera_info_callback(const sensor_msgs::CameraInfoConstPtr &cinfo)
+bool do_render(camera_helpers::OffscreenRenderService::Request &req,  camera_helpers::OffscreenRenderService::Response &res)
 {
-
     tf::TransformListener listener ;
 
     tf::StampedTransform transform;
 
     try {
-        listener.waitForTransform(link_name, "base_link", ros::Time(0), ros::Duration(1) );
-        listener.lookupTransform(link_name, "base_link", ros::Time(0), transform);
+        ros::Time ts(0) ;
 
-        cv::Mat res = grdr->render(cinfo, transform) ;
-        cv::imwrite("/tmp/im.png", res) ;
+        listener.waitForTransform(link_name, "base_link", ts, ros::Duration(1) );
+        listener.lookupTransform(link_name, "base_link", ts, transform);
 
+        cv::Mat mask = grdr->render(transform) ;
+
+        cv_bridge::CvImage cvi ;
+        cvi.header.stamp = ros::Time::now() ;
+        cvi.header.frame_id = link_name;
+        cvi.encoding = "mono8";
+        cvi.image = mask;
+
+        cvi.toImageMsg(res.mask);
+
+        return true ;
 
     } catch (tf::TransformException ex) {
         ROS_ERROR("%s",ex.what());
+        return false ;
     }
 }
 
+
+void camera_info_callback(const sensor_msgs::CameraInfoConstPtr &cinfo)
+{
+
+    image_geometry::PinholeCameraModel camera_model ;
+    camera_model.fromCameraInfo(cinfo) ;
+
+    grdr = new CollisionModelRenderer ;
+    grdr->init(camera_model) ;
+
+    // Register the service with the master
+    ros::NodeHandle nh("~") ;
+    server = nh.advertiseService("render", &do_render);
+
+    camera_sub.shutdown() ;
+}
+
+
+
 int main(int argc, char *argv[])
 {
-    ros::init(argc, argv, "ofrender") ;
+    ros::init(argc, argv, "offscreen_render") ;
 
-    ros::NodeHandle nh ;
+    ros::NodeHandle nh("~") ;
 
+    string prefix ;
 
+    nh.getParam("camera_info_topic", prefix) ;
+    nh.getParam("camera_link", link_name) ;
 
-    robot_helpers::MoveRobot mv ;
-//    robot_helpers::moveGripperPointingDown(mv, "r1", 0.3, -0.7, 0.4) ;
-
-
-    grdr = new CollisionModelRenderer() ;
-
-    if ( ! grdr->init() ) return 0 ;
-
-    grdr->ignoreLink("certh_floor");
-    grdr->ignoreLink("certh_roof");
-    grdr->ignoreLink("certh_wall_1");
-    grdr->ignoreLink("certh_wall_2");
-    grdr->ignoreLink("certh_wall_3");
-    grdr->ignoreLink("certh_wall_4");
-    grdr->ignoreLink("camera_stick");
-
-
-    string prefix = "xtion3" ;
-
-    sensor_msgs::CameraInfoConstPtr tmp_camera ;
-
-    ros::Subscriber  camera_sub = nh.subscribe<sensor_msgs::CameraInfo>("/" + prefix + "/depth_registered/camera_info", 1, camera_info_callback ) ;
+    camera_sub = nh.subscribe<sensor_msgs::CameraInfo>(prefix, 1, camera_info_callback ) ;
 
     ros::spin() ;
-
 
 }

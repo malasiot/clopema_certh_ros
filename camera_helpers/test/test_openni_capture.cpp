@@ -1,5 +1,6 @@
 #include <camera_helpers/OpenNICapture.h>
 #include <camera_helpers/OpenNIServiceClient.h>
+#include <camera_helpers/CollisionMask.h>
 
 #include <string>
 #include <highgui.h>
@@ -112,6 +113,7 @@ int main(int argc, char *argv[])
     ros::init(argc, argv, "openni_capture_example");
     ros::NodeHandle nh ;
 
+    cv::imwrite("/tmp/oo.png", camera_helpers::getCollisionMask("xtion3")) ;
 
  //   camera_helpers::OpenNICapturePointCloud grabber2("xtion3") ;
 
