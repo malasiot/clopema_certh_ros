@@ -34,8 +34,9 @@ void processDepth(cv::Mat depth, cv::Mat& depth2, cv::Rect r){
 bool do_unfolding(certh_unfolding::unfold::Request &req, certh_unfolding::unfold::Response &res ) {
 
     ros::Publisher marker_pub;
+    ros::NodeHandle h("~");
 
-
+    marker_pub = h.advertise<visualization_msgs::Marker>("/visualization_marker_", 0);
 
     //cout << "Sleep ended" << endl;
 
@@ -678,14 +679,14 @@ bool do_unfolding(certh_unfolding::unfold::Request &req, certh_unfolding::unfold
 }
 
 
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "unfold_hanging_cloth");
-
     ros::NodeHandle nh("~");
 
     // Register the service with the master
-    ros::ServiceServer server = nh.advertiseService("unfold", &do_unfolding);
+    ros::ServiceServer server = nh.advertiseService("unfold", &do_unfolding );
 
     ros::spin() ;
 
