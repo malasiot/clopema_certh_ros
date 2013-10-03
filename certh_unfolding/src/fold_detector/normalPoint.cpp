@@ -287,6 +287,10 @@ int normalPoint(int corner, ret_all r, bool side, Mat imc, Point & P){
 				}
 				keepi=i;//the point is found
 			}
+			else{//<-----------------------------
+				P.x=0;P.y=0;
+				return 0;
+			}//<-------------------
 
 		}
 		//fake detailed edges
