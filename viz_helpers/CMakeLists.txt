@@ -38,7 +38,7 @@ SET (CAMERA_VIEW_SOURCES
 	src/CameraViewServer.cpp
 	src/Dashboard.cpp
 	src/CameraViewPlugin.cpp
-	src/Commander.cpp
+        src/Commander.cpp
 	src/CommandPanelServer.cpp
 
 )
