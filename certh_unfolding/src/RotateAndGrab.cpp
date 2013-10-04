@@ -60,9 +60,10 @@ void RotateAndGrab::doCapture()
         {
             cv::Mat clr, depth ;
             ros::Time ts ;
+            pcl::PointCloud<pcl::PointXYZ> pc ;
             image_geometry::PinholeCameraModel cm;
 
-            if ( openni::grab(camera, clr, depth, ts, cm) )
+            if ( openni::grab(camera, clr, depth, pc, ts, cm) )
             {
 
                 tf::StampedTransform transform;
@@ -74,7 +75,7 @@ void RotateAndGrab::doCapture()
                     listener.lookupTransform(camera + "_rgb_optical_frame", arm + "_ee", ts, transform);
                     tf::TransformTFToEigen(transform, pose);
 
-                    process(clr, depth, cm, ts, pose) ;
+                    process( pc, clr, depth, cm, ts, pose) ;
 
                 } catch (tf::TransformException ex) {
                     ROS_INFO("%s",ex.what());

@@ -6,6 +6,7 @@
 #include <tf_conversions/tf_eigen.h>
 #include <certh_libs/cvHelpers.h>
 #include <highgui.h>
+#include <pcl/io/pcd_io.h>
 
 using namespace cv ;
 using namespace Eigen ;
@@ -24,15 +25,18 @@ public:
 
     }
 
-    void process(const Mat &clr, const Mat &depth, const image_geometry::PinholeCameraModel &cm, const ros::Time &ts, Affine3d &tip_pose_in_camera_frame)
+    void process(const pcl::PointCloud<pcl::PointXYZ> &pc ,const Mat &clr, const Mat &depth, const image_geometry::PinholeCameraModel &cm, const ros::Time &ts, Affine3d &tip_pose_in_camera_frame)
     {
         cmodel = cm ;
 
         cout << counter << endl ;
 
         ros::Duration(0.1).sleep() ;
+
         cv::imwrite(str(boost::format("/tmp/cap_rgb_%d.png") % counter), clr) ;
         cv::imwrite(str(boost::format("/tmp/cap_depth_%d.png") % counter), depth) ;
+
+        pcl::io::savePCDFileBinary(str(boost::format("/tmp/cap_pc_%d.pcd") % counter), pc) ;
 
         Vector3d tip = tip_pose_in_camera_frame * Vector3d(0, 0, 0) ;
         cv::Point2d p = cm.project3dToPixel(cv::Point3d(tip.x(), tip.y(), tip.z())); ;
@@ -52,7 +56,7 @@ public:
        counter ++ ;
     }
 
-    bool selectGraspPoint(Affine3d &pose, Vector3d &pp, bool & orientLeft)
+    bool selectGraspPoint(Affine3d &pose, Vector3d &pp, bool & orientLeft, int & index, int  &x , int &y)
     {
         if ( !found )
         {
@@ -69,12 +73,12 @@ public:
 
 
         int idx = grasp_candidate[0] ;
-        int x = grasp_candidate[1] ;
-        int y = grasp_candidate[2] ;
+         x = grasp_candidate[1] ;
+         y = grasp_candidate[2] ;
 
         cv::Mat imc = cv::imread(str(boost::format("/tmp/cap_rgb_%d.png") % idx), -1) ;
         cv::Mat imd = cv::imread(str(boost::format("/tmp/cap_depth_%d.png") % idx), -1) ;
-
+        index = idx ;
         // find the coordinates of the point in 3D in the correct frame
 
         ushort z ;
@@ -147,6 +151,8 @@ void publishPointMarker(ros::Publisher &vis_pub, const Eigen::Vector3d &p)
 
 }
 
+
+
 int main(int argc, char **argv) {
 
     ros::init(argc, argv, "unfolding2");
@@ -165,40 +171,48 @@ int main(int argc, char **argv) {
 
     action.rotate(-2*M_PI) ;
 
+
     Affine3d pose ;
     Vector3d pp ;
 
     int x = 0,  y= 0;
-    Unfold uf("r2",marker_pub);
+    Unfold uf("r1",marker_pub);
 
-    if ( action.selectGraspPoint(pose, pp, action.orientLeft) )
+    int idx;
+    if ( action.selectGraspPoint(pose, pp, action.orientLeft, idx, x, y) )
     {
 
         MoveRobot rb ;
         rb.setServoMode(false);
         moveGripper(rb, "r1", pose.translation(), Quaterniond(pose.rotation())) ;
+        pcl::PointCloud<pcl::PointXYZ> pc;
+        pcl::io::loadPCDFile(str(boost::format("/tmp/cap_pc_%d.pcd") % idx), pc);
 
-        publishPointMarker(marker_pub, pp);
+        uf.graspPoint(pc, x, y, false, false,false, true);
+
+// sotiris //
+//        publishPointMarker(marker_pub, pp);
 
 
-        Vector3d dir(0.001, 0.99, 0) ;
-        dir.normalize() ;
+//        Vector3d dir(0.001, 0.99, 0) ;
+//        dir.normalize() ;
 
 
-        KinematicsModel kmodel ;
-        kmodel.init() ;
+//        KinematicsModel kmodel ;
+//        kmodel.init() ;
 
-        GraspHangingPlanner gsp(kmodel, "r1") ;
+//        GraspHangingPlanner gsp(kmodel, "r1") ;
 
-        gsp.cone_aperture = M_PI/20 ;
-        gsp.cone_length = 0.1 ;
-        gsp.offset = 0 ;
+//        gsp.cone_aperture = M_PI/20 ;
+//        gsp.cone_length = 0.1 ;
+//        gsp.offset = 0 ;
 
-        trajectory_msgs::JointTrajectory traj ;
-        cout<< "ORIENTATION OF GSP = " << action.orientLeft << endl;
+//        trajectory_msgs::JointTrajectory traj ;
+//        cout<< "ORIENTATION OF GSP = " << action.orientLeft << endl;
 
-        if ( gsp.plan(pp, dir, traj) )
-           rb.execTrajectory(traj) ;
+//        if ( gsp.plan(pp, dir, traj) )
+//           rb.execTrajectory(traj) ;
+// /sotiris//
 
         setServoPowerOff() ;
     }

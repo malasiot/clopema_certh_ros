@@ -27,7 +27,7 @@ public:
 
 protected:
 
-    virtual void process(const cv::Mat &clr, const cv::Mat &depth, const image_geometry::PinholeCameraModel &cm,
+    virtual void process( const pcl::PointCloud<Eigen::MatrixXf> &pc, const cv::Mat &clr, const cv::Mat &depth, const image_geometry::PinholeCameraModel &cm,
                          const ros::Time &ts, Eigen::Affine3d &tip_pose_in_camera_frame) {}
 
 
