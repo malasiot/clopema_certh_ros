@@ -47,6 +47,13 @@ rosbuild_add_executable(offscreen_render src/OffscreenRenderer.cpp)
 target_link_libraries(offscreen_render  ${OSMESA_LIBRARY} ${OPENGL_LIBRARIES})
 ENDIF( OSMESA_FOUND )
 
+FIND_PACKAGE(OpenNI2)
+IF( OPENNI2_FOUND )
+include_directories(${OPENNI2_INCLUDE_DIRS})
+rosbuild_add_executable(openni2_camera_node src/OpenNI2Driver.cpp)
+target_link_libraries(openni2_camera_node  ${OPENNI2_LIBRARIES})
+ENDIF( OPENNI2_FOUND )
+
 ### testers
 
 rosbuild_add_executable(test_openni_capture test/test_openni_capture.cpp)
