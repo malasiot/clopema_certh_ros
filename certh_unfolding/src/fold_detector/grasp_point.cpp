@@ -29,8 +29,8 @@ bool grasp_point(bool detected , vector<double>& grasp_candidate, vector<Eigen::
 		int max=0,kmax=0,lmax=0;
 		for (int k=0;k<store.size();k++){
 			for (int l=0;l<store.at(k).size();l++){
-                //if (max<store.at(k).at(l) && location.at(k).at(l).x<cx && depthD.at(k).at(l)>35 && radius.at(k).at(l)>2){//<-------------------------
-				if (max<store.at(k).at(l) && location.at(k).at(l).x<cx ){
+                if (max<store.at(k).at(l) && location.at(k).at(l).x<cx && depthD.at(k).at(l)>35 && radius.at(k).at(l)>2){//<-------------------------
+                //if (max<store.at(k).at(l) && location.at(k).at(l).x<cx ){
 					//make sure that the point is detected to this particular image
 					if (current_corner.at(k).at(l)==true){
 						max=store.at(k).at(l);

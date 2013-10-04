@@ -166,6 +166,7 @@ int main(int argc, char **argv) {
     {
 
         MoveRobot rb ;
+        rb.setServoMode(false);
         moveGripper(rb, "r1", pose.translation(), Quaterniond(pose.rotation())) ;
 
         publishPointMarker(marker_pub, pp);

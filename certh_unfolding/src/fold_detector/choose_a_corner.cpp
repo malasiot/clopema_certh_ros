@@ -28,7 +28,7 @@ using namespace std;
 //location:dinei thn topothesia tvn a-corners, dhladh tis syntetagmenes tou junction sto opoio antistoixoun
 bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_depthD, vector<vector<bool> >& side,vector<vector<float> >& depthD, vector<vector<int> > junctions,vector<vector<int> >& store,vector<vector<Point> >& location,vector<vector<bool> >& current_corner,int i,int ind,int& k_stop,ret_all r, vector<vector< int> > & radius, vector<vector <Point> > & Points,Mat imc){
     Point pp;
-
+    pp.x=0;pp.y=0;
     bool stop=false;
 		
 		//gia oles tis trexouses a-corners
@@ -56,8 +56,8 @@ bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_
 					side.at(i).at(0)=c_side.at(j);
 					
 					depthD.at(i).at(0)=c_depthD.at(j);
-//                    radius.at(i).at(0) = normalPoint(a_corner.at(j), r, c_side.at(j), imc, pp);//<-------------------------------
-//                    Points.at(i).at(0) = pp;//<-----------------------------------------------------------
+                    radius.at(i).at(0) = normalPoint(a_corner.at(j), r, c_side.at(j), imc, pp);//<-------------------------------
+                    Points.at(i).at(0) = pp;//<-----------------------------------------------------------
 					
 				}
 				else{
@@ -106,10 +106,10 @@ bool group_a_corners(vector<int> a_corner, vector<bool> c_side, vector<float> c_
 				side.at(i).at(side.at(i).size()-1)=c_side.at(j);
 				depthD.at(i).resize(depthD.at(i).size()+1);
 				depthD.at(i).at(depthD.at(i).size()-1)=c_depthD.at(j);
-//                radius.at(i).resize(radius.at(i).size()+1);//<--------------------------------------------------------------
-//                radius.at(i).at(radius.at(i).size()-1)=normalPoint(a_corner.at(j), r, c_side.at(j), imc, pp);
-//                Points.at(i).resize(Points.at(i).size()+1);
-//                Points.at(i).at(Points.at(i).size()-1)=pp;//<--------------------------------------------------------------
+                radius.at(i).resize(radius.at(i).size()+1);//<--------------------------------------------------------------
+                radius.at(i).at(radius.at(i).size()-1)=normalPoint(a_corner.at(j), r, c_side.at(j), imc, pp);
+                Points.at(i).resize(Points.at(i).size()+1);
+                Points.at(i).at(Points.at(i).size()-1)=pp;//<--------------------------------------------------------------
 
 			}
 			
@@ -143,11 +143,11 @@ int choose_a_corner(a_corners a_corn,depths d, vector<vector<int> > junctions,in
 		depthD.resize(depthD.size()+1);
 		vector<float> fl(1,0.0);
 		depthD.at(depthD.size()-1)=fl;
-//        vector<int> vi(1, 0);//<--------------------------
-//        radius.resize(radius.size()+1);
-//        radius.at(radius.size()-1)=vi;
-//        Points.resize(Points.size()+1);
-//        Points.at(Points.size()-1)=P;//<-----------------------------------
+        vector<int> vi(1, 0);//<--------------------------
+        radius.resize(radius.size()+1);
+        radius.at(radius.size()-1)=vi;
+        Points.resize(Points.size()+1);
+        Points.at(Points.size()-1)=P;//<-----------------------------------
 
 
 	}
