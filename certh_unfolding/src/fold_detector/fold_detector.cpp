@@ -36,7 +36,7 @@ colors show_colors(int);
 ret_all call_main(Mat,Mat);
 int choose_a_corner(a_corners, depths ,vector<vector<int> > ,int ,vector<vector<int> >& ,vector<vector<Point> >&,vector<vector<bool> >& ,vector<vector <bool> > & , vector<vector<float> >& ,int& ,ret_all, vector<vector< int> > & , vector<vector <Point> > & , Mat);
 
-bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& grasp_candidate, vector<vector<int> >& store, vector<vector<Point> >& location, vector<vector<bool> >& current_corner,  vector<vector <bool> > & side, vector<vector<float> >& depthD, int cx, vector<vector< int> > & radius, vector<vector <Point> > & Points  ){
+bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& grasp_candidate, vector<vector<int> >& store, vector<vector<Point> >& location, vector<vector<bool> >& current_corner,  vector<vector <bool> > & side, vector<vector<float> >& depthD, int cx, vector<vector< int> > & radius, vector<vector <Point> > & Points, bool &orientLeft  ){
 
     bool ret;
 	int i_stop=-1,k_stop=-1;
@@ -59,7 +59,7 @@ bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& gr
 //			grasp_candidate.at(2)=location.at(i_stop).at(k_stop).y;
             grasp_candidate.at(1)=Points.at(i_stop).at(k_stop).x;
             grasp_candidate.at(2)=Points.at(i_stop).at(k_stop).y;
-            cout<<" SIDE "<<side.at(i_stop).at(k_stop);
+            orientLeft = side.at(i_stop).at(k_stop);
             //cout<<"COORDINATES "<<grasp_candidate.at(1)<<" "<<grasp_candidate.at(2)<<endl;
             //cout<<"i_stop "<<i_stop<<endl;
             //depict

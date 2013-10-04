@@ -5,7 +5,6 @@
 #include "Unfold.h"
 #include <tf_conversions/tf_eigen.h>
 #include <certh_libs/cvHelpers.h>
-
 #include <highgui.h>
 
 using namespace cv ;
@@ -14,10 +13,12 @@ using namespace robot_helpers ;
 using namespace std ;
 using namespace certh_libs ;
 
+
 class FoldDetectorAction: public RotateAndGrab
 {
 public:
-    FoldDetectorAction(const string &arm): RotateAndGrab("xtion3", arm) {
+
+      FoldDetectorAction(const string &arm): RotateAndGrab("xtion3", arm) {
         counter = 0 ;
         found = false ;
 
@@ -40,7 +41,7 @@ public:
         orientations.push_back(tip_pose_in_camera_frame.matrix()) ;
 
         vector<double> grasp_cand_(3) ;
-        bool detected = folds_.detect( clr, depth, counter, grasp_cand_, p.x );
+        bool detected = folds_.detect( clr, depth, counter, grasp_cand_, p.x , orientLeft);
 
         if ( detected ) {
             found = true ;
@@ -103,12 +104,15 @@ public:
     int found ;
     folds folds_ ;
     vector<Matrix4d> orientations ;
+    bool orientLeft;
     vector<double> grasp_candidate ;
     Affine3d pose ;
     int cx ;
     image_geometry::PinholeCameraModel cmodel  ;
     bool isACorner;
+
 };
+
 
 
 void publishPointMarker(ros::Publisher &vis_pub, const Eigen::Vector3d &p)
@@ -142,6 +146,7 @@ void publishPointMarker(ros::Publisher &vis_pub, const Eigen::Vector3d &p)
     vis_pub.publish(marker);
 
 }
+
 int main(int argc, char **argv) {
 
     ros::init(argc, argv, "unfolding2");
@@ -162,8 +167,11 @@ int main(int argc, char **argv) {
 
     Affine3d pose ;
     Vector3d pp ;
-    bool  orientLeft;
-    if ( action.selectGraspPoint(pose, pp, orientLeft) )
+
+    int x = 0,  y= 0;
+    Unfold uf("r2",marker_pub);
+
+    if ( action.selectGraspPoint(pose, pp, action.orientLeft) )
     {
 
         MoveRobot rb ;
@@ -171,6 +179,7 @@ int main(int argc, char **argv) {
         moveGripper(rb, "r1", pose.translation(), Quaterniond(pose.rotation())) ;
 
         publishPointMarker(marker_pub, pp);
+
 
         Vector3d dir(0.001, 0.99, 0) ;
         dir.normalize() ;
@@ -186,7 +195,7 @@ int main(int argc, char **argv) {
         gsp.offset = 0 ;
 
         trajectory_msgs::JointTrajectory traj ;
-
+        cout<< "ORIENTATION OF GSP = " << action.orientLeft << endl;
 
         if ( gsp.plan(pp, dir, traj) )
            rb.execTrajectory(traj) ;

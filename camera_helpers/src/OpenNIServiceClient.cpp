@@ -22,7 +22,7 @@ namespace openni {
 bool doConnect(const std::string &camera, bool con)
 {
     ros::NodeHandle nh ;
-    ros::ServiceClient client = nh.serviceClient<camera_helpers::OpenNIServiceConnect>(camera + "/openni_service/connect");
+    ros::ServiceClient client = nh.serviceClient<camera_helpers::OpenNIServiceConnect>("/openni_service/" + camera + "/connect");
 
     if ( !client.waitForExistence() ) {
         ROS_ERROR("Can't connect to service %s", client.getService().c_str()) ;
@@ -59,7 +59,7 @@ bool disconnect(const std::string &camera)
 bool captureRGBD(const string &camera, cv::Mat &rgb, cv::Mat &depth, image_geometry::PinholeCameraModel &cm, ros::Time &ts)
 {
     ros::NodeHandle nh ;
-    ros::ServiceClient client = nh.serviceClient<camera_helpers::OpenNIServiceGrab>(camera + "/openni_service/grab");
+    ros::ServiceClient client = nh.serviceClient<camera_helpers::OpenNIServiceGrab>("/openni_service/" + camera + "/grab");
 
     if ( !client.waitForExistence() ) {
         ROS_ERROR("Can't connect to service %s", client.getService().c_str()) ;

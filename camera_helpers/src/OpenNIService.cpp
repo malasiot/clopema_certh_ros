@@ -142,8 +142,8 @@ int main(int argc, char **argv)
     OpenNIService srv(camera) ;
 
     // Register the service with the master
-    ros::ServiceServer grabber = nh.advertiseService( "grab", &OpenNIService::grab, &srv  );
-    ros::ServiceServer connect = nh.advertiseService( "connect", &OpenNIService::connect, &srv  );
+    ros::ServiceServer grabber = nh.advertiseService(camera + "/grab", &OpenNIService::grab, &srv  );
+    ros::ServiceServer connect = nh.advertiseService(camera + "/connect", &OpenNIService::connect, &srv  );
 
     ros::spin() ;
 

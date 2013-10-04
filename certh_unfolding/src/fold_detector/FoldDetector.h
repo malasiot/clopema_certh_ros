@@ -89,10 +89,10 @@ public:
 
 	ret_all call_main(Mat,Mat);
 
-    bool fold_detector(Mat, Mat, int, vector<double>& , vector<vector<int> > &, vector<vector<Point> >& , vector<vector<bool> >& ,vector<vector<bool> >& ,vector<vector<float> >& , int ,vector<vector< int> > & , vector<vector <Point> > &);
+    bool fold_detector(Mat, Mat, int, vector<double>& , vector<vector<int> > &, vector<vector<Point> >& , vector<vector<bool> >& ,vector<vector<bool> >& ,vector<vector<float> >& , int ,vector<vector< int> > & , vector<vector <Point> > &, bool&);
 
-    bool detect(const Mat &clr, const Mat &depth, int frame, vector<double> &graspCandidates, int cx ) {
-    bool res =  fold_detector(clr, depth, frame, graspCandidates, score, location, current_corner, sider, depthD, cx, radius, Points) ;
+    bool detect(const Mat &clr, const Mat &depth, int frame, vector<double> &graspCandidates, int cx, bool &orientLeft ) {
+        bool res =  fold_detector(clr, depth, frame, graspCandidates, score, location, current_corner, sider, depthD, cx, radius, Points, orientLeft) ;
 
     return res ;
     }

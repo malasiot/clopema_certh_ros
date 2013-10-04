@@ -19,13 +19,13 @@ int main(int argc, char **argv) {
 
     sleep(3);
     Unfold uf("r2",marker_pub );
-    while(!uf.graspMiddle());
-    while(!uf.graspLowestPoint());
+//    while(!uf.graspMiddle());
+//    while(!uf.graspLowestPoint());
 
-//    ros::Duration(3).sleep() ;
+    ros::Duration(1).sleep() ;
 
-//    while(uf.graspLowestPoint(false, true));
-//    while(uf.graspLowestPoint(true, true));
+    while(!uf.graspLowestPoint(false, true));
+    while(!uf.graspLowestPoint(true, true));
 
     camera_helpers::openni::disconnect(uf.camera) ;
     setServoPowerOff() ;

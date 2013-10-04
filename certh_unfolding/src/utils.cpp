@@ -971,9 +971,9 @@ bool Unfold::graspLowestPoint(bool lastMove, bool allwaysDrop){
         return true ;
     }
 
-
-    if( !flipCloth() ){
+    if( !flipCloth( allwaysDrop) ){
         cout << "CANT FLIP CLOTH"<< endl;
+        moveArm(movingArmPose(), movingArm) ;
         setGripperStates(movingArm, true);
         return false;
     }
