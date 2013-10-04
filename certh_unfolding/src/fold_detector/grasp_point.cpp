@@ -42,8 +42,10 @@ bool grasp_point(bool detected , vector<double>& grasp_candidate, vector<Eigen::
 		}
         if (max>3){
             grasp_candidate.at(0)=kmax;
-            grasp_candidate.at(1)=location.at(kmax).at(lmax).x;
-            grasp_candidate.at(2)=location.at(kmax).at(lmax).y;
+//            grasp_candidate.at(1)=location.at(kmax).at(lmax).x;
+//            grasp_candidate.at(2)=location.at(kmax).at(lmax).y;
+            grasp_candidate.at(1)=Points.at(kmax).at(lmax).x;
+            grasp_candidate.at(2)=Points.at(kmax).at(lmax).y;
             cout<<" SIDE "<<side.at(kmax).at(lmax);
             orientLeft = side.at(kmax).at(lmax);
             ///////depict

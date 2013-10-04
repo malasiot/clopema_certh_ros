@@ -61,7 +61,7 @@ public:
                     isACorner = true ;
             else
             {
-                 bool orientarion = detectHorizontalEdge(grasp_candidate, cx, orientations.size()-1);
+                 bool orientation = detectHorizontalEdge(grasp_candidate, cx, orientations.size()-1);
                  isACorner = false;
             }
         }
@@ -84,7 +84,6 @@ public:
 
         cv::rectangle(imc, cv::Rect(x-2, y-2, 5, 5), cv::Scalar(255, 0, 255), 2) ;
 
-
         cv::imwrite("/tmp/results/gsp.png", imc) ;
 
         Affine3d camera_frame ;
@@ -93,8 +92,10 @@ public:
 
         pose = camera_frame * Affine3d(orientations[idx])  ;
 
-        pp = camera_frame * Vector3d(p.x, p.y, p.z)  ;
+        cout <<"p = "<< p <<endl;
 
+        pp = camera_frame * Vector3d(p.x, p.y, p.z)  ;
+        cout <<"pp = " << pp << endl;
         return true ;
     }
 
@@ -171,7 +172,6 @@ int main(int argc, char **argv) {
 
         publishPointMarker(marker_pub, pp);
 
-        cout << pp << endl ;
         Vector3d dir(0.001, 0.99, 0) ;
         dir.normalize() ;
 

@@ -55,8 +55,10 @@ bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& gr
 			
             ret=true;
 			grasp_candidate.at(0)=i_stop;
-			grasp_candidate.at(1)=location.at(i_stop).at(k_stop).x;
-			grasp_candidate.at(2)=location.at(i_stop).at(k_stop).y;
+//			grasp_candidate.at(1)=location.at(i_stop).at(k_stop).x;
+//			grasp_candidate.at(2)=location.at(i_stop).at(k_stop).y;
+            grasp_candidate.at(1)=Points.at(i_stop).at(k_stop).x;
+            grasp_candidate.at(2)=Points.at(i_stop).at(k_stop).y;
             cout<<" SIDE "<<side.at(i_stop).at(k_stop);
             //cout<<"COORDINATES "<<grasp_candidate.at(1)<<" "<<grasp_candidate.at(2)<<endl;
             //cout<<"i_stop "<<i_stop<<endl;
