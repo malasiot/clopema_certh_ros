@@ -19,8 +19,6 @@ int main(int argc, char **argv) {
 
     sleep(3);
     Unfold uf("r2",marker_pub );
-//    while(!uf.graspMiddle());
-//    while(!uf.graspLowestPoint());
 
     ros::Duration(1).sleep() ;
 

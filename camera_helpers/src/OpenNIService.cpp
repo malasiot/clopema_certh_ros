@@ -129,21 +129,22 @@ int main(int argc, char **argv)
         ROS_ERROR("No camera specified") ;
         return 0 ;
     }
-    string camera = argv[1] ;
+    string camera ;
 
     ros::init(argc, argv, "openni_service"  );
+    ros::NodeHandle nh("~") ;
 
 
-
+    nh.param("camera", camera, string("camera")) ;
     
 
-    ros::NodeHandle nh("~") ;
+
 
     OpenNIService srv(camera) ;
 
     // Register the service with the master
-    ros::ServiceServer grabber = nh.advertiseService(camera + "/grab", &OpenNIService::grab, &srv  );
-    ros::ServiceServer connect = nh.advertiseService(camera + "/connect", &OpenNIService::connect, &srv  );
+    ros::ServiceServer grabber = nh.advertiseService("grab", &OpenNIService::grab, &srv  );
+    ros::ServiceServer connect = nh.advertiseService("connect", &OpenNIService::connect, &srv  );
 
     ros::spin() ;
 

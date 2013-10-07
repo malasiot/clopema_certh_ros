@@ -187,8 +187,8 @@ int main(int argc, char **argv) {
         moveGripper(rb, "r1", pose.translation(), Quaterniond(pose.rotation())) ;
         pcl::PointCloud<pcl::PointXYZ> pc;
         pcl::io::loadPCDFile(str(boost::format("/tmp/cap_pc_%d.pcd") % idx), pc);
-
-        uf.graspPoint(pc, x, y, false, false,false, true);
+        setGripperState("r2", true);
+        uf.graspPoint(pc, x, y, false, !action.orientLeft ,true, true);
 
 // sotiris //
 //        publishPointMarker(marker_pub, pp);
@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
         setServoPowerOff() ;
     }
 
-    ros::spin() ;
+   // ros::spin() ;
 
     return 0 ;
 }

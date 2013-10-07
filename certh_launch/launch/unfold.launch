@@ -11,23 +11,22 @@ Libor Wagner and Vladimir Petrík on February  8, 2013
 <launch>
 
   <include file="$(find certh_launch)/launch/xtion3.launch" />
-  <!-- <include file="$(find certh_launch)/launch/xtion2.launch" /> -->
+  <include file="$(find certh_launch)/launch/xtion2.launch" /> 
 
   <node name="openni_service" pkg="camera_helpers" type="openni_service" ns="xtion3" >
-  	<param  name="camera" value="xtion3)"/>	
+  	<param  name="camera" value="xtion3"/>	
   </node>
 
-  <!--<node name="openni_service" pkg="camera_helpers" type="openni_service" ns="xtion2" >
-  	<param  name="camera" value="xtion2)"/>	
+  <node name="openni_service" pkg="camera_helpers" type="openni_service" ns="xtion2" >
+  	<param  name="camera" value="xtion2"/>	
   </node>
-  -->
-
-  <!-- <node name="unfolding_Service" pkg="certh_unfolding" type="unfoldingService" >
+  
+  <node name="unfolding_Service" pkg="certh_unfolding" type="unfoldingService" >
 	
   </node>
 
   <node name="pickup_Service" pkg="certh_pickup" type="pickup_service" >
 	
   </node>
-  -->
+  
 </launch>
