@@ -138,8 +138,6 @@ int main(int argc, char **argv)
     nh.param("camera", camera, string("camera")) ;
     
 
-
-
     OpenNIService srv(camera) ;
 
     // Register the service with the master
