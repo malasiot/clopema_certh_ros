@@ -144,7 +144,7 @@ bool planToJointGoal(const string &armName, const sensor_msgs::JointState &js, t
 
 }
 
-bool planArmToPose(const string &armName, const Eigen::Vector3d &pos, const Eigen::Quaterniond &q, trajectory_msgs::JointTrajectory &traj)
+bool planArmToPose(const string &armName, const Eigen::Vector3d &pos, const Eigen::Quaterniond &q, trajectory_msgs::JointTrajectory &traj, arm_navigation_msgs::SimplePoseConstraint *poseConstraint)
 {
     clopema_arm_navigation::ClopemaMotionPlan mp;
     mp.request.motion_plan_req.group_name = armName + "_arm" ;
@@ -166,8 +166,18 @@ bool planArmToPose(const string &armName, const Eigen::Vector3d &pos, const Eige
     desired_pose.pose.orientation.z = q.z() ;
     desired_pose.pose.orientation.w = q.w() ;
 
-    desired_pose.absolute_position_tolerance.x = desired_pose.absolute_position_tolerance.y = desired_pose.absolute_position_tolerance.z = 0.02;
-    desired_pose.absolute_roll_tolerance = desired_pose.absolute_pitch_tolerance = desired_pose.absolute_yaw_tolerance = 0.04;
+    if ( poseConstraint )
+    {
+        desired_pose.absolute_position_tolerance = poseConstraint->absolute_position_tolerance ;
+        desired_pose.absolute_roll_tolerance = poseConstraint->absolute_roll_tolerance ;
+        desired_pose.absolute_pitch_tolerance = poseConstraint->absolute_pitch_tolerance ;
+        desired_pose.absolute_yaw_tolerance = poseConstraint->absolute_yaw_tolerance ;
+    }
+    else
+    {
+        desired_pose.absolute_position_tolerance.x = desired_pose.absolute_position_tolerance.y = desired_pose.absolute_position_tolerance.z = 0.02;
+        desired_pose.absolute_roll_tolerance = desired_pose.absolute_pitch_tolerance = desired_pose.absolute_yaw_tolerance = 0.04;
+    }
 
     poseToClopemaMotionPlan(mp, desired_pose);
 

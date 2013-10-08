@@ -31,6 +31,9 @@ private:
 
     sensor_msgs::CameraInfoPtr getDefaultCameraInfo(int width, int height, double f) ;
 
+    void connectCb() ;
+    void disconnectCb() ;
+
     ros::NodeHandle nh ;
     image_transport::ImageTransport it ;
 
@@ -47,6 +50,7 @@ private:
     openni::VideoStream** streams ;
 
     boost::thread capture_thread ;
+    boost::mutex connect_mutex_ ;
 };
 
 bool OpenNI2Driver::start()
@@ -145,6 +149,45 @@ string OpenNI2Driver::findDevice(const string &device_id_)
     }
 }
 
+void OpenNI2Driver::connectCb()
+{
+    boost::lock_guard<boost::mutex> lock(connect_mutex_);
+
+    ROS_ERROR(
+        "Connected %d %d",
+        image_pub_rgb.getNumSubscribers(),
+                image_pub_depth.getNumSubscribers()
+                );
+
+    if ( image_pub_rgb.getNumSubscribers() > 0 ||
+         image_pub_depth.getNumSubscribers() > 0 )
+    {
+        start() ;
+    }
+
+
+}
+
+void OpenNI2Driver::disconnectCb()
+{
+    boost::lock_guard<boost::mutex> lock(connect_mutex_);
+
+    ROS_ERROR(
+        "Disconnected %d %d",
+        image_pub_rgb.getNumSubscribers(),
+                image_pub_depth.getNumSubscribers()
+                );
+
+    if ( image_pub_rgb.getNumSubscribers() == 0 &&
+         image_pub_depth.getNumSubscribers() == 0 )
+    {
+        stop() ;
+    }
+
+
+}
+
+
 bool OpenNI2Driver::init(const string &device_id)
 {
     Status initStatus = OpenNI::initialize();
@@ -166,6 +209,14 @@ bool OpenNI2Driver::init(const string &device_id)
         return false ;
     }
 
+    string rgb_info_url, depth_info_url;
+    bool depth_registration ;
+
+    nh.param("rgb_camera_info_url", rgb_info_url, string());
+    nh.param("depth_camera_info_url", depth_info_url, string());
+    nh.param("depth_registration", depth_registration, true);
+
+
     if ( device.setDepthColorSyncEnabled(true) != STATUS_OK )
     {
         ROS_ERROR("Could not enable color and depth synchronization. Reason: %s",  OpenNI::getExtendedError());
@@ -174,15 +225,18 @@ bool OpenNI2Driver::init(const string &device_id)
 
 
     // Initialize Publisher for depth and rgb image and advertise
-    image_pub_depth = it.advertise("depth/image_raw", 1);
-    image_pub_rgb = it.advertise("rgb/image_raw", 1);
-    pub_depth_camera_info = nh.advertise<sensor_msgs::CameraInfo>("depth/camera_info", 1);
-    pub_rgb_camera_info = nh.advertise<sensor_msgs::CameraInfo>("rgb/camera_info", 1);
 
-    string rgb_info_url, depth_info_url;
+    {
+        boost::lock_guard<boost::mutex> lock(connect_mutex_);
 
-    nh.param("rgb_camera_info_url", rgb_info_url, string());
-    nh.param("depth_camera_info_url", depth_info_url, string());
+        image_transport::SubscriberStatusCallback cnCb = boost::bind(&OpenNI2Driver::connectCb, this);
+        image_transport::SubscriberStatusCallback dcnCb = boost::bind(&OpenNI2Driver::disconnectCb, this);
+
+        image_pub_depth = ( depth_registration ) ? it.advertise("depth_registered/image_raw", 1, cnCb, dcnCb) : it.advertise("depth/image_raw", 1, cnCb, dcnCb);
+        image_pub_rgb = it.advertise("rgb/image_raw", 1, cnCb, dcnCb);
+        pub_depth_camera_info = nh.advertise<sensor_msgs::CameraInfo>("depth/camera_info", 1);
+        pub_rgb_camera_info = nh.advertise<sensor_msgs::CameraInfo>("rgb/camera_info", 1);
+    }
 
     // Load the saved calibrations, if they exist
     rgb_info_manager_ =  boost::make_shared<camera_info_manager::CameraInfoManager>(nh, "rgb", rgb_info_url);
@@ -200,7 +254,9 @@ bool OpenNI2Driver::init(const string &device_id)
     streams[0] = &depthStream;
     streams[1] = &rgbStream;
 
-    if ( device.isImageRegistrationModeSupported(IMAGE_REGISTRATION_DEPTH_TO_COLOR) )
+    capture_thread = boost::thread(boost::bind(&OpenNI2Driver::run, this)) ;
+
+    if ( depth_registration && device.isImageRegistrationModeSupported(IMAGE_REGISTRATION_DEPTH_TO_COLOR) )
     {
         ImageRegistrationMode mode ;
         if ( ( mode = device.getImageRegistrationMode() ) != IMAGE_REGISTRATION_DEPTH_TO_COLOR )
@@ -208,12 +264,10 @@ bool OpenNI2Driver::init(const string &device_id)
             if ( device.setImageRegistrationMode(IMAGE_REGISTRATION_DEPTH_TO_COLOR) != STATUS_OK )
             {
                 ROS_ERROR("Could not set image registration. Reason: %s",  OpenNI::getExtendedError());
+                depth_registration = false ;
             }
         }
     }
-
-    capture_thread = boost::thread(boost::bind(&OpenNI2Driver::run, this)) ;
-
     return true ;
 
 }
@@ -228,6 +282,8 @@ void OpenNI2Driver::run()
 
     while (ros::ok())
     {
+      //   boost::lock_guard<boost::mutex> lock(connect_mutex_);
+
         int changedIndex;
         OpenNI::waitForAnyStream( streams, 2, &changedIndex );
         // capture time as close to recording as possible
@@ -353,10 +409,10 @@ int main(int argc, char **argv)
 
     driver.reset(new OpenNI2Driver) ;
 
-    if ( driver->init("2@11") )
+    if ( driver->init("2@12") )
     {
-        //driver->stop() ;
-        driver->start() ;
+        driver->stop() ;
+  //      driver->start() ;
 
         ros::spin() ;
     }

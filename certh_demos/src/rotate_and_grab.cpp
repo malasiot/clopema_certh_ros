@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
     ros::init(argc, argv, "rotate_and_grab_example");
     ros::NodeHandle nh ;
 
-    RotateAndGrab rg("xtion2", "r2") ;
+    RotateAndGrab rg("xtion2", "r1") ;
     rg.init(Vector3d(0.0, -1.2, 0.8)) ;
     rg.rotate(M_PI/6) ;
 }

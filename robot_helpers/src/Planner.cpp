@@ -332,7 +332,7 @@ OmplJointGoalSampler::OmplJointGoalSampler(const ompl::base::SpaceInformationPtr
                            const ompl::base::ProblemDefinitionPtr &pd_,
                            GoalRegionPtr goal_,
                            const PlanningContextPtr &manip_): manip(manip_), goal(goal_),
-    si(space_information_), sampleNum(0), max_sample_count_(10000), pd(pd_) {
+    si(space_information_), sampleNum(0), max_sample_count_(1000), pd(pd_) {
 
     joints = manip->getJoints() ;
     manip->getJointState(cs);
