@@ -21,7 +21,6 @@ int main(int argc, char **argv) {
     Unfold uf("r2",marker_pub );
 
     ros::Duration(1).sleep() ;
-
     while(!uf.graspLowestPoint(false, true));
     while(!uf.graspLowestPoint(true, true));
 

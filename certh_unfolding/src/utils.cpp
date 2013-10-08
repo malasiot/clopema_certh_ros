@@ -849,8 +849,22 @@ void printPose(geometry_msgs::Pose p){
 //}
 
 //Finds and grasps the lowest point of a hanging cloth, flips the cloth and releases the moving arm
+bool Unfold::moveArmsParking(){
+
+
+
+ return   moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
+
+
+}
+
+
+
 bool Unfold::graspLowestPoint(bool lastMove, bool allwaysDrop){
 
+    cout<< movingArmPose()<< endl;
+    cout<< holdingArmPose() << endl;
+    cout << movingArm <<" "<< holdingArm<< endl;
     moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
     setGripperStates(movingArm , true);

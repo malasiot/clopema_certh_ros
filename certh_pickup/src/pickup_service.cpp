@@ -7,14 +7,15 @@
 bool do_pickup(certh_pickup::PickUp::Request &req,   certh_pickup::PickUp::Response &res)
 {
     PickUp pick("r2");
-
+    float tableHeight = 0.725 ;
+    addBoxToCollisionModel(1.3, 0, tableHeight/2.0, 0.8, 0.8, tableHeight );
     ros::Duration wait = ( req.time_out > 0 ) ? ros::Duration(req.time_out) : ros::Duration(100) ;
 
     if ( pick.graspClothFromTable(wait) )
         res.status = 0 ;
     else
         res.status = 1 ;
-
+    resetCollisionModel();
     setServoPowerOff();
 
     return true ;

@@ -22,8 +22,8 @@
   <depend package="camera_helpers"/>
   <depend package="robot_helpers"/>
   <depend package="viz_helpers"/>
-  <depent package="certh_unfolding"/>
-  <depent package="certh_pickup"/>
+  <depend package="certh_unfolding"/>
+  <depend package="certh_pickup"/>
 </package>
 
 
