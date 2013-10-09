@@ -25,6 +25,8 @@ int main(int argc, char **argv) {
     while(!uf.graspLowestPoint(true, true));
 
     camera_helpers::openni::disconnect(uf.camera) ;
+
+
     setServoPowerOff() ;
     return 0;
 }
