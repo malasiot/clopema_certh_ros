@@ -12,6 +12,8 @@ set(ROS_BUILD_TYPE Debug)
 rosbuild_init()
 
 FIND_PACKAGE(OpenCV REQUIRED)
+FIND_PACKAGE(PCL REQUIRED)
+FIND_PACKAGE(VTK REQUIRED)
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -27,3 +29,5 @@ rosbuild_add_boost_directories()
 
 rosbuild_add_executable(psnode src/ps_node.cpp src/utilities.cpp)
 #rosbuild_add_executable(psclient src/ps_client.cpp)
+
+target_link_libraries(psnode ${VTK_LIBRARIES})

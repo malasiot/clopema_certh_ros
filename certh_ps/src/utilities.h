@@ -7,7 +7,8 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
-
+#include <fstream>
+#include <pcl/visualization/cloud_viewer.h>
 
 void photometricStereo(cv::Mat &Lights, cv::Mat *IgrFF, int w, int lowbound, int upbound, int numImages, cv::Mat &Nx, cv::Mat &Ny, cv::Mat &Nz, cv::Mat &alb_gr);
 void init_port(int *fd, unsigned int baud);
@@ -17,6 +18,8 @@ cv::Mat linRegress(cv::Mat x1, cv::Mat x2, cv::Mat y, double n);
 void quadrantShift(int w, cv::Mat &wx, cv::Mat &wy);
 cv::Mat psCloud(int w, cv::Mat Nx, cv::Mat Ny, cv::Mat Nz);
 cv::Scalar focusMetric(cv::Mat frame, cv::Rect roiFM);
+void cloudVis(cv::Mat &alb_gr, cv::Mat &Z, int w, std::string zType);
+cv::Mat loadLights(int &imageNumber, std::string &lightsp);
 
 #endif // UTILITIES_H
 

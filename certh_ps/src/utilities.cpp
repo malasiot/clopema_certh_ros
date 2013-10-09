@@ -401,3 +401,114 @@ Scalar focusMetric(Mat frame, Rect roiFM)
   return focusMeasure;
 }
 
+void cloudVis(Mat &alb_gr, Mat &Z, int w, string zType)
+{
+    if (zType.compare("New") == 0)
+    {
+      // XYZ Coordinates
+      Mat X(Mat_<double>(w * w, 1));
+      Mat Y(Mat_<double>(w * w, 1));
+
+      int index1 = 0, index2 = 0, k = 0;
+      for (index1 = 0; index1 < w; index1++)
+        {
+	  for (index2 = 0; index2 < w; index2++)
+            {
+	      X.row(k) = index1 + 1;
+	      Y.row(k) = index2 + 1;
+	      k++;
+            }
+        }
+
+      Z = Z.reshape(0, w * w);
+      alb_gr = alb_gr.reshape(0, w * w);
+      alb_gr = alb_gr * 255.0;
+      alb_gr.convertTo(alb_gr, CV_8UC1);
+
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+
+      // Fill in the cloud data
+      for (int i = 0; i < (w * w); i++)
+        {
+            pcl::PointXYZRGB cloud_data;
+            cloud_data.x = X.at<double>(i,0);
+            cloud_data.y = Y.at<double>(i,0);
+            cloud_data.z = Z.at<double>(i,0);
+	    //cloud_data.rgb = alb_gr.at<float>(i, 0);
+	    cloud_data.r = alb_gr.at<int>(i, 0);
+	    cloud_data.g = alb_gr.at<int>(i, 0);
+	    cloud_data.b = alb_gr.at<int>(i, 0);
+            cloud->points.push_back(cloud_data);
+        }
+        pcl::visualization::PCLVisualizer viewer("Cloud Viewer");
+	//	viewer.setBackgroundColor (255, 255, 255);
+        pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud);
+        viewer.addPointCloud<pcl::PointXYZRGB>(cloud,rgb);
+        while (!viewer.wasStopped())
+        {
+            viewer.spinOnce();
+        }
+        destroyAllWindows();
+    }
+    else if (zType.compare("Old") == 0)
+    {
+        alb_gr = alb_gr.reshape(0, w * w);
+        alb_gr.convertTo(alb_gr, CV_8UC1);
+
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGB>);
+
+        // Fill in the cloud data
+        for (int i = 0; i < (w * w); ++i)
+        {
+            pcl::PointXYZRGB cloud_data;
+            cloud_data.x = Z.at<double>(i,0);
+            cloud_data.y = Z.at<double>(i,1);
+            cloud_data.z = Z.at<double>(i,2);
+            cloud_data.rgb = alb_gr.at<float>(i, 0);
+            cloud->points.push_back(cloud_data);
+        }
+        pcl::visualization::PCLVisualizer viewer("Cloud Viewer");
+//        viewer.setBackgroundColor (255, 255, 255);
+        pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud);
+        viewer.addPointCloud<pcl::PointXYZRGB>(cloud,rgb);
+        while (!viewer.wasStopped())
+        {
+            viewer.spinOnce();
+        }
+        //destroyAllWindows();
+    }
+}
+
+cv::Mat loadLights(int &imageNumber,std::string &lightsp)
+{
+    string line;
+    int rows,cols;
+    double my_array[imageNumber][3];
+    Mat Lights(Mat_<double>(imageNumber, 3));
+
+    ifstream pFile (lightsp.c_str());
+    if (pFile.is_open())
+    {
+        rows=0;
+
+        while(!pFile.eof())
+        {
+            while(getline(pFile, line))
+            {
+                cols=0;
+                stringstream ss(line);
+                while(ss >> my_array[rows][cols])
+                {
+                    Lights.row(rows).col(cols) = my_array[rows][cols];
+                    cols++;
+                }
+                rows++;
+            }
+        }
+        pFile.close();
+    }
+    else
+        cout << "Unable to open file";
+
+    return Lights;
+}
