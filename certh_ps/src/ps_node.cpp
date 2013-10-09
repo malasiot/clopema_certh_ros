@@ -95,7 +95,7 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
   // for all frames in video
   for(i=0; i < 8; i++) {
     write(serialPort, "0", 1);
-    ss << i + 1;
+    ss << i + 1 << '\n';
     write(serialPort, ss.str().c_str(), 1);
     //    ss.str(std::string());
     //    ss.clear()f;
@@ -115,7 +115,7 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
     cvtColor(frame(roi), images[i], CV_RGB2GRAY);
     //    images[i] = frame;
 
-    cv::imwrite(ss.str() + ".jpg", images[i]);
+    cv::imwrite(ss.str().substr(0, ss.str().size() - 1) + ".jpg", images[i]);
     ss.str(std::string());
     ss.clear();
   }

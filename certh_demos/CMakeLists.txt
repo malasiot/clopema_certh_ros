@@ -45,6 +45,8 @@ rosbuild_add_boost_directories()
 rosbuild_add_executable(rsp src/main.cpp)
 rosbuild_link_boost(rsp signals)
 
+rosbuild_add_executable(unfolding src/unfolding.cpp)
+
 rosbuild_add_executable(xtion3Calibration src/xtion3Calibration.cpp)
 target_link_libraries(xtion3Calibration clopema_move)
 rosbuild_link_boost(xtion3Calibration signals)

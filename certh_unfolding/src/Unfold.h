@@ -120,7 +120,7 @@ public:
         else{
             pose.position.x = -0.23;
             pose.position.y = -0.8;
-            pose.position.z = 1.6;
+            pose.position.z = 1.58;
         }
         return pose;
     }
@@ -171,6 +171,9 @@ public:
 
     Eigen::Matrix4d findLowestPointOrientation(Eigen::Vector4d vector );
     Eigen::Matrix4d findGraspingPointOrientation(Eigen::Vector4d vector, bool orientUp = false);
+
+    bool moveArmsParking() ;
+
 
     float findBias(Eigen::Vector4d vector);
     bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3d &orig, const Eigen::Vector3d &base, float apperture, Eigen::Vector3d &p, Eigen::Vector3d &n);

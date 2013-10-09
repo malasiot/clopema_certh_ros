@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
     cin.ignore();
     geometry_msgs::Pose pose ;
 
-    pose.position.x =  0.2;
+    pose.position.x =  -0.10;
     pose.position.y =  -1.1 ;
     pose.position.z = 0.8;
 
@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
     moveArm(pose, "r2");
 
 
-    pose.position.x =  0.2;
+    pose.position.x =  -0.10;
     pose.position.y =  -1.1 ;
     pose.position.z = 0.735;
 

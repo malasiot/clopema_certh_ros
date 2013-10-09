@@ -8,7 +8,8 @@ namespace robot_helpers {
 
 // plan end-point to reach given pose
 
-bool planArmToPose(const std::string &armName, const Eigen::Vector3d &pos, const Eigen::Quaterniond &q, trajectory_msgs::JointTrajectory &traj) ;
+bool planArmToPose(const std::string &armName, const Eigen::Vector3d &pos, const Eigen::Quaterniond &q, trajectory_msgs::JointTrajectory &traj,
+                   arm_navigation_msgs::SimplePoseConstraint *poseConstraint = NULL) ;
 
 // plan Xtion frame to pose
 

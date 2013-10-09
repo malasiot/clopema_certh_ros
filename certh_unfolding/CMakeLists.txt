@@ -19,7 +19,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_add_boost_directories()
 rosbuild_gensrv()
 
-rosbuild_add_executable(unfolding src/unfolding.cpp src/utils.cpp src/grasp_from_floor.cpp)
+rosbuild_add_executable(unfoldingService src/unfolding_Service.cpp src/utils.cpp src/grasp_from_floor.cpp)
 
 rosbuild_add_executable(unfoldingLP src/unfoldingLP.cpp src/utils.cpp src/grasp_from_floor.cpp)
 
@@ -53,6 +53,7 @@ rosbuild_add_executable(partial_unfold2
     src/fold_detector/grasp_point.cpp
     src/fold_detector/detectHorizontalEdge.cpp
     src/fold_detector/normalPoint.cpp
+    src/utils.cpp
 )
 rosbuild_link_boost(partial_unfold2 signals)
 

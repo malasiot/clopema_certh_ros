@@ -13,4 +13,9 @@
   <depend package="robot_helpers"/>
   <depend package="camera_helpers"/>
  
+ <export>
+    <cpp cflags="-I${prefix}/include" />
+	
+  </export>
+ 
 </package>

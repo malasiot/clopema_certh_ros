@@ -14,6 +14,11 @@
   <depend package="nodelet"/>
   <depend package="camera_info_manager"/>
 
+	<depend package="collision_space"/>
+	<depend package="geometric_shapes"/>
+	<depend package="arm_navigation_msgs"/>
+	<depend package="planning_environment"/>
+
 <!--  <depend package="RH_cameras"/> -->
 
   <depend package="certh_libs"/>

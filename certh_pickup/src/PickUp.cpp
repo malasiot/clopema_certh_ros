@@ -148,6 +148,8 @@ bool PickUp::moveXtionAboveCloth(){
        return false ;
     }
 
+    cv::imwrite("/tmp/meeting/on_table.png", rgb) ;
+
     prevDepth = depth ;
 
     cv::Mat dmap, mask ;

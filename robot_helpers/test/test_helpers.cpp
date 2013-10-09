@@ -6,6 +6,8 @@
 #include <robot_helpers/Planners.h>
 #include <planning_environment/util/construct_object.h>
 
+#include <fstream>
+
 using namespace std;
 using namespace robot_helpers ;
 using namespace Eigen ;
@@ -66,39 +68,41 @@ void createMarkerFromMesh( shapes::Mesh &mesh, const Eigen::Affine3d &trans, vis
 
 }
 
-void planSingle(KinematicsModel &kmodel)
+bool planSingle(KinematicsModel &kmodel, double X, double Y, double Z, bool exec=false)
 {
 
-    MA1400_R2_IKSolver solver_r2 ;
-    solver_r2.setKinematicModel(&kmodel);
+    MA1400_R1_IKSolver solver_r1 ;
+    solver_r1.setKinematicModel(&kmodel);
 
-    Quaterniond q = lookAt(Eigen::Vector3d(1, 0, 0),-M_PI/2) ;
+    Quaterniond q = lookAt(Eigen::Vector3d(0, -1, 0),-M_PI/2) ;
 
     double roll, pitch, yaw ;
     robot_helpers::rpyFromQuat(q, roll, pitch, yaw) ;
 
 
+    PlanningContextPtr pctx(new PlanningContextSingle("r1_arm", &kmodel, &solver_r1, "r1_ee" ) );
 
-     PlanningContextPtr pctx(new PlanningContextSingle("r2_arm", &kmodel, &solver_r2, "r2_ee" ) );
+    SimplePoseGoal *region = new SimplePoseGoal(Affine3d(Translation3d(Vector3d(X, Y, Z)) * q)  ) ;
 
-    SimplePoseGoal *region = new SimplePoseGoal(Affine3d(Translation3d(Vector3d(-0.3, -0.9, 0.85)) * q)  ) ;
+    region->roll_delta_minus = M_PI/180  ;
+    region->roll_delta_plus = M_PI/180 ;
+    region->pitch_delta_minus = 0  ;
+    region->pitch_delta_plus = M_PI/20  ;
 
-    region->roll_delta_minus = M_PI  ;
-    region->roll_delta_plus = M_PI ;
-    region->pitch_delta_minus = M_PI/8  ;
-    region->pitch_delta_plus = M_PI/18  ;
-    region->yaw_delta_minus = M_PI/128 ;
-    region->yaw_delta_plus = M_PI/128  ;
+    region->yaw_delta_minus = M_PI/4 ;
+    region->yaw_delta_plus = M_PI/4  ;
 
     JointSpacePlanner planner(pctx) ;
 
-    planner.setTimeOut(20);
+    planner.setTimeOut(1.0);
 
     JointTrajectory traj ;
 
     GoalRegionPtr rg(region) ;
 
     bool rplan = planner.solve(rg, traj) ;
+
+    if ( !exec ) return rplan ;
 
     if ( rplan )
     {
@@ -107,7 +111,7 @@ void planSingle(KinematicsModel &kmodel)
 
         trajectory_msgs::JointTrajectory msg = traj.toMsg(10), filtered ;
 
-        filterTrajectory("r2_arm", msg, filtered) ;
+        filterTrajectory("r1_arm", msg, filtered) ;
 
 
         MoveRobot mv ;
@@ -117,6 +121,10 @@ void planSingle(KinematicsModel &kmodel)
         JointState rs = JointState::fromRobotState() ;
         kmodel.setJointState(rs);
     }
+    else
+        ROS_ERROR("Can't plan trajectory") ;
+
+    return rplan ;
 
 }
 
@@ -288,7 +296,7 @@ bool attachBoxToCollisionModel(arm_navigation_msgs::AttachedCollisionObject &att
     return true ;
 }
 
-bool attachTableToCollisionModel(arm_navigation_msgs::CollisionObject &col_object)
+bool attachTableToCollisionModel(arm_navigation_msgs::CollisionObject &col_object, const Vector3d &center, double sx, double sy)
 {
     col_object.id = "table";
     col_object.operation.operation = arm_navigation_msgs::CollisionObjectOperation::ADD;
@@ -298,9 +306,9 @@ bool attachTableToCollisionModel(arm_navigation_msgs::CollisionObject &col_objec
 
     geometry_msgs::Pose pose;
 
-    pose.position.x = 0;
-    pose.position.y = -1;
-    pose.position.z = 0.72;
+    pose.position.x = center.x();
+    pose.position.y = center.y();
+    pose.position.z = center.z() ;
     pose.orientation.x = 0;
     pose.orientation.y = 0;
     pose.orientation.z = 0;
@@ -311,8 +319,8 @@ bool attachTableToCollisionModel(arm_navigation_msgs::CollisionObject &col_objec
     object.type = arm_navigation_msgs::Shape::BOX;
 
     object.dimensions.resize(3);
-    object.dimensions[0] = 1.2;
-    object.dimensions[1] = 1.5;
+    object.dimensions[0] = sx;
+    object.dimensions[1] = sy;
     object.dimensions[2] = 0.02;
 
     col_object.shapes.push_back(object);
@@ -331,6 +339,8 @@ int main(int argc, char *argv[])
     ros::AsyncSpinner spinner(4) ;
     spinner.start() ;
 
+    resetCollisionModel() ;
+
     ros::Publisher pub = nh_.advertise<visualization_msgs::MarkerArray>( "visualization_marker_array", 0 );
     ros::Publisher pub2 = nh_.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
@@ -338,23 +348,87 @@ int main(int argc, char *argv[])
     arm_navigation_msgs::CollisionObject col_object ;
 
 
-    attachTableToCollisionModel(col_object) ;
-    attachBoxToCollisionModel(att_object, "r2") ;
+    attachTableToCollisionModel(col_object, Vector3d(0, -1.3, 0.72), 0.8, 1.2) ;
+ //   attachBoxToCollisionModel(att_object, "r1") ;
 
 
-    arm_navigation_msgs::PlanningScene scene ;
-    scene.attached_collision_objects.push_back(att_object) ;
-    scene.collision_objects.push_back(col_object) ;
+    ros::service::waitForService("/environment_server/set_planning_scene_diff");
+      ros::ServiceClient get_planning_scene_client =
+        nh_.serviceClient<arm_navigation_msgs::GetPlanningScene>("/environment_server/set_planning_scene_diff");
 
-    MoveRobot mv ;
+      arm_navigation_msgs::GetPlanningScene::Request planning_scene_req;
+      arm_navigation_msgs::GetPlanningScene::Response planning_scene_res;
+
+
+  //  planning_scene_req.planning_scene_diff.attached_collision_objects.push_back(att_object) ;
+  planning_scene_req.planning_scene_diff.collision_objects.push_back(col_object) ;
+
+
+    if(!get_planning_scene_client.call(planning_scene_req, planning_scene_res)) {
+       ROS_WARN("Can't get planning scene");
+       return -1;
+     }
+
+      MoveRobot mv ;
+    {
+    ofstream strm("/tmp/r1_side.txt") ;
+
+    KinematicsModel kmodel ;
+    kmodel.init() ;
+
+    planSingle(kmodel, 0.3, -0.95, 0.8, true) ;
+
+
+
+    for(double x = -0.5 ; x <= 0.5 ; x+= 0.02 )
+        for(double y = -0.5 ; y >= -1.5 ; y -= 0.02 )
+        {
+            KinematicsModel kmodel ;
+            kmodel.init() ;
+
+            if ( planSingle(kmodel, x, y, 0.85) )
+            {
+                strm << x << ' ' << y << endl ;
+            }
+        }
+    }
+
+
+/*
+    arm_navigation_msgs::SimplePoseConstraint pc ;
+    pc.absolute_position_tolerance.x = 0.02 ;
+    pc.absolute_position_tolerance.y = 0.02 ;
+    pc.absolute_position_tolerance.z = 0.02 ;
+    pc.absolute_roll_tolerance =  M_PI/2 ;
+    pc.absolute_pitch_tolerance = M_PI/2 ;
+    pc.absolute_yaw_tolerance =  M_PI/2 ;
+
+
+    trajectory_msgs::JointTrajectory traj_ ;
+
+
+  //  moveGripperPointingDown(mv, "r2", 0, -1.2, 0.8) ;
+
     moveHome(mv) ;
- //   moveGripper(mv, "r1", Vector3d(0.0, -1.0, 1.5),  lookAt(Eigen::Vector3d(0, 0, -1),0)) ;
+    if ( planArmToPose("r1",  Vector3d(0.3, -0.9, 0.85), lookAt(Eigen::Vector3d(0.2, -1, 0), -M_PI/2), traj_, &pc) )
+    {
 
+        mv.execTrajectory(traj_) ;
+    }
+    else
+    {
+        ROS_ERROR("Can't plan trajectory") ;
+    }
 
-        KinematicsModel kmodel ;
-        kmodel.init(scene) ;
+*/
+  //   moveGripper(mv, "r2", Vector3d(0.3, -1.2, 0.8),  lookAt(Eigen::Vector3d(-0.5, 0, -0.2), -M_PI/2)) ;
 
-        planSingle(kmodel) ;
+      //moveGripper(mv, "r1", Vector3d(0.3, -0.8, 0.8),  lookAt(Eigen::Vector3d(-0.5, -0.5, -0.2), -M_PI/2)) ;
+
+    while(1) ;
+    KinematicsModel kmodel ;
+    kmodel.init() ;
+
 
         visualization_msgs::MarkerArray markers_ ;
         kmodel.getRobotMarkers(markers_);

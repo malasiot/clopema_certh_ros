@@ -91,10 +91,10 @@ Point search_area(int corner, ret_all r, bool side, Mat bin, vector<int> vec, ve
 	
 	if (side==false){
 		istarty=r.junctions.at(corner).at(1);
-		istopy=istarty+20;
+        istopy=istarty+10;
 	}
 	else{
-		istarty=r.junctions.at(corner).at(1)-20;
+        istarty=r.junctions.at(corner).at(1)-10;
 		istopy=r.junctions.at(corner).at(1);
 	}
 
@@ -270,6 +270,7 @@ int normalPoint(int corner, ret_all r, bool side, Mat imc, Point & P){
 
 		//find the point on the edge that the junction corresponds to
 		int xs=r.junctions.at(corner).at(0),ys,keepi;
+		if (r.detailed_edges.at(2*ind+1).size()>0){//<-------------------------------------------------------------------------------
 		for (int i=0; i<r.detailed_edges.at(2*ind).size()-1 && r.detailed_edges.at(2*ind).at(i+1)>0; i++){
 			bool expr1=(r.junctions.at(corner).at(0)>=r.detailed_edges.at(2*ind).at(i) && r.junctions.at(corner).at(0)<=r.detailed_edges.at(2*ind).at(i+1));
 			bool expr2=(r.junctions.at(corner).at(0)<=r.detailed_edges.at(2*ind).at(i) && r.junctions.at(corner).at(0)>=r.detailed_edges.at(2*ind).at(i+1));
@@ -286,6 +287,10 @@ int normalPoint(int corner, ret_all r, bool side, Mat imc, Point & P){
 				}
 				keepi=i;//the point is found
 			}
+			else{//<-----------------------------
+				P.x=0;P.y=0;
+				return 0;
+			}//<-------------------
 
 		}
 		//fake detailed edges
@@ -379,7 +384,12 @@ int normalPoint(int corner, ret_all r, bool side, Mat imc, Point & P){
 			P=search_area( corner,  r, side,  bin, vec, o,ri);
 			r0=ri;
 		}
-
+			}////<---------------------------------------------------------------------
+		else{
+			P.x=0;
+			P.y=0;
+			r0=0;
+		}//<---------------------------------------------------
 	}
 	else{////////////////////////////////////////arrow junction////////////////////////////////
 		vector<int> tv(2);

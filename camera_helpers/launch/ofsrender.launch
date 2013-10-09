@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+
+<launch>
+
+
+  <node pkg="camera_helpers" type="offscreen_render" name="offscreen_render" respawn="true" output="screen" ns="xtion3">
+    <param name="camera_info_topic"   value="/xtion3/depth_registered/camera_info" />
+    <param name="camera_link"   value="xtion3_rgb_optical_frame" />
+	<param name="ignore_links"  value="certh_floor;certh_roof;certh_wall_1;certh_wall_2;certh_wall_3;certh_wall_4;camera_stick" />
+  </node>
+
+</launch>

@@ -40,7 +40,7 @@ void JointTrajectory::addPoint(double t, const JointState &state)
             names.push_back((*it).first) ;
     }
 
-    assert(t >= 0.0 && t <= 1.0) ;
+ //   assert(t >= 0.0 && t <= 1.0) ;
 
     positions.resize(positions.size()+1) ;
     times.push_back(t) ;

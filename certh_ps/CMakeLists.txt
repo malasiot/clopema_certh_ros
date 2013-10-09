@@ -28,6 +28,8 @@ rosbuild_gensrv()
 rosbuild_add_boost_directories()
 
 rosbuild_add_executable(psnode src/ps_node.cpp src/utilities.cpp)
+rosbuild_add_executable(approach_Table src/approach_Table.cpp )
+rosbuild_add_executable(leave_Table src/leave_Table.cpp )
 #rosbuild_add_executable(psclient src/ps_client.cpp)
 
 target_link_libraries(psnode ${VTK_LIBRARIES})

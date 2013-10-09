@@ -27,7 +27,7 @@ public:
 
 protected:
 
-    virtual void process(const cv::Mat &clr, const cv::Mat &depth, const image_geometry::PinholeCameraModel &cm,
+    virtual void process( const pcl::PointCloud<Eigen::MatrixXf> &pc, const cv::Mat &clr, const cv::Mat &depth, const image_geometry::PinholeCameraModel &cm,
                          const ros::Time &ts, Eigen::Affine3d &tip_pose_in_camera_frame) {}
 
 
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
     ros::init(argc, argv, "rotate_and_grab_example");
     ros::NodeHandle nh ;
 
-    RotateAndGrab rg("xtion2", "r2") ;
-    rg.init(Vector3d(0, -0.9, 1.2)) ;
+    RotateAndGrab rg("xtion2", "r1") ;
+    rg.init(Vector3d(0.0, -1.2, 0.8)) ;
     rg.rotate(M_PI/6) ;
 }
