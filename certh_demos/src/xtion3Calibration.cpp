@@ -26,6 +26,8 @@ using namespace std ;
 #include <pcl/point_types.h>
 #include <pcl/ros/conversions.h>
 #include <Eigen/Geometry>
+#include <camera_helpers/OpenNIServiceClient.h>
+#include <robot_helpers/Utils.h>
 
 bool cont;
 int cx, cy;
@@ -161,8 +163,10 @@ float points[9][3] = {
 0.2,  	-1.1, 	0.8
 } ;
 
-void grabpc(camera_helpers::OpenNICaptureAll *grabber)
+void grabpc()
 {
+
+
 
     cv::Mat rgb, depth ;
     pcl::PointCloud<pcl::PointXYZ> pc ;
@@ -190,7 +194,7 @@ void grabpc(camera_helpers::OpenNICaptureAll *grabber)
 	for (unsigned int i=0;i<9;i++){
            setPose(points[i][0],points[i][1],points[i][2]);
 			
-            if ( grabber->grab(rgb, depth, pc, ts, cm) )
+            if ( camera_helpers::openni::grab( "xtion3" ,rgb, depth, pc, ts, cm) )
 			{
                 cont = false;
 				while(!cont){		
@@ -263,39 +267,20 @@ void grabpc(camera_helpers::OpenNICaptureAll *grabber)
         for(int j=0; j<4; ++j)
             fout << trInv.at<float>(i, j) << " " ;
         fout << endl;
-        //fout << t.at<float>(i, 0) << std::endl;
 	}
 
 
 	
-	/*
 
-    std::cout << "start grabbing PC" << std::endl ;
-    for(int i=0 ; i<10 ; i++ )
-    {
-        grabber->grab(cloud, ts) ;
-
-        pcl::io::savePCDFileASCII(str(boost::format("/tmp/cloud_%03d.pcd") % i), cloud) ;
-
-      //  ros::Duration(0.3).sleep() ;
-    }
-    std::cout << "finished PC" << std::endl ;
-*/
-    grabber->disconnect() ;
+    camera_helpers::openni::disconnect("xtion3") ;
 
 }
 
 int main(int argc, char **argv) {
 	ros::init(argc, argv, "move_pose_dual");
 	ros::NodeHandle nh;
-
-
-
-   camera_helpers::OpenNICaptureAll grabber2("xtion3") ;
-   grabber2.connect() ;
-
-   grabpc(&grabber2) ;
-
+    camera_helpers::openni::connect("xtion3") ;
+    grabpc();
 
 	return 1;
 }
