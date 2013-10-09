@@ -22,7 +22,7 @@ cv::VideoCapture *capture;
 bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::PhotometricStereo::Response &res) {
 
   // Paths and Filenames of various files
-  string lightsPath = "Lights/L.dat"; //Lights direction path
+  string lightsPath = "data/Lights/L.dat"; //Lights direction path
   string fullImagePath = "data/Full_Images/"; //Place to save full images
   string multiImagePath = "data/Images/"; // Place to save images from single leds
   string normalsPath = "data/Normals/"; // Place to save normals
@@ -123,8 +123,8 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
   write(serialPort, "0", 1);  
 
   // FlatFielding
-  string data_path = "/home/christos/clopema/certh_ps/data/";
-  string ff_path = data_path + "ff/";
+  //string data_path = "/home/christos/clopema/certh_ps/data/";
+  string ff_path =  "data/ff/";
   for(i = 0; i < 8; i++) {
     string path = ff_path +  boost::lexical_cast<string>(i+1) + ".jpg";
     FF_Image = imread(path, 0);
