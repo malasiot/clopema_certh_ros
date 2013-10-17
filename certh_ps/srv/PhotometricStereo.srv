@@ -1,4 +1,4 @@
-int64 req
 ---
 #sensor_msgs/PointCloud2 reconstruction
-int64 a
+#int64 a
+string a

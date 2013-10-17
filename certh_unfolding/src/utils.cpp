@@ -56,9 +56,6 @@ int Unfold::setGripperStates(const string &armName  , bool open){
     clopema_motoros::SetGripperState sopen;
     sopen.request.open=open;
     ros::service::call("/" + armName + "_gripper/set_open", sopen);
-    if((armName == "r2") && (open == true))
-        openG2();
-    return 0;
 }
 
 //Opens or closes the grippers
@@ -76,29 +73,6 @@ int Unfold::setGrippersStates( bool open){
 }
 
 
-int Unfold::openG2(){
-
-    clopema_motoros::WriteIO openGripper;
-    openGripper.request.address = 10026;
-
-    for(unsigned int i = 0 ; i < 4 ; i++){
-        openGripper.request.value = false;
-        if (!ros::service::call("/write_io", openGripper)) {
-            ROS_ERROR("Can't call service write_io");
-            return -1;
-        }
-        ros::Duration(0.1).sleep();
-
-        openGripper.request.value = true;
-        ros::service::waitForService("/write_io");
-        if (!ros::service::call("/write_io", openGripper)) {
-            ROS_ERROR("Can't call service write_io");
-            return -1;
-        }
-        ros::Duration(0.5).sleep();
-    }
-
-}
 
 ////Calculates the quaternion of a 4d rotatation matrix
 //geometry_msgs::Quaternion Unfold::rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix){
@@ -849,14 +823,7 @@ void printPose(geometry_msgs::Pose p){
 //}
 
 //Finds and grasps the lowest point of a hanging cloth, flips the cloth and releases the moving arm
-bool Unfold::moveArmsParking(){
 
-
-
- return   moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
-
-
-}
 
 
 

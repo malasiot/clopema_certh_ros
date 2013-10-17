@@ -18,6 +18,7 @@ using namespace std;
 
 int serialPort;
 cv::VideoCapture *capture;
+ros::Publisher pub;
 
 bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::PhotometricStereo::Response &res) {
 
@@ -34,7 +35,7 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
   // Quantities required for PS
   Mat Lights; // Lights directions
   int imageNum = 8; // Number of Images
-  int x0 = 40, y0 = 40, w = 400; //Region of interest / bounding box
+  int x0 = 120, y0 = 40, w = 400; //Region of interest / bounding box
   Rect roi(x0, y0, w, w); // Region of interest
   Mat imageAcquired[imageNum]; // Original image to start process
   Mat FF_Image; // Flatfielding image
@@ -61,7 +62,7 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
     cout << '\n';
   }
   */
-  cout << Lights;
+  //  cout << Lights;
 
   double rate = 30.0;
   cv::Mat frame; // current video frame
@@ -115,7 +116,7 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
     cvtColor(frame(roi), images[i], CV_RGB2GRAY);
     //    images[i] = frame;
 
-    cv::imwrite(ss.str().substr(0, ss.str().size() - 1) + ".jpg", images[i]);
+    cv::imwrite("data/images/" + ss.str().substr(0, ss.str().size() - 1) + ".jpg", images[i]);
     ss.str(std::string());
     ss.clear();
   }
@@ -136,10 +137,10 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
   photometricStereo(Lights, FFed_Image, w, 0, 255, imageNum, Nx, Ny, Nz, alb_gr);
   //  photometricStereo(Lights, images, w, 0, 255, imageNum, Nx, Ny, Nz, alb_gr); 
 
-  cv::imwrite("Nx.jpg", Nx*255.0);
-  cv::imwrite("Ny.jpg", Ny*255.0);
-  cv::imwrite("Nz.jpg", Nz*255.0);
-  cv::imwrite("albedo.jpg", alb_gr*255.0);
+  cv::imwrite("data/normals/Nx.jpg", Nx*255.0);
+  cv::imwrite("data/normals/Ny.jpg", Ny*255.0);
+  cv::imwrite("data/normals/Nz.jpg", Nz*255.0);
+  cv::imwrite("data/albedo/albedo.jpg", alb_gr*255.0);
 
   cv::FileStorage fs("data.xml", cv::FileStorage::WRITE);
   fs << "Nx" <<  Nx << "Ny" << Ny << "Nz" << Nz << "albedo" << alb_gr;
@@ -152,8 +153,8 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
   
   // Cloud Visualization
   cloudVis(alb_gr, Z, w, "New");
-  
-  res.a = 16;
+ 
+  res.a = "Returned successfully.";
 
   return true;
 }
@@ -176,12 +177,14 @@ int main(int argc, char **argv)
       cout << "Error opening serial port." << endl;
       return -1;
     }
+  cout << "Serial port initialiazed correctly." << endl;
   write(serialPort, "0", 1);
-  cout << "Reset lights." << endl;
   
   // Set camera parameters
+  cout << "Camera settings :" << endl;
   system("./cameraSettings.sh");
-  //ros::Duration(5).sleep();
+
+  // ros::Duration(5).sleep();
   
   // Open the camera
   capture = new cv::VideoCapture(0);
@@ -199,6 +202,7 @@ int main(int argc, char **argv)
   // Register the service with the master
   ros::ServiceServer psServer = nh.advertiseService("PS_reconstruction", &do_reconstruct);
   ROS_INFO("PS service is ready.");
+
   ros::spin();
 
   return 0;

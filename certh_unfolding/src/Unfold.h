@@ -165,15 +165,12 @@ public:
 
     int setGripperStates(const string &armName  , bool open);
     int setGrippersStates( bool open);
-    int openG2();
+
 
     void rotateHoldingGripper(float angle );
 
     Eigen::Matrix4d findLowestPointOrientation(Eigen::Vector4d vector );
     Eigen::Matrix4d findGraspingPointOrientation(Eigen::Vector4d vector, bool orientUp = false);
-
-    bool moveArmsParking() ;
-
 
     float findBias(Eigen::Vector4d vector);
     bool findLowestPoint(const pcl::PointCloud<pcl::PointXYZ> &depth, const Eigen::Vector3d &orig, const Eigen::Vector3d &base, float apperture, Eigen::Vector3d &p, Eigen::Vector3d &n);
