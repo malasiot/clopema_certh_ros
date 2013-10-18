@@ -104,6 +104,7 @@ public:
         return true ;
     }
 
+public :
     int counter ;
     int found ;
     folds folds_ ;
@@ -151,7 +152,20 @@ void publishPointMarker(ros::Publisher &vis_pub, const Eigen::Vector3d &p)
 
 }
 
+bool failedGrasp(Unfold unfold, FoldDetectorAction &act){
 
+    cv::Mat rgb ;
+    cv::Mat depth ;
+    pcl::PointCloud<pcl::PointXYZ> pc ;
+
+    unfold.grabFromXtion(rgb, depth, pc) ;
+    cv::imwrite(str(boost::format("/tmp/cap_rgb_%d.png") % act.orientations.size()), rgb) ;
+    cv::imwrite(str(boost::format("/tmp/cap_depth_%d.png") % act.orientations.size()), depth) ;
+    pcl::io::savePCDFileBinary(str(boost::format("/tmp/cap_pc_%d.pcd") % act.orientations.size()), pc) ;
+
+    detectHorizontalEdge(act.grasp_candidate, act.cx ,act.orientations.size());
+
+}
 
 int main(int argc, char **argv) {
 
@@ -188,8 +202,12 @@ int main(int argc, char **argv) {
         pcl::PointCloud<pcl::PointXYZ> pc;
         pcl::io::loadPCDFile(str(boost::format("/tmp/cap_pc_%d.pcd") % idx), pc);
         setGripperState("r2", true);
-        uf.graspPoint(pc, x, y, false, !action.orientLeft ,true, true);
+        if (!uf.graspPoint(pc, x, y, false, !action.orientLeft ,true, true) ){
 
+            pcl::io::loadPCDFile(str(boost::format("/tmp/cap_pc_%d.pcd") % action.orientations.size()), pc);
+            failedGrasp(uf, action);
+            uf.graspPoint(pc, action.grasp_candidate[1], action.grasp_candidate[2], false, !action.orientLeft, true, true);
+        }
 // sotiris //
 //        publishPointMarker(marker_pub, pp);
 

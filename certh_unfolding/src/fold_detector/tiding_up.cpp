@@ -98,7 +98,7 @@ ret_j_ed tiding_up(vector<vector<int> > junctions,vector<vector<int> > detailed_
 			for (int ii=0;ii<table.size();ii++){
 				for (int jj=0;jj<table.at(0).size();jj++){
 					if (table.at(ii).at(jj)==e2){
-						table.at(ii).at(jj)==e1;
+                        table.at(ii).at(jj)=e1;
 					}
 				}
 			}

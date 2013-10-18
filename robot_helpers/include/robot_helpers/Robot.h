@@ -100,6 +100,7 @@ Eigen::Affine3d getCurrentPose(const std::string &armName) ;
 
 bool setGripperState(const std::string &armName, bool open = true) ;
 bool getGripperState(const std::string &armName, bool &open) ;
+int setGrippersStates( bool open) ;
 
 void pointToRobotState(arm_navigation_msgs::RobotState &state, trajectory_msgs::JointTrajectoryPoint &point, std::vector<std::string> & joint_names);
 

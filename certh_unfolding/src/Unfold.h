@@ -189,9 +189,6 @@ public:
     bool releaseCloth( const string &armName );
     bool showUnfolding();
 
-   // geometry_msgs::Quaternion rotationMatrix4ToQuaternion(Eigen::Matrix4d matrix);
-    //geometry_msgs::Quaternion rotationMatrix3ToQuaternion(Eigen::Matrix3d matrix);
-
     bool confirmGrasping();
 
     bool grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc );

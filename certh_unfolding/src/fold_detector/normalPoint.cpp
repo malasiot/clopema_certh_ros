@@ -77,9 +77,9 @@ Point search_area(int corner, ret_all r, bool side, Mat bin, vector<int> vec, ve
 	//}
 
 
-	/*namedWindow("bin",0);
-	imshow("bin",bin);
-	waitKey();*/
+//	namedWindow("bin",0);
+//	imshow("bin",bin);
+//	waitKey();
 	//////////////
 	//detect the area for the normal extraction
 
@@ -91,10 +91,10 @@ Point search_area(int corner, ret_all r, bool side, Mat bin, vector<int> vec, ve
 	
 	if (side==false){
 		istarty=r.junctions.at(corner).at(1);
-        istopy=istarty+10;
+		istopy=istarty+13;
 	}
 	else{
-        istarty=r.junctions.at(corner).at(1)-10;
+		istarty=r.junctions.at(corner).at(1)-13;
 		istopy=r.junctions.at(corner).at(1);
 	}
 
@@ -118,9 +118,9 @@ Point search_area(int corner, ret_all r, bool side, Mat bin, vector<int> vec, ve
 	}
 
 
-	//namedWindow("bin",0);
-	//imshow("bin",bin);
-	//waitKey();
+//	namedWindow("bin",0);
+//	imshow("bin",bin);
+//	waitKey();
 	Mat bin2;
 	bin.copyTo(bin2);
 
@@ -128,7 +128,7 @@ Point search_area(int corner, ret_all r, bool side, Mat bin, vector<int> vec, ve
 	bool found=false;
 	while (ri>0 && found==false){
 		ri--;
-        //cout<<ri<<" ";
+		cout<<ri<<" ";
 		for (int xx=istartx+ri; xx<istopx-ri && found==false;xx++){
 			for (int yy=istarty; yy<istopy-ri;yy++){
 				//bin.at<uchar>(yy,xx)=255;
@@ -237,10 +237,9 @@ Point search_area(int corner, ret_all r, bool side, Mat bin, vector<int> vec, ve
 
 int normalPoint(int corner, ret_all r, bool side, Mat imc, Point & P){
 	int tr=9;
-	int ri=tr,r0;
-	
+	int ri=tr,r0=0;
 	Mat bin=cv::Mat::zeros(imc.rows,imc.cols,CV_8UC1);
-
+	
 	////////////////////////////////////////////////////////"T-junction"
 	if (r.edges_of_junct.at(corner).at(1)==r.edges_of_junct.at(corner).at(2)){
 		int ind=r.edges_of_junct.at(corner).at(1);
@@ -267,14 +266,29 @@ int normalPoint(int corner, ret_all r, bool side, Mat imc, Point & P){
 		edgest2.at(1)=r.junctions.at(corner).at(1);
 		edgest2.at(2)=r.edges_t.at(r.edges_of_junct.at(corner).at(1)).at(2);
 		edgest2.at(3)=r.edges_t.at(r.edges_of_junct.at(corner).at(1)).at(3);
-
+		
 		//find the point on the edge that the junction corresponds to
 		int xs=r.junctions.at(corner).at(0),ys,keepi;
-		if (r.detailed_edges.at(2*ind+1).size()>0){//<-------------------------------------------------------------------------------
+		//if (r.detailed_edges.at(2*ind+1).size()>0){//<-------------------------------------------------------------------------------
+		
+		
+		
+	/*	for (int j=0;j<r.detailed_edges.at(2*ind).size()-1 && r.detailed_edges.at(2*ind).at(j+1)>0;j++){
+			line(bin, Point(r.detailed_edges.at(2*ind).at(j),r.detailed_edges.at(2*ind+1).at(j)), Point(r.detailed_edges.at(2*ind).at(j+1),r.detailed_edges.at(2*ind+1).at(j+1)), 255, 2, CV_AA);
+		}
+		namedWindow("Point",0);
+		imshow("Point",bin);
+		waitKey();*/
+
+		bool found_p=false;
+
 		for (int i=0; i<r.detailed_edges.at(2*ind).size()-1 && r.detailed_edges.at(2*ind).at(i+1)>0; i++){
+			//find the subedge the junction corresponds to
 			bool expr1=(r.junctions.at(corner).at(0)>=r.detailed_edges.at(2*ind).at(i) && r.junctions.at(corner).at(0)<=r.detailed_edges.at(2*ind).at(i+1));
 			bool expr2=(r.junctions.at(corner).at(0)<=r.detailed_edges.at(2*ind).at(i) && r.junctions.at(corner).at(0)>=r.detailed_edges.at(2*ind).at(i+1));
+			
 			if ((expr1==true) || (expr2==true)){
+				
 				float ar= r.detailed_edges.at(2*ind+1).at(i)-r.detailed_edges.at(2*ind+1).at(i+1);
 				float par =r.detailed_edges.at(2*ind).at(i)-r.detailed_edges.at(2*ind).at(i+1);
 				if (par!=0){
@@ -286,13 +300,17 @@ int normalPoint(int corner, ret_all r, bool side, Mat imc, Point & P){
 					ys=r.detailed_edges.at(2*ind+1).at(i);
 				}
 				keepi=i;//the point is found
+				found_p=true;//<------------------------------------------------
 			}
-			else{//<-----------------------------
-				P.x=0;P.y=0;
-				return 0;
-			}//<-------------------
+		
 
 		}
+		
+		if (found_p==false){//<-----//if not, the edge is round :(--------(file all, example 0)-------------------------------------------
+			P.x=0;P.y=0;
+			return 0;
+		}//<----------------------------------------------------------------------------------------------------
+
 		//fake detailed edges
 		//
 		vector<vector<int> > det1(2),det2(2);
@@ -352,14 +370,14 @@ int normalPoint(int corner, ret_all r, bool side, Mat imc, Point & P){
 				bin.at<uchar>(ys+o1,xs+o2)=255;
 				bin.at<uchar>(r.junctions.at(corner).at(1)+o1,r.junctions.at(corner).at(0)+o2)=255;
 			}
-		}*/
-		/*for (int j=0;j<r.detailed_edges.at(2*ind).size()-1 && r.detailed_edges.at(2*ind).at(j+1)>0;j++){
+		}
+		for (int j=0;j<r.detailed_edges.at(2*ind).size()-1 && r.detailed_edges.at(2*ind).at(j+1)>0;j++){
 			line(bin, Point(r.detailed_edges.at(2*ind).at(j),r.detailed_edges.at(2*ind+1).at(j)), Point(r.detailed_edges.at(2*ind).at(j+1),r.detailed_edges.at(2*ind+1).at(j+1)), 255, 2, CV_AA);
-		}*/
-		/*namedWindow("Point",0);
+		}
+		namedWindow("Point",0);
 		imshow("Point",bin);
-		waitKey();*/
-		/*for (int i=0;i<det2.at(0).size()-1 && det2.at(0).at(i+1)>0;i++){
+		waitKey();
+		for (int i=0;i<det2.at(0).size()-1 && det2.at(0).at(i+1)>0;i++){
 				line(bin, Point(det2.at(0).at(i),det2.at(1).at(i)), Point(det2.at(0).at(i+1),det2.at(1).at(i+1)), 255, 2, CV_AA);
 			}
 		namedWindow("Point",0);
@@ -384,14 +402,16 @@ int normalPoint(int corner, ret_all r, bool side, Mat imc, Point & P){
 			P=search_area( corner,  r, side,  bin, vec, o,ri);
 			r0=ri;
 		}
-			}////<---------------------------------------------------------------------
-		else{
-			P.x=0;
-			P.y=0;
-			r0=0;
-		}//<---------------------------------------------------
+		//}////<---------------------------------------------------------------------
+		//else{
+		//	P.x=0;
+		//	P.y=0;
+		//	r0=0;
+		//}//<---------------------------------------------------
+
 	}
 	else{////////////////////////////////////////arrow junction////////////////////////////////
+		
 		vector<int> tv(2);
 		vector<vector<int> > vec(2,tv);
 		vector<int> o(3);

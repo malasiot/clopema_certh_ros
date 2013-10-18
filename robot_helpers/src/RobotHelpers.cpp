@@ -223,6 +223,18 @@ bool getGripperState(const std::string &armName, bool &open_)
     return false ;
 }
 
+int setGrippersStates( bool open){
+
+    ros::service::waitForService("/r1_gripper/set_open");
+    ros::service::waitForService("/r2_gripper/set_open");
+    clopema_motoros::SetGripperState sopen;
+    sopen.request.open=open;
+    ros::service::call("/r1_gripper/set_open", sopen);
+    ros::service::call("/r2_gripper/set_open", sopen);
+
+
+    return 0;
+}
 
 //bool setRobotSpeed(float speed)
 //{
