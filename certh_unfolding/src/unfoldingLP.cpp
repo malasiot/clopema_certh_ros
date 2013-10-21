@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
     marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker_", 0);
 
     sleep(3);
-    Unfold uf("r2",marker_pub );
+    Unfold uf("r2" );
 
     ros::Duration(1).sleep() ;
     while(!uf.graspLowestPoint(false, true));

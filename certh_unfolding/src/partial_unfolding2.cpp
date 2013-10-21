@@ -17,11 +17,18 @@ using namespace certh_libs ;
 
 class FoldDetectorAction: public RotateAndGrab
 {
+
 public:
 
-      FoldDetectorAction(const string &arm): RotateAndGrab("xtion3", arm) {
+     int cx ;
+     image_geometry::PinholeCameraModel cmodel  ;
+
+public:
+
+    FoldDetectorAction(const string &arm): RotateAndGrab("xtion3", arm) {
         counter = 0 ;
         found = false ;
+        uf.setHoldingArm(arm);
 
     }
 
@@ -35,7 +42,6 @@ public:
 
         cv::imwrite(str(boost::format("/tmp/cap_rgb_%d.png") % counter), clr) ;
         cv::imwrite(str(boost::format("/tmp/cap_depth_%d.png") % counter), depth) ;
-
         pcl::io::savePCDFileBinary(str(boost::format("/tmp/cap_pc_%d.pcd") % counter), pc) ;
 
         Vector3d tip = tip_pose_in_camera_frame * Vector3d(0, 0, 0) ;
@@ -46,6 +52,7 @@ public:
 
         vector<double> grasp_cand_(3) ;
         bool detected = folds_.detect( clr, depth, counter, grasp_cand_, p.x , orientLeft);
+
 
         if ( detected ) {
             found = true ;
@@ -104,6 +111,10 @@ public:
         return true ;
     }
 
+
+
+
+
 public :
     int counter ;
     int found ;
@@ -112,10 +123,9 @@ public :
     bool orientLeft;
     vector<double> grasp_candidate ;
     Affine3d pose ;
-    int cx ;
-    image_geometry::PinholeCameraModel cmodel  ;
-    bool isACorner;
 
+    bool isACorner;
+    Unfold uf;
 };
 
 
@@ -185,12 +195,11 @@ int main(int argc, char **argv) {
 
     action.rotate(-2*M_PI) ;
 
-
     Affine3d pose ;
     Vector3d pp ;
 
     int x = 0,  y= 0;
-    Unfold uf("r1",marker_pub);
+    Unfold uf("r1");
 
     int idx;
     if ( action.selectGraspPoint(pose, pp, action.orientLeft, idx, x, y) )

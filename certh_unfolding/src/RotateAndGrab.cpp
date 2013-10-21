@@ -24,6 +24,7 @@ void RotateAndGrab::init(const Vector3d &pos)
 
     cmove.actionStarted.connect(boost::bind(&RotateAndGrab::startCapture, this)) ;
     cmove.actionCompleted.connect(boost::bind(&RotateAndGrab::stopCapture, this)) ;
+
 }
 
 void RotateAndGrab::rotate(double theta)
@@ -89,6 +90,8 @@ void RotateAndGrab::doCapture()
     } while ( !_stoped ) ;
 
 }
+
+
 
 void RotateAndGrab::stopCapture()
 {

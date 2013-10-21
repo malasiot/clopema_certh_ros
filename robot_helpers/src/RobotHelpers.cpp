@@ -43,6 +43,10 @@ void MoveRobot::activeCb() {
 }
 
 
+void MoveRobot::cancelGoals(){
+    cmc_.cancelGoal();
+}
+
 void MoveRobot::doneCb(const actionlib::SimpleClientGoalState& state, const control_msgs::FollowJointTrajectoryResultConstPtr& result) {
     ROS_DEBUG("Finished in state [%s:%s]", state.toString().c_str(), state.text_.data());
     ROS_DEBUG("Result - error code: %d", result->error_code);
@@ -51,7 +55,6 @@ void MoveRobot::doneCb(const actionlib::SimpleClientGoalState& state, const cont
 
     actionCompleted() ;
 }
-
 
 
 bool MoveRobot::execTrajectory(const trajectory_msgs::JointTrajectory &traj)

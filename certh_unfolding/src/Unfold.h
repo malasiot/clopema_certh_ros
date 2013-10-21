@@ -45,7 +45,8 @@ class Unfold {
 
 
 public:
-    Unfold(const string &armName, ros::Publisher markerPub);
+    Unfold(const string &armName);
+    Unfold();
     virtual ~Unfold();
 
 private:
@@ -179,6 +180,8 @@ public:
     bool pointInsideCone(const Eigen::Vector3d &x, const Eigen::Vector3d &apex, const Eigen::Vector3d &base, float aperture);
     Eigen::Vector3d computeNormal(const pcl::PointCloud<pcl::PointXYZ> &pc, int x, int y);
     void robustPlane3DFit(vector<Eigen::Vector3d> &x, Eigen::Vector3d  &c, Eigen::Vector3d &u);
+
+    bool parkArmsForGrasping() ;
 
     bool graspLowestPoint(bool lastMove = false , bool allwaysDrop = false );
     bool graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y , bool lastMove = false, bool orientLeft = true, bool orientUp = false, bool alwaysDrop = false );

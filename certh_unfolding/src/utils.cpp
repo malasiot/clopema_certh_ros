@@ -17,16 +17,24 @@ using namespace std;
 using namespace robot_helpers;
 using namespace camera_helpers ;
 
-Unfold::Unfold(const string &armName, ros::Publisher markerPub){
+Unfold::Unfold(const string &armName){
 
    setHoldingArm(armName);
-   marker_pub  = markerPub;
+
    camera = "xtion3" ;
    openni::connect( camera ) ;
 
    ros::Duration(1).sleep() ;
    clothType = -1;
+}
 
+Unfold::Unfold(){
+
+   camera = "xtion3" ;
+   openni::connect( camera ) ;
+
+   ros::Duration(1).sleep() ;
+   clothType = -1;
 }
 
 Unfold::~Unfold() {
@@ -825,7 +833,11 @@ void printPose(geometry_msgs::Pose p){
 //Finds and grasps the lowest point of a hanging cloth, flips the cloth and releases the moving arm
 
 
+bool Unfold::parkArmsForGrasping(){
 
+    moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
+    return true;
+}
 
 bool Unfold::graspLowestPoint(bool lastMove, bool allwaysDrop){
 

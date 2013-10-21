@@ -42,7 +42,7 @@ bool do_unfolding(certh_unfolding::unfold::Request &req, certh_unfolding::unfold
 
    // graspFromFloor("r2");
 
-    Unfold rb("r2",marker_pub );
+    Unfold rb("r2" );
 
 //    ofstream ftxt("himg.txt");
 //    ofstream frgb("rgb.txt");

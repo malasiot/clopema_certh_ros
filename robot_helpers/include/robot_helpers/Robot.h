@@ -43,6 +43,7 @@ public:
 
     boost::signal<void ()> actionCompleted ;
     boost::signal<void ()> actionStarted ;
+    void cancelGoals() ;
 
 private:
 
