@@ -44,7 +44,9 @@ void MoveRobot::activeCb() {
 
 
 void MoveRobot::cancelGoals(){
-    cmc_.cancelGoal();
+
+    cmc_.stopTrackingGoal();
+    cmc_.cancelAllGoals();
 }
 
 void MoveRobot::doneCb(const actionlib::SimpleClientGoalState& state, const control_msgs::FollowJointTrajectoryResultConstPtr& result) {

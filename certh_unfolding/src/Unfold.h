@@ -55,7 +55,6 @@ private:
     string holdingArm;
     string movingArm;
     int clothType; //0 shirt ,1 trousers, 2 shorts1, 3 shorts2, 4 T-shirt1, 5 T-shirt2
-    ros::Publisher marker_pub;
 
 public:
     string camera ;
@@ -188,7 +187,7 @@ public:
     bool flipCloth(bool allwaysDrop = false);
     bool moveToCheckGrasping() ;
 
-    int moveArmsFlipCloth( ros::Publisher &vis_pub, float radious , geometry_msgs::Pose pose1, geometry_msgs::Pose pose2,  const std::string &arm1Name = "r1", const std::string &arm2Name = "r2" );
+    int moveArmsFlipCloth( float radious, geometry_msgs::Pose pose1 , geometry_msgs::Pose pose2, const string &arm1Name,  const std::string &arm2Name = "r1" );
     bool releaseCloth( const string &armName );
     bool showUnfolding();
 

@@ -883,14 +883,14 @@ bool Unfold::graspLowestPoint(bool lastMove, bool allwaysDrop){
         bottom = top;
         bottom.x()-=1;
 
+        openni::connect( camera ) ;
         while( !openni::grab(camera, rgb, depth, pc, ts, cm) ) ;
-        if(findLowestPoint(pc, top, bottom, angle, p, n)== false)
-//            cout<< "Cant find lowest point"<< endl;
+        findLowestPoint(pc, top, bottom, angle, p, n);
 
-        publishLowestPointMarker(marker_pub,p ,n );
+     //   publishLowestPointMarker(marker_pub, p ,n );
 
         Eigen::Vector4d tar(p.x(), p.y(), p.z(), 1);       
-        targetP = calib * tar;
+        targetP = calib * tar ;
 
         Eigen::Vector4d norm (n.x(), n.y(), n.z(), 0);
         Eigen::Vector4d targetN;
@@ -1000,11 +1000,11 @@ bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y
     y= oy;
     Eigen::Matrix4d calib = getTranformationMatrix("xtion3_rgb_optical_frame");
 
-    publishLowestPointMarker(marker_pub,p ,n );
+    //publishLowestPointMarker(marker_pub,p ,n );
 
     Eigen::Vector4d tar(p.x(), p.y(), p.z(), 1);
     targetP = calib * tar;
-    publishPointMarker(marker_pub, targetP, 1);
+   // publishPointMarker(marker_pub, targetP, 1);
     Eigen::Vector4d norm (n.x(), n.y(), n.z(), 0);
     Eigen::Vector4d targetN;
     targetN = calib * norm.normalized();
@@ -1075,7 +1075,7 @@ bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y
         rot << cos(theta) , sin(theta), -sin(theta), cos(theta);
         vect = rot * vect;
         targetP << ts.getOrigin().x() + vect.x(), ts.getOrigin().y() + vect.y(), targetP.z(), 1;
-        publishPointMarker(marker_pub, targetP, 2);
+       // publishPointMarker(marker_pub, targetP, 2);
 
         Eigen::Matrix3d orient;
         if(orientUp)
@@ -1396,6 +1396,7 @@ bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y
 
 bool Unfold::confirmGrasping(){
 
+    openni::connect( camera ) ;
     cv::Mat rgb, depth ;
     pcl::PointCloud <pcl::PointXYZ> pc ;
 
@@ -1468,6 +1469,7 @@ bool Unfold::confirmGrasping(){
 
 bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc ){
 
+    openni::connect( camera ) ;
 
     ros::Duration(0.3).sleep();
     ros::Time ts(0);
@@ -1485,6 +1487,7 @@ bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::Po
 
 bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, cv::Rect & r ){
 
+    openni::connect( camera ) ;
 
     ros::Duration(0.3).sleep();
     ros::Time ts(0);
@@ -1655,7 +1658,7 @@ bool Unfold::flipCloth( bool allwaysDrop){
 
                 cout<< "Collision Sphere added" << endl;
 
-            if ( moveArmsFlipCloth( marker_pub, radious + 0.1, desPoseUp, desPoseDown, holdingArm, movingArm) == -1){
+            if ( moveArmsFlipCloth(  radious + 0.1, desPoseUp, desPoseDown, holdingArm, movingArm) == -1){
                 resetCollisionModel();
 
                 setGripperStates(movingArm,true);
@@ -1730,7 +1733,7 @@ bool Unfold::flipCloth( bool allwaysDrop){
 }
 
 //Sets the constrains in order to flip the cloth and then moving the arms
-int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, const string &arm1Name, const string &arm2Name){
+int Unfold::moveArmsFlipCloth(  float radious , geometry_msgs::Pose pose1, geometry_msgs::Pose pose2, const string &arm1Name, const string &arm2Name){
 
     MoveRobot cmove;
     cmove.setServoMode(false);
@@ -1816,34 +1819,34 @@ int Unfold::moveArmsFlipCloth(ros::Publisher &vis_pub,  float radious , geometry
 
 
     // PUBLISH MARKERS
-    visualization_msgs::Marker marker1;
-    marker1.header.frame_id = "base_link";
-    marker1.header.stamp = ros::Time::now();
-    marker1.ns = "BOX";
-    marker1.id = 0;
-    marker1.type = visualization_msgs::Marker::CUBE;
-    marker1.action = visualization_msgs::Marker::ADD;
-    marker1.pose.position.x = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).position.x;
-    marker1.pose.position.y = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).position.y;
-    marker1.pose.position.z = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).position.z;
-    marker1.pose.orientation.x = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_orientation.x;
-    marker1.pose.orientation.y = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_orientation.y;
-    marker1.pose.orientation.z = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_orientation.z;
-    marker1.pose.orientation.w = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_orientation.w;
-    marker1.scale.x = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_shape.dimensions.at(0);
-    marker1.scale.y = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_shape.dimensions.at(1);
-    marker1.scale.z = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_shape.dimensions.at(2);
+//    visualization_msgs::Marker marker1;
+//    marker1.header.frame_id = "base_link";
+//    marker1.header.stamp = ros::Time::now();
+//    marker1.ns = "BOX";
+//    marker1.id = 0;
+//    marker1.type = visualization_msgs::Marker::CUBE;
+//    marker1.action = visualization_msgs::Marker::ADD;
+//    marker1.pose.position.x = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).position.x;
+//    marker1.pose.position.y = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).position.y;
+//    marker1.pose.position.z = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).position.z;
+//    marker1.pose.orientation.x = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_orientation.x;
+//    marker1.pose.orientation.y = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_orientation.y;
+//    marker1.pose.orientation.z = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_orientation.z;
+//    marker1.pose.orientation.w = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_orientation.w;
+//    marker1.scale.x = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_shape.dimensions.at(0);
+//    marker1.scale.y = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_shape.dimensions.at(1);
+//    marker1.scale.z = mp.request.motion_plan_req.path_constraints.position_constraints.at(1).constraint_region_shape.dimensions.at(2);
 
-    marker1.color.r = 0.0f;
-    marker1.color.g = 1.0f;
-    marker1.color.b = 0.0f;
-    marker1.color.a = 0.5;
+//    marker1.color.r = 0.0f;
+//    marker1.color.g = 1.0f;
+//    marker1.color.b = 0.0f;
+//    marker1.color.a = 0.5;
 
-    marker1.lifetime = ros::Duration(5);
+//    marker1.lifetime = ros::Duration(5);
 
-    ros::Duration(0.3).sleep();
-    vis_pub.publish(marker1);
-    ros::Duration(0.3).sleep();
+//    ros::Duration(0.3).sleep();
+//    vis_pub.publish(marker1);
+//    ros::Duration(0.3).sleep();
     //////END PUBLISHING
 
     arm_navigation_msgs::PositionConstraint position_constraint;
@@ -1933,6 +1936,7 @@ bool Unfold::showUnfolding(){
 std::vector <Unfold::grabRGBD> Unfold::grabRGBD360() {
 
     moveArms(holdingArmPose(), movingArmPose(), holdingArm, movingArm ) ;
+    openni::connect( camera ) ;
 
     std::vector <grabRGBD> images ;
     cv::Mat rgb, depth ;
@@ -1960,6 +1964,7 @@ std::vector <Unfold::grabRGBD> Unfold::grabRGBD360() {
 bool Unfold::graspMiddle(){
 
 
+    openni::connect( camera ) ;
     //moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
     setGripperStates(movingArm , true);

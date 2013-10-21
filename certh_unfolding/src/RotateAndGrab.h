@@ -15,6 +15,16 @@ public:
 
     void rotate(double theta) ;
 
+    struct rotateData {
+
+        int cx ;
+        int dataCounter;
+        std::vector <pcl::PointCloud<pcl::PointXYZ> > cloud ;
+        std::vector < cv::Mat > clr ;
+        std::vector < cv::Mat > depth ;
+        std::vector < Eigen::Matrix4d > orientations ;
+
+    } ;
 protected:
 
     virtual void process(const pcl::PointCloud<pcl::PointXYZ> &pc, const cv::Mat &clr, const cv::Mat &depth, const image_geometry::PinholeCameraModel &cm,
