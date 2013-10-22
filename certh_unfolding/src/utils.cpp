@@ -1396,13 +1396,14 @@ bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y
 
 bool Unfold::confirmGrasping(){
 
-    openni::connect( camera ) ;
+
     cv::Mat rgb, depth ;
     pcl::PointCloud <pcl::PointXYZ> pc ;
-
+    openni::connect( camera ) ;
+    ros::Duration(0.3).sleep();
     grabFromXtion(rgb, depth, pc ) ;
-    string rgbFileName = "/tmp/rgb_cap.png" ;
-    string depthFileName = "/tmp/depth_cap.png" ;
+    string rgbFileName = "/tmp/rgb_cap_.png" ;
+    string depthFileName = "/tmp/depth_cap_.png" ;
     cv::imwrite(rgbFileName, rgb) ;
 
     geometry_msgs::Point point ;
@@ -1427,6 +1428,8 @@ bool Unfold::confirmGrasping(){
 
         }
     }
+    rgbFileName = "/tmp/rgb_cap_confirm.png" ;
+    depthFileName = "/tmp/depth_cap_confirm.png" ;
 
     cv::imwrite(rgbFileName, rgb) ;
     cv::imwrite(depthFileName, depth) ;
@@ -1452,7 +1455,7 @@ bool Unfold::confirmGrasping(){
 
     cout << "COUNT = " << count<< endl;
 
-    if (count < 20) return false;
+    if (count < 5) return false;
 
     float mean = sum/(float) count ;
 

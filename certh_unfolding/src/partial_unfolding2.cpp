@@ -50,10 +50,6 @@ public:
         data.clr.push_back(clr) ;
         data.depth.push_back(depth) ;
 
-//        cv::imwrite(str(boost::format("/tmp/cap_rgb_%d.png") % data.dataCounter), clr) ;
-//        cv::imwrite(str(boost::format("/tmp/cap_depth_%d.png") % data.dataCounter), depth) ;
-//        pcl::io::savePCDFileBinary(str(boost::format("/tmp/cap_pc_%d.pcd") % data.dataCounter), pc) ;
-
         Vector3d tip = tip_pose_in_camera_frame * Vector3d(0, 0, 0) ;
         cv::Point2d p = cm.project3dToPixel(cv::Point3d(tip.x(), tip.y(), tip.z())); ;
         data.cx = p.x ;
@@ -92,12 +88,13 @@ public:
 
 
         int idx = grasp_candidate[0] ;
-         x = grasp_candidate[1] ;
-         y = grasp_candidate[2] ;
+        x = grasp_candidate[1] ;
+        y = grasp_candidate[2] ;
 
-         cv::Mat imc = data.clr[idx];   //cv::imread(str(boost::format("/tmp/cap_rgb_%d.png") % idx), -1) ;
-         cv::Mat imd = data.depth[idx];     //cv::imread(str(boost::format("/tmp/cap_depth_%d.png") % idx), -1) ;
+        cv::Mat imc = data.clr[idx];
+        cv::Mat imd = data.depth[idx];
         index = idx ;
+
         // find the coordinates of the point in 3D in the correct frame
 
         ushort z ;
@@ -144,10 +141,9 @@ public:
 
 
 
-int main(int argc, char **argv) {
+bool graspACorner(string armName, bool lastMove = false) {
 
-    ros::init(argc, argv, "unfolding2");
-    ros::NodeHandle nh;
+
    // ros::Publisher marker_pub;
 
     //ros::AsyncSpinner spinner(4) ;
@@ -156,17 +152,24 @@ int main(int argc, char **argv) {
 
   //  marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
 
-    FoldDetectorAction fd("r1") ;
+    string arm2Name ;
+    if (armName=="r1")
+       arm2Name="r2";
+    else
+       arm2Name="r1";
+
+    FoldDetectorAction fd(armName) ;
 
     fd.unfold.parkArmsForGrasping();
-    fd.init(Vector3d(-0.12, -0.83, 1.6)) ;
-    fd.rotate(-2*M_PI) ;
+
+    fd.init(Vector3d(fd.unfold.holdingArmPose().position.x, fd.unfold.holdingArmPose().position.y,fd.unfold.holdingArmPose().position.z)) ;
+    fd.rotate(-1.7*M_PI) ;
 
     Affine3d pose ;
     Vector3d pp ;
 
     int x = 0,  y= 0;
-    Unfold uf("r1");
+
 
     int idx;
     if ( fd.selectGraspPoint(pose, pp, fd.orientLeft, idx, x, y) )
@@ -174,19 +177,19 @@ int main(int argc, char **argv) {
 
         MoveRobot rb ;
         rb.setServoMode(false);
-        moveGripper(rb, "r1", pose.translation(), Quaterniond(pose.rotation())) ;
+        moveGripper(rb, armName, pose.translation(), Quaterniond(pose.rotation())) ;
 
 
-        setGripperState("r2", true);
+        setGripperState(arm2Name, true);
 
-        if (!uf.graspPoint(fd.data.cloud[idx], x, y, false, !fd.orientLeft ,true, true) ){
+        if (!fd.unfold.graspPoint(fd.data.cloud[idx], x, y, lastMove, !fd.orientLeft ,true, true) ){
 
             bool done = false ;
 
             while(!done){
 
                 fd.failedGrasp(fd.orientLeft);
-                done = uf.graspPoint(fd.data.cloud[fd.data.dataCounter-1], fd.grasp_candidate[1], fd.grasp_candidate[2], false, !fd.orientLeft, true, true);
+                done = fd.unfold.graspPoint(fd.data.cloud[fd.data.dataCounter-1], fd.grasp_candidate[1], fd.grasp_candidate[2], lastMove, !fd.orientLeft, true, true);
 
             }
         }
@@ -215,10 +218,22 @@ int main(int argc, char **argv) {
 //           rb.execTrajectory(traj) ;
 // /sotiris//
 
-        setServoPowerOff() ;
+
     }
 
    // ros::spin() ;
 
+
+}
+
+
+
+int main(int argc, char **argv) {
+
+    ros::init(argc, argv, "unfolding2");
+    ros::NodeHandle nh;
+    graspACorner("r1") ;
+    graspACorner("r2", true) ;
+    setServoPowerOff(true) ;
     return 0 ;
 }
