@@ -20,12 +20,12 @@ struct colors{
 colors show_colors(int);
 
 
-bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx , int n){
+bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx , int n, Mat winnerPicd ,Mat winnerPic){
     folds f;
     bool side;
 
-    cv::Mat winnerPic= cv::imread(str(boost::format("/tmp/cap_rgb_%d.png") % n), -1) ;
-    cv::Mat winnerPicd = cv::imread(str(boost::format("/tmp/cap_depth_%d.png") % n), -1) ;
+//    cv::Mat winnerPic= cv::imread(str(boost::format("/tmp/cap_rgb_%d.png") % n), -1) ;
+//    cv::Mat winnerPicd = cv::imread(str(boost::format("/tmp/cap_depth_%d.png") % n), -1) ;
 
     //detect the edges
     ret_all r=f.call_main( winnerPic, winnerPicd);

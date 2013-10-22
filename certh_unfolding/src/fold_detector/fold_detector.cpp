@@ -62,24 +62,24 @@ bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& gr
             orientLeft = side.at(i_stop).at(k_stop);
             //cout<<"COORDINATES "<<grasp_candidate.at(1)<<" "<<grasp_candidate.at(2)<<endl;
             //cout<<"i_stop "<<i_stop<<endl;
-            //depict
-            cv::Mat winnerPic = cv::imread(str(boost::format("/tmp/cap_rgb_%d.png") % grasp_candidate.at(0)), -1) ;
-            cv::Mat winnerPicd = cv::imread(str(boost::format("/tmp/cap_depth_%d.png") % grasp_candidate.at(0)), -1) ;
+//            //depict
+//            cv::Mat winnerPic = cv::imread(str(boost::format("/tmp/cap_rgb_%d.png") % grasp_candidate.at(0)), -1) ;
+//            cv::Mat winnerPicd = cv::imread(str(boost::format("/tmp/cap_depth_%d.png") % grasp_candidate.at(0)), -1) ;
 
-            ret_all r=f.call_main( winnerPic, winnerPicd);
+//            ret_all r=f.call_main( winnerPic, winnerPicd);
 
-            for (int i=0;i<r.detailed_edges.size();i=i+2){
+//            for (int i=0;i<r.detailed_edges.size();i=i+2){
 
-                if (r.detailed_edges.at(i).size()>0 && r.detailed_edges.at(i).at(0)!=-90){
-                    for (int j=0;j<r.detailed_edges.at(i).size()-1;j++){
-                        colors rc=show_colors(i);
+//                if (r.detailed_edges.at(i).size()>0 && r.detailed_edges.at(i).at(0)!=-90){
+//                    for (int j=0;j<r.detailed_edges.at(i).size()-1;j++){
+//                        colors rc=show_colors(i);
 
-                        line(winnerPic, Point(r.detailed_edges.at(i).at(j),r.detailed_edges.at(i+1).at(j)), Point(r.detailed_edges.at(i).at(j+1),r.detailed_edges.at(i+1).at(j+1)), Scalar(rc.c0,rc.c1,rc.c2), 1, CV_AA);
-                    }
-                }
-            }
+//                        line(winnerPic, Point(r.detailed_edges.at(i).at(j),r.detailed_edges.at(i+1).at(j)), Point(r.detailed_edges.at(i).at(j+1),r.detailed_edges.at(i+1).at(j+1)), Scalar(rc.c0,rc.c1,rc.c2), 1, CV_AA);
+//                    }
+//                }
+//            }
 
-            imwrite("/tmp/results/cap_rgb_point_.png",winnerPic);
+//            imwrite("/tmp/results/cap_rgb_point_.png",winnerPic);
 		}
 		else{
 			ret=false;

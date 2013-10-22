@@ -40,7 +40,7 @@ struct ret_all{
 extern bool grasp_point(bool  , vector<double>& , vector<Eigen::Matrix4d>&  , vector<vector<int> >&  , vector<vector<Point> >&  , vector<vector<bool> >&  , vector<vector<bool> >& ,vector<vector<float> >& ,  int ,bool &, vector<vector< int> > &, vector<vector <Point> > &  );
 
 extern int normalPoint(int , ret_all , bool , Mat , Point & );
-extern bool detectHorizontalEdge( vector<double>& , int,int );
+extern bool detectHorizontalEdge( vector<double>& , int, int, Mat, Mat );
 
 //these functions are used for the detection of the corners that are created from a fold of the cloth(arrow junctions)
 /////call_main ///
