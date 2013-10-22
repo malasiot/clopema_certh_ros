@@ -57,7 +57,7 @@ public:
         data.orientations.push_back(tip_pose_in_camera_frame.matrix()) ;
 
         vector<double> grasp_cand_(3) ;
-        bool detected = folds_.detect( clr, depth, data.dataCounter, grasp_cand_, p.x , orientLeft);
+        bool detected = folds_.detect( clr, depth, data.dataCounter, grasp_cand_, p.x , orientLeft, hand, lowl);
 
         if ( detected ) {
             found = true ;
@@ -71,17 +71,17 @@ public:
 
 
 
-    bool selectGraspPoint(Affine3d &pose, Vector3d &pp, bool & orientLeft, int & index, int  &x , int &y)
+    bool selectGraspPoint(Affine3d &pose, Vector3d &pp, bool & orientLeft, int & index, int  &x , int &y, int hand, int lowl)
     {
         if ( !found )
         {
             grasp_candidate.resize(3) ;
 
-            if( folds_.select(found, grasp_candidate, data.orientations, data.cx, orientLeft))
+            if( folds_.select(found, grasp_candidate, data.orientations, data.cx, orientLeft, hand, lowl))
                     isACorner = true ;
             else
             {
-                 orientLeft = detectHorizontalEdge(grasp_candidate, data.cx, data.dataCounter-1,  data.depth[data.dataCounter-1], data.clr[data.dataCounter-1]);
+                 orientLeft = detectHorizontalEdge(grasp_candidate, data.cx, data.dataCounter-1,  data.depth[data.dataCounter-1], data.clr[data.dataCounter-1], hand,  lowl);
                  isACorner = false;
             }
         }
@@ -134,7 +134,7 @@ public:
         data.depth.push_back(depth) ;
         data.dataCounter++ ;
 
-        orient = detectHorizontalEdge(grasp_candidate, data.cx ,data.dataCounter-1, data.depth[data.dataCounter-1], data.clr[data.dataCounter-1]);
+        orient = detectHorizontalEdge(grasp_candidate, data.cx ,data.dataCounter-1, data.depth[data.dataCounter-1], data.clr[data.dataCounter-1], hand, lowl);
 
     }
 };
@@ -161,8 +161,20 @@ bool graspACorner(string armName, bool lastMove = false) {
     FoldDetectorAction fd(armName) ;
 
     fd.unfold.parkArmsForGrasping();
-
     fd.init(Vector3d(fd.unfold.holdingArmPose().position.x, fd.unfold.holdingArmPose().position.y,fd.unfold.holdingArmPose().position.z)) ;
+
+    cv::Mat rgb ;
+    cv::Mat depth ;
+    pcl::PointCloud<pcl::PointXYZ> pc ;
+    fd.unfold.grabFromXtion(rgb, depth, pc) ;
+
+    fd.hand = 1 ;
+    if ( lastMove == true)
+        fd.hand = 2;
+
+    fd.lowl = garmentsLengthLimit( depth, rgb);
+
+
     fd.rotate(-1.7*M_PI) ;
 
     Affine3d pose ;
@@ -172,7 +184,7 @@ bool graspACorner(string armName, bool lastMove = false) {
 
 
     int idx;
-    if ( fd.selectGraspPoint(pose, pp, fd.orientLeft, idx, x, y) )
+    if ( fd.selectGraspPoint(pose, pp, fd.orientLeft, idx, x, y, fd.hand, fd.lowl) )
     {
 
         MoveRobot rb ;
@@ -232,6 +244,7 @@ int main(int argc, char **argv) {
 
     ros::init(argc, argv, "unfolding2");
     ros::NodeHandle nh;
+
     graspACorner("r2") ;
     graspACorner("r1", true) ;
     setServoPowerOff(true) ;

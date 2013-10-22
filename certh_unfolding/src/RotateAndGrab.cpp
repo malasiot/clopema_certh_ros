@@ -44,6 +44,7 @@ void RotateAndGrab::startCapture()
     capture_thread = boost::thread(boost::bind(&RotateAndGrab::doCapture, this)) ;
 }
 
+
 void RotateAndGrab::doCapture()
 {
     bool _stoped = false ;

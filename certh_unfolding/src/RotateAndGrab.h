@@ -14,11 +14,12 @@ public:
     void init(const Eigen::Vector3d &pos) ;
 
     void rotate(double theta) ;
-
+    int lowl, hand;
     struct rotateData {
 
         int cx ;
         int dataCounter;
+
         std::vector <pcl::PointCloud<pcl::PointXYZ> > cloud ;
         std::vector < cv::Mat > clr ;
         std::vector < cv::Mat > depth ;
@@ -28,7 +29,7 @@ public:
 protected:
 
     virtual void process(const pcl::PointCloud<pcl::PointXYZ> &pc, const cv::Mat &clr, const cv::Mat &depth, const image_geometry::PinholeCameraModel &cm,
-                         const ros::Time &ts, Eigen::Affine3d &tip_pose_in_camera_frame) = 0;
+                         const ros::Time &ts, Eigen::Affine3d &tip_pose_in_camera_frame ) = 0;
 
 
     void startCapture() ;

@@ -37,11 +37,11 @@ struct ret_all{
     a_corners a_corn;
     depths d;
 };
-extern bool grasp_point(bool  , vector<double>& , vector<Eigen::Matrix4d>&  , vector<vector<int> >&  , vector<vector<Point> >&  , vector<vector<bool> >&  , vector<vector<bool> >& ,vector<vector<float> >& ,  int ,bool &, vector<vector< int> > &, vector<vector <Point> > &  );
+extern bool grasp_point(bool  , vector<double>& , vector<Eigen::Matrix4d>&  , vector<vector<int> >&  , vector<vector<Point> >&  , vector<vector<bool> >&  , vector<vector<bool> >& ,vector<vector<float> >& ,  int ,bool &, vector<vector< int> > &, vector<vector <Point> > & ,int, int );
 
 extern int normalPoint(int , ret_all , bool , Mat , Point & );
 extern bool detectHorizontalEdge( vector<double>& , int, int, Mat, Mat, int, int );
-
+extern int garmentsLengthLimit( Mat ,Mat );
 //these functions are used for the detection of the corners that are created from a fold of the cloth(arrow junctions)
 /////call_main ///
 //this function detects the edges and junctions of the hanging cloth
@@ -89,7 +89,7 @@ public:
 
 	ret_all call_main(Mat,Mat);
 
-    bool fold_detector(Mat, Mat, int, vector<double>& , vector<vector<int> > &, vector<vector<Point> >& , vector<vector<bool> >& ,vector<vector<bool> >& ,vector<vector<float> >& , int ,vector<vector< int> > & , vector<vector <Point> > &, bool&);
+    bool fold_detector(Mat, Mat, int, vector<double>& , vector<vector<int> > &, vector<vector<Point> >& , vector<vector<bool> >& ,vector<vector<bool> >& ,vector<vector<float> >& , int ,vector<vector< int> > & , vector<vector <Point> > &, bool&, int ,int);
 
     bool detect(const Mat &clr, const Mat &depth, int frame, vector<double> &graspCandidates, int cx, bool &orientLeft, int hand, int lowl ) {
         bool res =  fold_detector(clr, depth, frame, graspCandidates, score, location, current_corner, sider, depthD, cx, radius, Points, orientLeft, hand,lowl) ;

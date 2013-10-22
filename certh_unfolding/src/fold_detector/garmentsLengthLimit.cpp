@@ -4,8 +4,8 @@
 
 using namespace cv;
 using namespace std;
-
-int garmentsLengthLimit(int cx, Mat depthMap,Mat bgrImage)
+typedef uint16_t char16_t;
+int garmentsLengthLimit(Mat depthMap,Mat bgrImage)
 {
 
 			int limUp=1400,limDown=	900;	
@@ -95,7 +95,7 @@ int garmentsLengthLimit(int cx, Mat depthMap,Mat bgrImage)
 		//line( gray_rgb,Point(cx, miny), Point(cx, maxy), Scalar(0,255,0), 3, CV_AA);
 
 
-		int dif=int(2*(cx-minx)/3);
+        int dif=int(2*(maxx-minx)/3);
 		int lowl=minx+dif;
 		/*line( gray_rgb,Point(lowl, miny), Point(lowl, maxy), Scalar(0,255,0), 3, CV_AA);
 		namedWindow("oria",0);

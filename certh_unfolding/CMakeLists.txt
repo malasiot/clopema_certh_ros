@@ -25,8 +25,8 @@ rosbuild_add_executable(unfoldingLP src/unfoldingLP.cpp src/utils.cpp src/grasp_
 
 
 #rosbuild_add_executable(partial_unfold src/partial_unfolding.cpp src/utils.cpp src/fold_detector/fold_detector.cpp src/fold_detector/call_main.cpp src/fold_detector/choose_a_corner.cpp src/fold_detector/canny_image.cpp src/fold_detector/true_pixels.cpp src/fold_detector/thinning.cpp src/fold_detector/following_edges.cpp src/fold_detector/colors.cpp src/fold_detector/connect2_junctions src/fold_detector/a_corner_check.cpp src/fold_detector/douglas_peucker.cpp src/fold_detector/edges_in_detail.cpp src/fold_detector/follow.cpp src/fold_detector/unify_junctions.cpp src/fold_detector/tiding_up.cpp src/fold_detector/check_depths.cpp src/fold_detector/a_corner_depths.cpp src/fold_detector/check_disconnected.cpp src/fold_detector/normal_distance.cpp 
-src/fold_detector/garmentsLengthLimit.cpp
-src/fold_detector/grasp_point.cpp)
+#src/fold_detector/garmentsLengthLimit.cpp
+#src/fold_detector/grasp_point.cpp)
 #rosbuild_link_boost(partial_unfold signals)
 
 rosbuild_add_executable(partial_unfold2
@@ -55,7 +55,10 @@ rosbuild_add_executable(partial_unfold2
     src/fold_detector/grasp_point.cpp
     src/fold_detector/detectHorizontalEdge.cpp
     src/fold_detector/normalPoint.cpp
+    src/fold_detector/garmentsLengthLimit.cpp
     src/utils.cpp
+ 
+
 )
 rosbuild_link_boost(partial_unfold2 signals)
 
