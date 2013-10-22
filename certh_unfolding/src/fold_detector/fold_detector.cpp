@@ -36,7 +36,7 @@ colors show_colors(int);
 ret_all call_main(Mat,Mat);
 int choose_a_corner(a_corners, depths ,vector<vector<int> > ,int ,vector<vector<int> >& ,vector<vector<Point> >&,vector<vector<bool> >& ,vector<vector <bool> > & , vector<vector<float> >& ,int& ,ret_all, vector<vector< int> > & , vector<vector <Point> > & , Mat);
 
-bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& grasp_candidate, vector<vector<int> >& store, vector<vector<Point> >& location, vector<vector<bool> >& current_corner,  vector<vector <bool> > & side, vector<vector<float> >& depthD, int cx, vector<vector< int> > & radius, vector<vector <Point> > & Points, bool &orientLeft  ){
+bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& grasp_candidate, vector<vector<int> >& store, vector<vector<Point> >& location, vector<vector<bool> >& current_corner,  vector<vector <bool> > & side, vector<vector<float> >& depthD, int cx, vector<vector< int> > & radius, vector<vector <Point> > & Points, bool &orientLeft,int hand,int lowl  ){
 
     bool ret;
 	int i_stop=-1,k_stop=-1;
@@ -50,7 +50,9 @@ bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& gr
         i_stop=choose_a_corner(r.a_corn,r.d, r.junctions,th,store,location,current_corner, side, depthD,k_stop,r, radius, Points, bgrImage);
 
 		cout<<"!";
-        if (i_stop!=-1 && location.at(i_stop).at(k_stop).x<cx && current_corner.at(i_stop).at(k_stop)==true && depthD.at(i_stop).at(k_stop)>300 && radius.at(i_stop).at(k_stop)>2){//<---
+		bool expr=(i_stop!=-1 && (hand==1 && location.at(i_stop).at(k_stop).x<cx) || (hand==2 && location.at(i_stop).at(k_stop).x<lowl));
+       
+		if (expr==true && current_corner.at(i_stop).at(k_stop)==true && depthD.at(i_stop).at(k_stop)>300 && radius.at(i_stop).at(k_stop)>2){//<---
         //if (i_stop!=-1 && location.at(i_stop).at(k_stop).x<cx && current_corner.at(i_stop).at(k_stop)==true && depthD.at(i_stop).at(k_stop)>3000){
 			
             ret=true;
