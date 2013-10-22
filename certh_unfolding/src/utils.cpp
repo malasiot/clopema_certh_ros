@@ -1114,6 +1114,7 @@ bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y
     setGripperStates(movingArm , false);
 
     if(lastMove == true){
+        float radious = getArmsDistance();
         moveToCheckGrasping() ;
         if(!confirmGrasping() ){
             setGripperStates(movingArm, true);
@@ -1400,7 +1401,7 @@ bool Unfold::confirmGrasping(){
     cv::Mat rgb, depth ;
     pcl::PointCloud <pcl::PointXYZ> pc ;
     openni::connect( camera ) ;
-    ros::Duration(0.3).sleep();
+    ros::Duration(3.0).sleep();
     grabFromXtion(rgb, depth, pc ) ;
     string rgbFileName = "/tmp/rgb_cap_.png" ;
     string depthFileName = "/tmp/depth_cap_.png" ;

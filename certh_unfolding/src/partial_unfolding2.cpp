@@ -232,8 +232,8 @@ int main(int argc, char **argv) {
 
     ros::init(argc, argv, "unfolding2");
     ros::NodeHandle nh;
-    graspACorner("r1") ;
-    graspACorner("r2", true) ;
+    graspACorner("r2") ;
+    graspACorner("r1", true) ;
     setServoPowerOff(true) ;
     return 0 ;
 }
