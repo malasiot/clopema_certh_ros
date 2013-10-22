@@ -40,7 +40,7 @@ struct ret_all{
 extern bool grasp_point(bool  , vector<double>& , vector<Eigen::Matrix4d>&  , vector<vector<int> >&  , vector<vector<Point> >&  , vector<vector<bool> >&  , vector<vector<bool> >& ,vector<vector<float> >& ,  int ,bool &, vector<vector< int> > &, vector<vector <Point> > &  );
 
 extern int normalPoint(int , ret_all , bool , Mat , Point & );
-extern bool detectHorizontalEdge( vector<double>& , int, int, Mat, Mat );
+extern bool detectHorizontalEdge( vector<double>& , int, int, Mat, Mat, int, int );
 
 //these functions are used for the detection of the corners that are created from a fold of the cloth(arrow junctions)
 /////call_main ///
@@ -91,16 +91,16 @@ public:
 
     bool fold_detector(Mat, Mat, int, vector<double>& , vector<vector<int> > &, vector<vector<Point> >& , vector<vector<bool> >& ,vector<vector<bool> >& ,vector<vector<float> >& , int ,vector<vector< int> > & , vector<vector <Point> > &, bool&);
 
-    bool detect(const Mat &clr, const Mat &depth, int frame, vector<double> &graspCandidates, int cx, bool &orientLeft ) {
-        bool res =  fold_detector(clr, depth, frame, graspCandidates, score, location, current_corner, sider, depthD, cx, radius, Points, orientLeft) ;
+    bool detect(const Mat &clr, const Mat &depth, int frame, vector<double> &graspCandidates, int cx, bool &orientLeft, int hand, int lowl ) {
+        bool res =  fold_detector(clr, depth, frame, graspCandidates, score, location, current_corner, sider, depthD, cx, radius, Points, orientLeft, hand,lowl) ;
 
     return res ;
     }
 
-    bool select(bool detected, vector<double> &grasp_candidate, vector<Eigen::Matrix4d> &orientations, int cx, bool & orientLeft)
+    bool select(bool detected, vector<double> &grasp_candidate, vector<Eigen::Matrix4d> &orientations, int cx, bool & orientLeft,int hand, int lowl)
     {
 
-        if ( grasp_point (detected , grasp_candidate, orientations ,  score , location , current_corner , sider, depthD, cx, orientLeft,radius, Points));
+        if ( grasp_point (detected , grasp_candidate, orientations ,  score , location , current_corner , sider, depthD, cx, orientLeft,radius, Points,hand, lowl));
 
             return true;
 

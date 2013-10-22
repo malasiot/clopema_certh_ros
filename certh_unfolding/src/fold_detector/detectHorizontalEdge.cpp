@@ -20,7 +20,7 @@ struct colors{
 colors show_colors(int);
 
 
-bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx , int n, Mat winnerPicd ,Mat winnerPic){
+bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx , int n, Mat winnerPicd ,Mat winnerPic,int hand, int lowl){
     folds f;
     bool side;
 
@@ -39,8 +39,9 @@ bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx , int n, Mat 
             double par=r.edges_t.at(i).at(0)-r.edges_t.at(i).at(2);
             if (par!=0){
                 double f=abs(ar/par);
-
-                if (r.edges_t.at(i).at(0)<cx && r.edges_t.at(i).at(2)<cx){//if it does not start from the grasping point
+				bool expr1=(hand==1 && r.edges_t.at(i).at(0)<cx && r.edges_t.at(i).at(2)<cx);//<------------------------------------
+				bool expr2=(hand==2 && r.edges_t.at(i).at(0)<lowl && r.edges_t.at(i).at(2)<lowl);//<--------------------------
+                if (expr1==true || expr2==true){//if it does not start from the grasping point
                     if (min_f<f){
                         cout<<"f= "<<f;
                         min_f=f;
