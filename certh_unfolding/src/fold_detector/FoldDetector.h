@@ -5,7 +5,8 @@
 
 #include <vector>
 #include <opencv2/opencv.hpp>
-
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 using namespace std;
 using namespace cv;
 
@@ -37,7 +38,7 @@ struct ret_all{
     a_corners a_corn;
     depths d;
 };
-extern bool grasp_point(bool  , vector<double>& , vector<Eigen::Matrix4d>&  , vector<vector<int> >&  , vector<vector<Point> >&  , vector<vector<bool> >&  , vector<vector<bool> >& ,vector<vector<float> >& ,  int ,bool &, vector<vector< int> > &, vector<vector <Point> > & ,int, int );
+
 
 extern int normalPoint(int , ret_all , bool , Mat , Point & );
 extern bool detectHorizontalEdge( vector<double>& , int, int, Mat, Mat, int, int );
@@ -61,6 +62,12 @@ extern int garmentsLengthLimit( Mat ,Mat );
 class folds{
 
 public:
+
+
+        std::vector < cv::Mat > clr ;
+        std::vector < cv::Mat > depth ;
+
+
 
     folds() {
         score.resize(1) ;
@@ -90,7 +97,7 @@ public:
 	ret_all call_main(Mat,Mat);
 
     bool fold_detector(Mat, Mat, int, vector<double>& , vector<vector<int> > &, vector<vector<Point> >& , vector<vector<bool> >& ,vector<vector<bool> >& ,vector<vector<float> >& , int ,vector<vector< int> > & , vector<vector <Point> > &, bool&, int ,int);
-
+    bool grasp_point(bool  , vector<double>& , vector<Eigen::Matrix4d>&  , vector<vector<int> >&  , vector<vector<Point> >&  , vector<vector<bool> >&  , vector<vector<bool> >& ,vector<vector<float> >& ,  int ,bool &, vector<vector< int> > &, vector<vector <Point> > & ,int, int );
     bool detect(const Mat &clr, const Mat &depth, int frame, vector<double> &graspCandidates, int cx, bool &orientLeft, int hand, int lowl ) {
         bool res =  fold_detector(clr, depth, frame, graspCandidates, score, location, current_corner, sider, depthD, cx, radius, Points, orientLeft, hand,lowl) ;
 

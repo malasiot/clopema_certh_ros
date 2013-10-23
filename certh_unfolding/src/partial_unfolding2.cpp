@@ -36,6 +36,7 @@ public:
         found = false ;
         unfold.setHoldingArm(arm);
         cmove.setServoMode(false);
+
     }
 
     void process(const pcl::PointCloud<pcl::PointXYZ> &pc ,const Mat &clr, const Mat &depth, const image_geometry::PinholeCameraModel &cm, const ros::Time &ts, Affine3d &tip_pose_in_camera_frame)
@@ -57,6 +58,10 @@ public:
         data.orientations.push_back(tip_pose_in_camera_frame.matrix()) ;
 
         vector<double> grasp_cand_(3) ;
+
+        folds_.clr.push_back(clr);
+        folds_.depth.push_back(depth);
+
         bool detected = folds_.detect( clr, depth, data.dataCounter, grasp_cand_, p.x , orientLeft, hand, lowl);
 
         if ( detected ) {
@@ -105,7 +110,8 @@ public:
 
         cv::rectangle(imc, cv::Rect(x-2, y-2, 5, 5), cv::Scalar(255, 0, 255), 2) ;
 
-        cv::imwrite("/tmp/results/gsp.png", imc) ;
+        cv::imwrite(str(boost::format("/tmp/results/gsp_rgb_%03d.png") % hand), imc ) ;
+        cv::imwrite(str(boost::format("/tmp/results/gsp_depth_%03d.png")% hand), imd ) ;
 
         Affine3d camera_frame ;
         tf::StampedTransform tr = robot_helpers::getTranformation(camera + "_rgb_optical_frame") ;
@@ -190,6 +196,10 @@ bool graspACorner(string armName, bool lastMove = false) {
         MoveRobot rb ;
         rb.setServoMode(false);
         moveGripper(rb, armName, pose.translation(), Quaterniond(pose.rotation())) ;
+        camera_helpers::openni::disconnect("xtion3") ;
+        fd.unfold.grabFromXtion(rgb, depth, pc) ;
+        cv::imwrite(str(boost::format("/tmp/results/re-evaluation_gsp%d.png") % fd.hand), rgb ) ;
+        cv::imwrite(str(boost::format("/tmp/results/re-evaluation_gsp_depth%d.png")% fd.hand), depth ) ;
 
 
         setGripperState(arm2Name, true);
@@ -244,9 +254,9 @@ int main(int argc, char **argv) {
 
     ros::init(argc, argv, "unfolding2");
     ros::NodeHandle nh;
-
-    graspACorner("r2") ;
-    graspACorner("r1", true) ;
+    //std:mkdir("/tmp/partialUnfolding/");
+    graspACorner("r1") ;
+    graspACorner("r2", true) ;
     setServoPowerOff(true) ;
     return 0 ;
 }
