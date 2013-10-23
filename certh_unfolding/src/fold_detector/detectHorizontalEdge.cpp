@@ -33,6 +33,14 @@ bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx , int n, Mat 
     //(find the edge with tthe minimum inclination)
     double min_f=0.0;
     int i_min=-1;
+
+	int dif=int(2*(cx-lowl)/3);
+	int limit2=lowl+dif;
+
+	dif=int((cx-lowl)/10);
+	int limitL=lowl+dif;
+
+
     for (int i=0;i<r.edges_t.size();i++){
         if (r.edges_t.at(i).at(0)!=-90){
             double ar=r.edges_t.at(i).at(1)-r.edges_t.at(i).at(3);
@@ -40,8 +48,9 @@ bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx , int n, Mat 
             if (par!=0){
                 double f=abs(ar/par);
 				bool expr1=(hand==1 && r.edges_t.at(i).at(0)<cx && r.edges_t.at(i).at(2)<cx);//<------------------------------------
-				bool expr2=(hand==2 && r.edges_t.at(i).at(0)<lowl && r.edges_t.at(i).at(2)<lowl);//<--------------------------
-                if (expr1==true || expr2==true){//if it does not start from the grasping point
+				bool expr2=(hand==2 && r.edges_t.at(i).at(0)<limit2 && r.edges_t.at(i).at(2)<limit2);//<--------------------------
+				bool expr3=(r.edges_t.at(i).at(0)>limitL && r.edges_t.at(i).at(2)>limitL);
+                if ((expr1==true || expr2==true) && expr3){//if it does not start from the grasping point
                     if (min_f<f){
                         cout<<"f= "<<f;
                         min_f=f;
