@@ -95,14 +95,12 @@ int garmentsLengthLimit(Mat depthMap,Mat bgrImage)
 		//line( gray_rgb,Point(cx, miny), Point(cx, maxy), Scalar(0,255,0), 3, CV_AA);
 
 
-        int dif=int(2*(maxx-minx)/3);
-		int lowl=minx+dif;
 		/*line( gray_rgb,Point(lowl, miny), Point(lowl, maxy), Scalar(0,255,0), 3, CV_AA);
 		namedWindow("oria",0);
 		imshow("oria",gray_rgb);
 		waitKey();*/
 		
-		return lowl;
+		return minx;
 
 
 }

@@ -50,9 +50,20 @@ bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& gr
         i_stop=choose_a_corner(r.a_corn,r.d, r.junctions,th,store,location,current_corner, side, depthD,k_stop,r, radius, Points, bgrImage);
 
 		cout<<"!";
-        //bool expr=(i_stop!=-1 && (hand==1 && location.at(i_stop).at(k_stop).x<cx) || (hand==2 && location.at(i_stop).at(k_stop).x<lowl));
-       bool expr=(i_stop!=-1 && ((hand==1 && location.at(i_stop).at(k_stop).x<cx) || (hand==2 && location.at(i_stop).at(k_stop).x<lowl)) );
-		if (expr==true && current_corner.at(i_stop).at(k_stop)==true && depthD.at(i_stop).at(k_stop)>300 && radius.at(i_stop).at(k_stop)>2){//<---
+
+
+
+		//calculate limit2 so that the 2nd time it detects points at the 2/3 lowest part of the article
+		int dif=int(2*(cx-lowl)/3);
+		int limit2=lowl+dif;
+		//calculate limitL so that it detects points that are not near the lowest point
+		dif=int((cx-lowl)/10);
+		int limitL=lowl+dif;
+
+		bool expr=(i_stop!=-1 && (hand==1 && location.at(i_stop).at(k_stop).x<cx) || (hand==2 && location.at(i_stop).at(k_stop).x<limit2));
+       
+		if (expr==true && current_corner.at(i_stop).at(k_stop)==true && depthD.at(i_stop).at(k_stop)>300 && radius.at(i_stop).at(k_stop)>2 && location.at(i_stop).at(k_stop).x>limitL){//<---
+
         //if (i_stop!=-1 && location.at(i_stop).at(k_stop).x<cx && current_corner.at(i_stop).at(k_stop)==true && depthD.at(i_stop).at(k_stop)>3000){
 			
             ret=true;
