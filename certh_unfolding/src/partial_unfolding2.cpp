@@ -182,6 +182,8 @@ bool graspACorner(string armName, bool lastMove = false) {
 
 
     fd.rotate(-1.7*M_PI) ;
+    camera_helpers::openni::connect("xtion3" ) ;
+    ros::Duration(1).sleep() ;
 
     Affine3d pose ;
     Vector3d pp ;
@@ -196,7 +198,6 @@ bool graspACorner(string armName, bool lastMove = false) {
         MoveRobot rb ;
         rb.setServoMode(false);
         moveGripper(rb, armName, pose.translation(), Quaterniond(pose.rotation())) ;
-        camera_helpers::openni::disconnect("xtion3") ;
         fd.unfold.grabFromXtion(rgb, depth, pc) ;
         cv::imwrite(str(boost::format("/tmp/results/re-evaluation_gsp%d.png") % fd.hand), rgb ) ;
         cv::imwrite(str(boost::format("/tmp/results/re-evaluation_gsp_depth%d.png")% fd.hand), depth ) ;

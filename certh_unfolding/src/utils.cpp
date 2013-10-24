@@ -22,7 +22,6 @@ Unfold::Unfold(const string &armName){
    setHoldingArm(armName);
 
    camera = "xtion3" ;
-   openni::connect( camera ) ;
 
    ros::Duration(1).sleep() ;
    clothType = -1;
@@ -31,14 +30,13 @@ Unfold::Unfold(const string &armName){
 Unfold::Unfold(){
 
    camera = "xtion3" ;
-   openni::connect( camera ) ;
+
 
    ros::Duration(1).sleep() ;
    clothType = -1;
 }
 
 Unfold::~Unfold() {
-    openni::disconnect(camera ) ;
 }
 
 //Sets the cloth type
@@ -883,7 +881,6 @@ bool Unfold::graspLowestPoint(bool lastMove, bool allwaysDrop){
         bottom = top;
         bottom.x()-=1;
 
-        openni::connect( camera ) ;
         while( !openni::grab(camera, rgb, depth, pc, ts, cm) ) ;
         findLowestPoint(pc, top, bottom, angle, p, n);
 
@@ -1400,7 +1397,6 @@ bool Unfold::confirmGrasping(){
 
     cv::Mat rgb, depth ;
     pcl::PointCloud <pcl::PointXYZ> pc ;
-    openni::connect( camera ) ;
     ros::Duration(3.0).sleep();
     grabFromXtion(rgb, depth, pc ) ;
     string rgbFileName = "/tmp/rgb_cap_.png" ;
@@ -1473,7 +1469,6 @@ bool Unfold::confirmGrasping(){
 
 bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc ){
 
-    openni::connect( camera ) ;
 
     ros::Duration(0.3).sleep();
     ros::Time ts(0);
@@ -1491,7 +1486,6 @@ bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::Po
 
 bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, cv::Rect & r ){
 
-    openni::connect( camera ) ;
 
     ros::Duration(0.3).sleep();
     ros::Time ts(0);
@@ -1940,7 +1934,6 @@ bool Unfold::showUnfolding(){
 std::vector <Unfold::grabRGBD> Unfold::grabRGBD360() {
 
     moveArms(holdingArmPose(), movingArmPose(), holdingArm, movingArm ) ;
-    openni::connect( camera ) ;
 
     std::vector <grabRGBD> images ;
     cv::Mat rgb, depth ;
@@ -1968,7 +1961,6 @@ std::vector <Unfold::grabRGBD> Unfold::grabRGBD360() {
 bool Unfold::graspMiddle(){
 
 
-    openni::connect( camera ) ;
     //moveArms(movingArmPose(), holdingArmPose(), movingArm, holdingArm );
 
     setGripperStates(movingArm , true);
