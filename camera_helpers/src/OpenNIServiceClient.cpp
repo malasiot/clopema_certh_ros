@@ -8,7 +8,8 @@
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl/ros/conversions.h>
-
+#include <pcl/io/pcd_io.h>
+#include <highgui.h>
 namespace enc = sensor_msgs::image_encodings;
 
 using namespace std ;
@@ -214,7 +215,17 @@ bool grab(const std::string &camera, pcl::PointCloud<pcl::PointXYZ> &cloud, ros:
 
     return grab(camera, rgb, depth, cloud, ts, model_) ;
 }
+bool grabAndSave(const std::string &camera,cv::Mat &rgb,cv::Mat &depth , pcl::PointCloud<pcl::PointXYZ> &cloud, const std::string &RGBFileName, const std::string &depthFileName, const std::string &pcFileName  ){
 
+    ros::Time ts ;
+    image_geometry::PinholeCameraModel model ;
+    bool  grabbed = grab( camera, rgb, depth, cloud, ts, model);
+    cv::imwrite(RGBFileName, rgb ) ;
+    cv::imwrite(depthFileName, depth ) ;
+    pcl::io::savePCDFile(pcFileName, cloud) ;
+
+    return grabbed ;
+}
 
 }
 }

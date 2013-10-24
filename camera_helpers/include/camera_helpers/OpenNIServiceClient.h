@@ -18,6 +18,7 @@ namespace openni {
     bool grab(const std::string &camera, pcl::PointCloud<pcl::PointXYZ> &cloud, ros::Time &ts) ;
     bool grab(const std::string &camera, pcl::PointCloud<pcl::PointXYZRGB> &cloud, ros::Time &ts) ;
     bool grab(const std::string &camera, cv::Mat &clr, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &cloud, ros::Time &ts, image_geometry::PinholeCameraModel &cm) ;
+    bool grabAndSave(const std::string &camera,cv::Mat &rgb,cv::Mat &depth , pcl::PointCloud<pcl::PointXYZ> &cloud, const std::string &RGBFileName, const std::string &depthFileName, const std::string &pcFileName  ) ;
 
     bool disconnect(const std::string &camera) ;
 } // namespace openni

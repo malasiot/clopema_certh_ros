@@ -160,3 +160,24 @@ int main(int argc, char *argv[])
     return 0 ;
 
 }
+
+
+//int main(int argc, char *argv[])
+//{
+//    ros::init(argc, argv, "openni_capture_example");
+//    ros::NodeHandle nh ;
+//    camera_helpers::openni::connect("xtion3");
+//    ros::Duration(1).sleep() ;
+//    cv::Mat rgb, depth ;
+//    pcl::PointCloud<pcl::PointXYZ> pc ;
+//    std::string RGBFileName = "/tmp/test_rgb.png", depthFileName = "/tmp/test_depth.png", pcFileName = "/tmp/test_pc.pcd" ;
+//    unsigned int count = 0 ;
+//    while(count < 10){
+
+//        cout << "hit enter to grab n' save\n" << endl;
+//        cin.ignore();
+//        camera_helpers::openni::grabAndSave("xtion3", rgb, depth, pc, RGBFileName, depthFileName, pcFileName);
+//        count++ ;
+
+//    }
+//}

@@ -71,15 +71,16 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
   int delay = 1000 / rate;
 
   system("v4l2-ctl -c focus_auto=1"); // turn auto-focus on
+  cout << "Auto-focus on." << endl; 
   //  system("v4l2-ctl -c exposure_auto=3"); // turn auto-exposure on
 
-  write(serialPort, "0", 1); 
-  write(serialPort, "1", 1); // turn on the first LED for auto-focus
+  write(serialPort, "0\n", 1); 
+  write(serialPort, "1\n", 1); // turn on the first LED for auto-focus
   
   stringstream ss;
   cv::Mat images[8];
   cv::Mat ff_images[8];
-
+  /*
   // wait for 3 seconds to focus 
   for(i = 0; i < 90; i++) {
     // read next frame if any
@@ -90,12 +91,14 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
     if (cv::waitKey(delay) > 0)
       break;
   }
+  */
   system("v4l2-ctl -c focus_auto=0"); // turn auto-focus off
+  cout << "Auto-focus off." << endl;
   //  system("v4l2-ctl -c exposure_auto=1"); // turn auto-exposure off
   
   // for all frames in video
   for(i=0; i < 8; i++) {
-    write(serialPort, "0", 1);
+    write(serialPort, "0\n", 1);
     ss << i + 1 << '\n';
     write(serialPort, ss.str().c_str(), 1);
     //    ss.str(std::string());
@@ -121,7 +124,7 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
     ss.clear();
   }
 
-  write(serialPort, "0", 1);  
+  write(serialPort, "0\n", 1);  
 
   // FlatFielding
   //string data_path = "/home/christos/clopema/certh_ps/data/";
