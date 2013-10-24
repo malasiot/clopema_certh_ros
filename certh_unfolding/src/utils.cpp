@@ -216,7 +216,7 @@ Eigen::Matrix4d Unfold::findGraspingPointOrientation(Eigen::Vector4d vector, boo
 
     Eigen::Matrix4d rotMat;
     Eigen::Vector3d N;
-    cout<< "Fit vector is" << N << endl;
+    //cout<< "Fit vector is" << N << endl;
 
 
     N << -vector.x(), -vector.y(), -vector.z();
@@ -350,7 +350,7 @@ void Unfold::robustPlane3DFit(vector<Eigen::Vector3d> &x, Eigen::Vector3d  &c, E
         sort(weight, weight + N) ;
 
         sigma = weight[N/2]/0.6745 ;
-        cout << "FIT QUALITY: " << sigma << endl;
+        //cout << "FIT QUALITY: " << sigma << endl;
         // Update weights using Hubers scheme
 
         wsum = 0.0 ;
@@ -1450,13 +1450,13 @@ bool Unfold::confirmGrasping(){
         }
     }
 
-    cout << "COUNT = " << count<< endl;
+    //cout << "COUNT = " << count<< endl;
 
     if (count < 5) return false;
 
     float mean = sum/(float) count ;
 
-    cout << "MEAN = " << mean << "GRIPPER POINT = " << point.z << endl;
+   // cout << "MEAN = " << mean << "GRIPPER POINT = " << point.z << endl;
 
     if ( abs( mean - point.z ) > 0.15 )
         return false ;
@@ -1572,7 +1572,7 @@ bool Unfold::flipCloth( bool allwaysDrop){
 
     moveToCheckGrasping() ;
     bool grasp = confirmGrasping() ;
-    cout << "grasping = " << grasp  << endl ;
+    //cout << "grasping = " << grasp  << endl ;
     if(!grasp){
         setGripperStates(movingArm, true) ;
         return false;
@@ -1897,21 +1897,21 @@ bool Unfold::showUnfolding(){
     float radious = getArmsDistance()-0.03;
     Eigen::Matrix3d orient;
     if (holdingArm == "r1"){
-        poseH.position.x = -radious/2.0;
+        poseH.position.x = -radious;
         poseH.position.y = -1.1;
         poseH.position.z = 1.4;
 
         poseM.position = poseH.position;
-        poseM.position.x = radious/2.0;
+        poseM.position.x = 0;
 
         orient << 0, -1, 1, -1, 0,0,0,-1,-1;
     }else{
-        poseM.position.x = -radious/2.0;
+        poseM.position.x = -radious;
         poseM.position.y = -1.1;
         poseM.position.z = 1.4;
 
         poseH.position = poseM.position;
-        poseH.position.x = radious/2.0;
+        poseH.position.x = 0;
         orient << 0, 1, -1, 1, 0,0,0,-1,-1;
     }
 

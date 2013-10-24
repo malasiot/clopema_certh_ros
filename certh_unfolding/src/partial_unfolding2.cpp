@@ -36,7 +36,9 @@ public:
         found = false ;
         unfold.setHoldingArm(arm);
         cmove.setServoMode(false);
-
+        data.cloud.resize(0);
+        data.clr.resize(0);
+        data.depth.resize(0);
     }
 
     void process(const pcl::PointCloud<pcl::PointXYZ> &pc ,const Mat &clr, const Mat &depth, const image_geometry::PinholeCameraModel &cm, const ros::Time &ts, Affine3d &tip_pose_in_camera_frame)
@@ -50,6 +52,9 @@ public:
         data.cloud.push_back(pc) ;
         data.clr.push_back(clr) ;
         data.depth.push_back(depth) ;
+
+        cv::imwrite(str(boost::format("/tmp/data/clr%03d.png") % data.dataCounter), data.clr[data.dataCounter] ) ;
+        cv::imwrite(str(boost::format("/tmp/data/depth%03d.png") % data.dataCounter),  data.depth[data.dataCounter]) ;
 
         Vector3d tip = tip_pose_in_camera_frame * Vector3d(0, 0, 0) ;
         cv::Point2d p = cm.project3dToPixel(cv::Point3d(tip.x(), tip.y(), tip.z())); ;
@@ -68,6 +73,7 @@ public:
             found = true ;
             grasp_candidate = grasp_cand_ ;
             isACorner=true;
+            cout<< "folds_.detect = true" << endl;
         }
 
        data.dataCounter ++ ;
@@ -82,11 +88,15 @@ public:
         {
             grasp_candidate.resize(3) ;
 
-            if( folds_.select(found, grasp_candidate, data.orientations, data.cx, orientLeft, hand, lowl))
+            if( folds_.select(found, grasp_candidate, data.orientations, data.cx, orientLeft, hand, lowl)){
                     isACorner = true ;
+                    cout<< "folds_.select = true" << endl;
+            }
             else
             {
+
                  orientLeft = detectHorizontalEdge(grasp_candidate, data.cx, data.dataCounter-1,  data.depth[data.dataCounter-1], data.clr[data.dataCounter-1], hand,  lowl);
+                 cout<< "detectHorizontalEdge" << endl;
                  isACorner = false;
             }
         }
@@ -99,7 +109,7 @@ public:
         cv::Mat imc = data.clr[idx];
         cv::Mat imd = data.depth[idx];
         index = idx ;
-
+        cout<< "GRASP CANDIDATE = " <<grasp_candidate[0] << endl;
         // find the coordinates of the point in 3D in the correct frame
 
         ushort z ;
@@ -119,10 +129,10 @@ public:
 
         pose = camera_frame * Affine3d(data.orientations[idx])  ;
 
-        cout <<"p = "<< p <<endl;
+
 
         pp = camera_frame * Vector3d(p.x, p.y, p.z)  ;
-        cout <<"pp = " << pp << endl;
+        cout <<"grasping point = " << pp << endl;
         return true ;
     }
 

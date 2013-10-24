@@ -23,7 +23,7 @@ colors show_colors(int);
 bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx , int n, Mat winnerPicd ,Mat winnerPic,int hand, int lowl){
     folds f;
     bool side;
-
+    cout<<"go for horizontal"<<endl;
 //    cv::Mat winnerPic= cv::imread(str(boost::format("/tmp/cap_rgb_%d.png") % n), -1) ;
 //    cv::Mat winnerPicd = cv::imread(str(boost::format("/tmp/cap_depth_%d.png") % n), -1) ;
 

@@ -107,8 +107,7 @@ public:
     bool select(bool detected, vector<double> &grasp_candidate, vector<Eigen::Matrix4d> &orientations, int cx, bool & orientLeft,int hand, int lowl)
     {
 
-        if ( grasp_point (detected , grasp_candidate, orientations ,  score , location , current_corner , sider, depthD, cx, orientLeft,radius, Points,hand, lowl));
-
+        if ( grasp_point (detected , grasp_candidate, orientations ,  score , location , current_corner , sider, depthD, cx, orientLeft,radius, Points,hand, lowl))
             return true;
 
         return false;

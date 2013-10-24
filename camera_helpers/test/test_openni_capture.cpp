@@ -108,76 +108,74 @@ void RotateAndGrab::stopCapture()
 }
 
 
-int main(int argc, char *argv[])
-{
-    ros::init(argc, argv, "openni_capture_example");
-    ros::NodeHandle nh ;
-
-    cv::imwrite("/tmp/oo.png", camera_helpers::getCollisionMask("xtion3")) ;
-
- //   camera_helpers::OpenNICapturePointCloud grabber2("xtion3") ;
-
-    //grabber2.connect(boost::bind( &grabpc, &grabber2 )) ;
-
-    RotateAndGrab rg("xtion2", "r2") ;
-    rg.init() ;
-
-    rg.rotate(30) ;
-
-    camera_helpers::OpenNICaptureRGBD grabber("xtion2") ;
-
-    image_geometry::PinholeCameraModel camera ;
-
-    if ( grabber.connect( ) )
-    {
-        std::cout << "start grabbing RGBD" << std::endl ;
-
-        cv::Mat clr, depth ;
-        ros::Time ts ;
-
-        for(int i=0 ; i<10 ; i++ )
-        {
-            if ( grabber.grab(clr, depth, ts, camera) )
-            {
-
-                cv::imwrite(str(boost::format("/tmp/rgb_%03d.png") % i), clr) ;
-                cv::imwrite(str(boost::format("/tmp/depth_%03d.png") % i), depth) ;
-                std::cout << "grab" << std::endl ;
-            }
-            else { std::cout << "ok" << std::endl ; }
-
-            ros::Duration(1).sleep() ;
-        }
-
-        std::cout << "finished RGBD" << std::endl ;
-
-        grabber.disconnect();
-
-    }
-
-    ros::spin() ;
-
-    return 0 ;
-
-}
-
-
 //int main(int argc, char *argv[])
 //{
 //    ros::init(argc, argv, "openni_capture_example");
 //    ros::NodeHandle nh ;
-//    camera_helpers::openni::connect("xtion3");
-//    ros::Duration(1).sleep() ;
-//    cv::Mat rgb, depth ;
-//    pcl::PointCloud<pcl::PointXYZ> pc ;
-//    std::string RGBFileName = "/tmp/test_rgb.png", depthFileName = "/tmp/test_depth.png", pcFileName = "/tmp/test_pc.pcd" ;
-//    unsigned int count = 0 ;
-//    while(count < 10){
 
-//        cout << "hit enter to grab n' save\n" << endl;
-//        cin.ignore();
-//        camera_helpers::openni::grabAndSave("xtion3", rgb, depth, pc, RGBFileName, depthFileName, pcFileName);
-//        count++ ;
+//    cv::imwrite("/tmp/oo.png", camera_helpers::getCollisionMask("xtion3")) ;
+
+// //   camera_helpers::OpenNICapturePointCloud grabber2("xtion3") ;
+
+//    //grabber2.connect(boost::bind( &grabpc, &grabber2 )) ;
+
+//    RotateAndGrab rg("xtion2", "r2") ;
+//    rg.init() ;
+
+//    rg.rotate(30) ;
+
+//    camera_helpers::OpenNICaptureRGBD grabber("xtion2") ;
+
+//    image_geometry::PinholeCameraModel camera ;
+
+//    if ( grabber.connect( ) )
+//    {
+//        std::cout << "start grabbing RGBD" << std::endl ;
+
+//        cv::Mat clr, depth ;
+//        ros::Time ts ;
+
+//        for(int i=0 ; i<10 ; i++ )
+//        {
+//            if ( grabber.grab(clr, depth, ts, camera) )
+//            {
+
+//                cv::imwrite(str(boost::format("/tmp/rgb_%03d.png") % i), clr) ;
+//                cv::imwrite(str(boost::format("/tmp/depth_%03d.png") % i), depth) ;
+//                std::cout << "grab" << std::endl ;
+//            }
+//            else { std::cout << "ok" << std::endl ; }
+
+//            ros::Duration(1).sleep() ;
+//        }
+
+//        std::cout << "finished RGBD" << std::endl ;
+
+//        grabber.disconnect();
 
 //    }
+
+//    ros::spin() ;
+
+//    return 0 ;
+
 //}
+
+
+int main(int argc, char *argv[])
+{
+    ros::init(argc, argv, "openni_capture_example");
+    ros::NodeHandle nh ;
+    camera_helpers::openni::connect("xtion3");
+    ros::Duration(1).sleep() ;
+    cv::Mat rgb, depth ;
+    pcl::PointCloud<pcl::PointXYZ> pc ;
+    std::string RGBFileName = "/tmp/unfolded/test_rgb.png", depthFileName = "/tmp/unfolded/test_depth.png", pcFileName = "/tmp/unfolded/test_pc.pcd" ;
+
+
+    cout << "hit enter to grab n' save\n" << endl;
+    cin.ignore();
+    camera_helpers::openni::grabAndSave("xtion3", rgb, depth, pc, RGBFileName, depthFileName, pcFileName);
+
+
+}
