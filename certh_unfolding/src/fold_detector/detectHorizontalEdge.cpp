@@ -64,26 +64,40 @@ bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx , int n, Mat 
             }//if par
         }//if at(0)!=-90
     }//for
-    //detect the most horizontal subedge
-    int i_min2=0;
-    min_f=0;
-    for (int i=0;i<r.detailed_edges.at(2*i_min).size()-1;i++){
-        double ar=r.detailed_edges.at(2*i_min+1).at(i) - r.detailed_edges.at(2*i_min+1).at(i+1) ;
-        double par= r.detailed_edges.at(2*i_min).at(i) - r.detailed_edges.at(2*i_min).at(i+1) ;
-        if (par != 0){
-            double f= abs( ar/par );
-            if ( min_f < f ){
-                min_f=f;
-                i_min2=i;
-            }
-        }
-    }
+    ////detect the most horizontal subedge
+    //int i_min2=0;
+    //min_f=0;
+    //for (int i=0;i<r.detailed_edges.at(2*i_min).size()-1;i++){
+    //    double ar=r.detailed_edges.at(2*i_min+1).at(i) - r.detailed_edges.at(2*i_min+1).at(i+1) ;
+    //    double par= r.detailed_edges.at(2*i_min).at(i) - r.detailed_edges.at(2*i_min).at(i+1) ;
+    //    if (par != 0){
+    //        double f= abs( ar/par );
+    //        if ( min_f < f ){
+    //            min_f=f;
+    //            i_min2=i;
+    //        }
+    //    }
+    //}
 
-   // cout<<"imin "<<i_min<<" f= "<<double(min_f)<<" imin2 "<<i_min2;
+   int i_min2;
+   if (r.detailed_edges.at(2*i_min).size()%2==1){
+		i_min2=r.detailed_edges.at(2*i_min).size()/2;
+		grasp_candidate.at(1)=r.detailed_edges.at(2*i_min).at(i_min2);
+		grasp_candidate.at(2)=r.detailed_edges.at(2*i_min+1).at(i_min2);
+	}
+	else{
+		int e1=int(r.detailed_edges.at(2*i_min).size()/2-0.5);
+		int e2=int(r.detailed_edges.at(2*i_min).size()/2+0.5);
+
+		int midx=int((r.detailed_edges.at(2*i_min).at(e1)+r.detailed_edges.at(2*i_min).at(e2))/2);
+		int midy= int((r.detailed_edges.at(2*i_min+1).at(e1)+r.detailed_edges.at(2*i_min+1).at(e2))/2);
+		grasp_candidate.at(1)=midx;
+		grasp_candidate.at(2)=midy;
+	}
 
     grasp_candidate.at(0)=n;
-    grasp_candidate.at(1)=r.detailed_edges.at(2*i_min).at(i_min2);
-    grasp_candidate.at(2)=r.detailed_edges.at(2*i_min+1).at(i_min2);
+ /*   grasp_candidate.at(1)=r.detailed_edges.at(2*i_min).at(i_min2);
+    grasp_candidate.at(2)=r.detailed_edges.at(2*i_min+1).at(i_min2);*/
 
             /////depict the edges
             for (int i=0;i<r.detailed_edges.size();i=i+2){
