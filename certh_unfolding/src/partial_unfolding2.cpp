@@ -161,15 +161,6 @@ public:
 
 bool graspACorner(string armName, bool lastMove = false) {
 
-
-   // ros::Publisher marker_pub;
-
-    //ros::AsyncSpinner spinner(4) ;
-
-//    spinner.start() ;
-
-  //  marker_pub = nh.advertise<visualization_msgs::Marker>("/visualization_marker", 0);
-
     string arm2Name ;
     if (armName=="r1")
        arm2Name="r2";
@@ -255,9 +246,6 @@ bool graspACorner(string armName, bool lastMove = false) {
 
 
     }
-
-   // ros::spin() ;
-
 
 }
 

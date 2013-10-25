@@ -1899,7 +1899,7 @@ bool Unfold::showUnfolding(float radious){
     Eigen::Matrix3d orient;
     if (holdingArm == "r1"){
         poseH.position.x = -(radious-0.03);
-        poseH.position.y = -1.1;
+        poseH.position.y = -0.8;
         poseH.position.z = 1.4;
 
         poseM.position = poseH.position;
@@ -1908,7 +1908,7 @@ bool Unfold::showUnfolding(float radious){
         orient << 0, -1, 1, -1, 0,0,0,-1,-1;
     }else{
         poseM.position.x = -(radious-0.03);
-        poseM.position.y = -1.1;
+        poseM.position.y = -0.8;
         poseM.position.z = 1.4;
 
         poseH.position = poseM.position;
