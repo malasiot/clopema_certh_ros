@@ -69,7 +69,9 @@ public:
         folds_.clr.push_back(clr);
         folds_.depth.push_back(depth);
 
-        bool detected = folds_.detect( clr, depth, data.dataCounter, grasp_cand_, p.x , orientLeft, hand, lowl);
+        bool detected  = false;
+        if (!found)
+             detected = folds_.detect( clr, depth, data.dataCounter, grasp_cand_, p.x , orientLeft, hand, lowl);
 
         if ( detected ) {
             found = true ;
@@ -201,15 +203,16 @@ bool graspACorner(string armName, bool lastMove = false) {
         MoveRobot rb ;
         rb.setServoMode(false);
         moveGripper(rb, armName, pose.translation(), Quaterniond(pose.rotation())) ;
-        fd.unfold.grabFromXtion(rgb, depth, pc) ;
+        fd.unfold.grabMeanFromXtion(rgb, depth, pc) ;
+        fd.unfold.drawPoint(rgb, 200, 0, 0, x, y) ;
         cv::imwrite(str(boost::format("/tmp/results/re-evaluation_gsp%d.png") % fd.hand), rgb ) ;
         cv::imwrite(str(boost::format("/tmp/results/re-evaluation_gsp_depth%d.png")% fd.hand), depth ) ;
 
 
         setGripperState(arm2Name, true);
 
-        if (!fd.unfold.graspPoint(fd.data.cloud[idx], x, y, lastMove, !fd.orientLeft ,true, true) ){
-
+//        if (!fd.unfold.graspPoint(fd.data.cloud[idx], x, y, lastMove, !fd.orientLeft ,true, true) ){
+        if (!fd.unfold.graspPoint(pc, x, y, lastMove, !fd.orientLeft ,true, true) ){
             bool done = false ;
 
             while(!done){

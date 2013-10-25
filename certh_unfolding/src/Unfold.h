@@ -192,17 +192,18 @@ public:
     int moveArmsFlipCloth( float radious, geometry_msgs::Pose pose1 , geometry_msgs::Pose pose2, const string &arm1Name,  const std::string &arm2Name = "r1" );
     bool releaseCloth( const string &armName );
     bool showUnfolding(float radious);
+    bool drawPoint(cv::Mat &rgb, int r, int g , int b, int x , int y);
 
     bool confirmGrasping();
 
     bool grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc );
     bool grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc, cv::Rect & r);
+    bool grabMeanFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc );
 
     bool findMiddlePoint(const pcl::PointCloud<pcl::PointXYZ> &depth, int &x , int &y) ;
     bool graspMiddle() ;
 
 
-    //------- DIMITRA--------
 
 public:
 

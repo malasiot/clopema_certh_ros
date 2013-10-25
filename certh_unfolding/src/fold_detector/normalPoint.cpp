@@ -91,10 +91,10 @@ Point search_area(int corner, ret_all r, bool side, Mat bin, vector<int> vec, ve
 	
 	if (side==false){
 		istarty=r.junctions.at(corner).at(1);
-		istopy=istarty+13;
+        istopy=istarty+9;
 	}
 	else{
-		istarty=r.junctions.at(corner).at(1)-13;
+        istarty=r.junctions.at(corner).at(1)-9;
 		istopy=r.junctions.at(corner).at(1);
 	}
 

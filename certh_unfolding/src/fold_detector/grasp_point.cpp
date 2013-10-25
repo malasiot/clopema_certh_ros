@@ -74,6 +74,7 @@ bool folds::grasp_point(bool detected , vector<double>& grasp_candidate, vector<
                     }
                 }
 
+
 //                imwrite(str(boost::format("/tmp/results/f_gsp_rgb%d.png") % hand), winnerPic);
 //                imwrite(str(boost::format("/tmp/results/f_gsp_depth%d.png") % hand), winnerPicd);
             ////////////////////////

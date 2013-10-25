@@ -1392,6 +1392,19 @@ bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y
 
 //}
 
+bool Unfold::drawPoint(cv::Mat  &rgb, int r, int g , int b, int x , int y){
+
+    for (int i = -3; i<4 ; i++){
+        for ( int j = -3 ; j<4 ; j++){
+
+            rgb.at<cv::Vec3b>(y+i,x+j)[0] = r;
+            rgb.at<cv::Vec3b>(y+i,x+j)[1] = g;
+            rgb.at<cv::Vec3b>(y+i,x+j)[2] = b;
+
+        }
+    }
+    return true ;
+}
 
 bool Unfold::confirmGrasping(){
 
@@ -1479,6 +1492,47 @@ bool Unfold::grabFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::Po
         cout<<"cant grab!  " << endl;
         return false;
     }
+
+    return true;
+}
+
+bool Unfold::grabMeanFromXtion(cv::Mat &rgb, cv::Mat &depth, pcl::PointCloud<pcl::PointXYZ> &pc ){
+
+
+    ros::Duration(0.3).sleep();
+    ros::Time ts(0);
+    image_geometry::PinholeCameraModel cm;
+
+
+    if(!openni::grab(camera, rgb, depth, pc, ts, cm)){
+        cout<<"cant grab!  " << endl;
+        return false;
+    }
+    pcl::PointCloud<pcl::PointXYZ> pc_avg;
+    pcl::copyPointCloud<pcl::PointXYZ>(pc, pc_avg);
+    for(int x = 0; x<640; ++x){
+        for(int y = 0; y<480; ++y){
+            pc_avg.at(x, y).x /= 10;
+            pc_avg.at(x, y).y /= 10;
+            pc_avg.at(x, y).z /= 10;
+        }
+    }
+
+    for(int i=0; i<9; ++i){
+        if(!openni::grab(camera, rgb, depth, pc, ts, cm)){
+            cout<<"cant grab!  " << endl;
+            return false;
+        }
+        for(int x = 0; x<640; ++x){
+            for(int y = 0; y<480; ++y){
+                pc_avg.at(x, y).x += pc.at(x,y).x/10;
+                pc_avg.at(x, y).y += pc.at(x,y).y/10;
+                pc_avg.at(x, y).z += pc.at(x,y).z/10;
+            }
+        }
+    }
+
+    pcl::copyPointCloud<pcl::PointXYZ>(pc_avg, pc);
 
     return true;
 }
@@ -1898,21 +1952,21 @@ bool Unfold::showUnfolding(float radious){
 //    float radious = getArmsDistance()-0.03;
     Eigen::Matrix3d orient;
     if (holdingArm == "r1"){
-        poseH.position.x = -(radious-0.03);
+        poseH.position.x = -(radious-0.01);
         poseH.position.y = -0.8;
         poseH.position.z = 1.4;
 
         poseM.position = poseH.position;
-        poseM.position.x = -0.03;
+        poseM.position.x = -0.01;
 
         orient << 0, -1, 1, -1, 0,0,0,-1,-1;
     }else{
-        poseM.position.x = -(radious-0.03);
+        poseM.position.x = -(radious-0.01);
         poseM.position.y = -0.8;
         poseM.position.z = 1.4;
 
         poseH.position = poseM.position;
-        poseH.position.x = -0.03;
+        poseH.position.x = -0.01;
         orient << 0, 1, -1, 1, 0,0,0,-1,-1;
     }
 
