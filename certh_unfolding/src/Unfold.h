@@ -48,6 +48,7 @@ public:
     Unfold(const string &armName);
     Unfold();
     virtual ~Unfold();
+    ros::Publisher marker_pub;
 
 private:
 
@@ -59,6 +60,7 @@ private:
 public:
     string camera ;
 
+    bool setMarkePubisher(ros::Publisher pub);
     void setClothType( int type);
     string getHoldingArm();
     string getMovingArm();

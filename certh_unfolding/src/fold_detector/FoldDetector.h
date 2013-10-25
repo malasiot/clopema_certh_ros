@@ -41,7 +41,7 @@ struct ret_all{
 
 
 extern int normalPoint(int , ret_all , bool , Mat , Point & );
-extern bool detectHorizontalEdge( vector<double>& , int, int, Mat, Mat, int, int );
+extern bool detectHorizontalEdge( vector<double>& , int, int, int, Mat, Mat, int, int );
 extern int garmentsLengthLimit( Mat ,Mat );
 //these functions are used for the detection of the corners that are created from a fold of the cloth(arrow junctions)
 /////call_main ///

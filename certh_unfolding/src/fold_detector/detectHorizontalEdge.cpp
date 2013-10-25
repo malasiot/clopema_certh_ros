@@ -20,7 +20,7 @@ struct colors{
 colors show_colors(int);
 
 
-bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx , int n, Mat winnerPicd ,Mat winnerPic,int hand, int lowl){
+bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx, int cy , int n, Mat winnerPicd ,Mat winnerPic,int hand, int lowl){
     folds f;
     bool side;
     cout<<"go for horizontal"<<endl;
@@ -94,8 +94,8 @@ bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx , int n, Mat 
 		grasp_candidate.at(1)=midx;
 		grasp_candidate.at(2)=midy;
 	}
-
-    grasp_candidate.at(0)=n;
+    grasp_candidate.at(1) += 5 ;
+    grasp_candidate.at(0) = n ;
  /*   grasp_candidate.at(1)=r.detailed_edges.at(2*i_min).at(i_min2);
     grasp_candidate.at(2)=r.detailed_edges.at(2*i_min+1).at(i_min2);*/
 
@@ -130,7 +130,12 @@ bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx , int n, Mat 
 //            namedWindow("winner",0);
 //            imshow("winner",winnerPic);
 //            waitKey();
-
+            if (cy- grasp_candidate.at(2)>0){
+                side= false;
+            }
+            else{
+                side= true;
+            }
 
 
     return side;

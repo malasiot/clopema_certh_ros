@@ -17,7 +17,7 @@ public:
     int lowl, hand;
     struct rotateData {
 
-        int cx ;
+        int cx , cy;
         int dataCounter;
 
         std::vector <pcl::PointCloud<pcl::PointXYZ> > cloud ;

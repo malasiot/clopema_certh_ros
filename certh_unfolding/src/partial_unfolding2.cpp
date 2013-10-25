@@ -61,7 +61,7 @@ public:
         Vector3d tip = tip_pose_in_camera_frame * Vector3d(0, 0, 0) ;
         cv::Point2d p = cm.project3dToPixel(cv::Point3d(tip.x(), tip.y(), tip.z())); ;
         data.cx = p.x ;
-
+        data.cy = p.y ;
         data.orientations.push_back(tip_pose_in_camera_frame.matrix()) ;
 
         vector<double> grasp_cand_(3) ;
@@ -97,7 +97,7 @@ public:
             else
             {
 
-                 orientLeft = detectHorizontalEdge(grasp_candidate, data.cx, data.dataCounter-1,  data.depth[data.dataCounter-1], data.clr[data.dataCounter-1], hand,  lowl);
+                 orientLeft = detectHorizontalEdge(grasp_candidate, data.cx, data.cy, data.dataCounter-1,  data.depth[data.dataCounter-1], data.clr[data.dataCounter-1], hand,  lowl);
                  cout<< "detectHorizontalEdge" << endl;
                  isACorner = false;
             }
@@ -152,12 +152,12 @@ public:
         data.depth.push_back(depth) ;
         data.dataCounter++ ;
 
-        orient = detectHorizontalEdge(grasp_candidate, data.cx ,data.dataCounter-1, data.depth[data.dataCounter-1], data.clr[data.dataCounter-1], hand, lowl);
+        orient = detectHorizontalEdge(grasp_candidate, data.cx, data.cy ,data.dataCounter-1, data.depth[data.dataCounter-1], data.clr[data.dataCounter-1], hand, lowl);
 
     }
 };
 
-
+ros::Publisher pub ;
 
 bool graspACorner(string armName, bool lastMove = false) {
 
@@ -168,7 +168,7 @@ bool graspACorner(string armName, bool lastMove = false) {
        arm2Name="r1";
 
     FoldDetectorAction fd(armName) ;
-
+    fd.unfold.setMarkePubisher(pub) ;
     fd.unfold.parkArmsForGrasping();
     fd.init(Vector3d(fd.unfold.holdingArmPose().position.x, fd.unfold.holdingArmPose().position.y,fd.unfold.holdingArmPose().position.z)) ;
 
@@ -251,11 +251,11 @@ bool graspACorner(string armName, bool lastMove = false) {
 
 
 
-
 int main(int argc, char **argv) {
 
     ros::init(argc, argv, "unfolding2");
     ros::NodeHandle nh;
+    pub = nh.advertise<visualization_msgs::Marker>( "visualization_marker", 0 );
 
     mkdir("/tmp/results/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) ;
     mkdir("/tmp/data/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) ;

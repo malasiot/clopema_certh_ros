@@ -17,12 +17,10 @@ using namespace std;
 using namespace robot_helpers;
 using namespace camera_helpers ;
 
-Unfold::Unfold(const string &armName){
+Unfold::Unfold(const string &armName ){
 
    setHoldingArm(armName);
-
    camera = "xtion3" ;
-
    ros::Duration(1).sleep() ;
    clothType = -1;
 }
@@ -30,13 +28,15 @@ Unfold::Unfold(const string &armName){
 Unfold::Unfold(){
 
    camera = "xtion3" ;
-
-
    ros::Duration(1).sleep() ;
    clothType = -1;
 }
 
 Unfold::~Unfold() {
+}
+
+bool Unfold::setMarkePubisher(ros::Publisher pub){
+    marker_pub = pub;
 }
 
 //Sets the cloth type
@@ -998,11 +998,11 @@ bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y
     y= oy;
     Eigen::Matrix4d calib = getTranformationMatrix("xtion3_rgb_optical_frame");
 
-    //publishLowestPointMarker(marker_pub,p ,n );
+    publishLowestPointMarker(marker_pub,p ,n );
 
     Eigen::Vector4d tar(p.x(), p.y(), p.z(), 1);
     targetP = calib * tar;
-   // publishPointMarker(marker_pub, targetP, 1);
+    //publishPointMarker(marker_pub, targetP, 1);
     Eigen::Vector4d norm (n.x(), n.y(), n.z(), 0);
     Eigen::Vector4d targetN;
     targetN = calib * norm.normalized();
