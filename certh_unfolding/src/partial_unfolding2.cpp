@@ -7,6 +7,8 @@
 #include <certh_libs/cvHelpers.h>
 #include <highgui.h>
 #include <pcl/io/pcd_io.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 using namespace cv ;
 using namespace Eigen ;
@@ -261,11 +263,14 @@ bool graspACorner(string armName, bool lastMove = false) {
 
 
 
+
 int main(int argc, char **argv) {
 
     ros::init(argc, argv, "unfolding2");
     ros::NodeHandle nh;
-    //std:mkdir("/tmp/partialUnfolding/");
+
+    mkdir("/tmp/results/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) ;
+    mkdir("/tmp/data/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) ;
     graspACorner("r1") ;
     graspACorner("r2", true) ;
     setServoPowerOff(true) ;

@@ -951,13 +951,14 @@ bool Unfold::graspLowestPoint(bool lastMove, bool allwaysDrop){
     setGripperStates( movingArm, false);
 
     if(lastMove == true){
+        float rad = getArmsDistance();
         moveToCheckGrasping() ;
         if(!confirmGrasping() ){
             moveArm(movingArmPose(), movingArm) ;
             setGripperStates(movingArm, true);
             return false ;
         }
-        showUnfolding();
+        showUnfolding(rad);
         return true ;
     }
 
@@ -1111,14 +1112,14 @@ bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y
     setGripperStates(movingArm , false);
 
     if(lastMove == true){
-        float radious = getArmsDistance();
+        float rad = getArmsDistance();
         moveToCheckGrasping() ;
         if(!confirmGrasping() ){
             setGripperStates(movingArm, true);
             moveArm(movingArmPose(), movingArm) ;           
             return false ;
         }
-        showUnfolding();
+        showUnfolding(rad);
         return true ;
     }
 
@@ -1891,27 +1892,27 @@ bool Unfold::releaseCloth( const string &armName ){
 }
 
 //Gets the final position showing the unfolding outcome
-bool Unfold::showUnfolding(){
+bool Unfold::showUnfolding(float radious){
 
     geometry_msgs::Pose poseH, poseM;
-    float radious = getArmsDistance()-0.03;
+//    float radious = getArmsDistance()-0.03;
     Eigen::Matrix3d orient;
     if (holdingArm == "r1"){
-        poseH.position.x = -radious;
+        poseH.position.x = -(radious-0.03);
         poseH.position.y = -1.1;
         poseH.position.z = 1.4;
 
         poseM.position = poseH.position;
-        poseM.position.x = 0;
+        poseM.position.x = -0.03;
 
         orient << 0, -1, 1, -1, 0,0,0,-1,-1;
     }else{
-        poseM.position.x = -radious;
+        poseM.position.x = -(radious-0.03);
         poseM.position.y = -1.1;
         poseM.position.z = 1.4;
 
         poseH.position = poseM.position;
-        poseH.position.x = 0;
+        poseH.position.x = -0.03;
         orient << 0, 1, -1, 1, 0,0,0,-1,-1;
     }
 
@@ -1920,7 +1921,7 @@ bool Unfold::showUnfolding(){
     poseH.orientation = rotationMatrix3ToQuaternion(orient);
 
 
-    if(moveArmsNoTearing(poseH, poseM, holdingArm, movingArm ) == -1)
+    if(moveArmsNoTearing(poseH, poseM, holdingArm, movingArm, radious ) == -1)
         return false;
 
     return true;

@@ -189,7 +189,7 @@ public:
 
     int moveArmsFlipCloth( float radious, geometry_msgs::Pose pose1 , geometry_msgs::Pose pose2, const string &arm1Name,  const std::string &arm2Name = "r1" );
     bool releaseCloth( const string &armName );
-    bool showUnfolding();
+    bool showUnfolding(float radious);
 
     bool confirmGrasping();
 
