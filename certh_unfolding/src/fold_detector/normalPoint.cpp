@@ -98,8 +98,8 @@ Point search_area(int corner, ret_all r, bool side, Mat bin, vector<int> vec, ve
 		istopy=r.junctions.at(corner).at(1);
 	}
 
-	istartx=r.junctions.at(corner).at(0)-20;
-	istopx=r.junctions.at(corner).at(0)+20;
+    istartx=r.junctions.at(corner).at(0)-15;
+    istopx=r.junctions.at(corner).at(0)+15;
 
 	//////////////////draw///
 	

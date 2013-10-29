@@ -94,7 +94,7 @@ bool detectHorizontalEdge( vector<double>& grasp_candidate, int cx, int cy , int
 		grasp_candidate.at(1)=midx;
 		grasp_candidate.at(2)=midy;
 	}
-    grasp_candidate.at(1) += 5 ;
+   // grasp_candidate.at(1) += 5 ;
     grasp_candidate.at(0) = n ;
  /*   grasp_candidate.at(1)=r.detailed_edges.at(2*i_min).at(i_min2);
     grasp_candidate.at(2)=r.detailed_edges.at(2*i_min+1).at(i_min2);*/

@@ -48,7 +48,8 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
   Lights = loadLights(imageNum, lightsPath);
   cout << Lights << endl;
   int i, j;  
-  /*double L[8][3];
+  
+  double L[8][3];
   Lights = Mat_<double>(8, 3);
 
   ifstream f("Lights.txt");
@@ -61,7 +62,7 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
     }
     cout << '\n';
   }
-  */
+  
   //  cout << Lights;
 
   double rate = 30.0;
@@ -80,7 +81,7 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
   stringstream ss;
   cv::Mat images[8];
   cv::Mat ff_images[8];
-  /*
+    
   // wait for 3 seconds to focus 
   for(i = 0; i < 90; i++) {
     // read next frame if any
@@ -91,7 +92,7 @@ bool do_reconstruct(certh_ps::PhotometricStereo::Request &req,   certh_ps::Photo
     if (cv::waitKey(delay) > 0)
       break;
   }
-  */
+  
   system("v4l2-ctl -c focus_auto=0"); // turn auto-focus off
   cout << "Auto-focus off." << endl;
   //  system("v4l2-ctl -c exposure_auto=1"); // turn auto-exposure off

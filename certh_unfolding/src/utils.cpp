@@ -1418,17 +1418,15 @@ bool Unfold::drawPoint(cv::Mat  &rgb, int r, int g , int b, int x , int y){
 //        return false;
 //    }
 
-//    string rgbFileName = "/tmp/rgb_cap_.png" ;
-//    string depthFileName = "/tmp/depth_cap_.png" ;
-//    cv::imwrite(rgbFileName, rgb) ;
+//    cv::imwrite("/tmp/rgb_cap_.png", rgb) ;
+//    cv::imwrite("/tmp/depth_cap_.png", depth) ;
 
 //    Eigen::Affine3d tip_pose_in_camera_frame ;
 //    tf::TransformTFToEigen( getTranformation(movingArm + "_ee", "xtion3_rgb_optical_frame" )  , tip_pose_in_camera_frame);
 
-//    int x, y ; //640 ,480
-
-//    Vector3d tip = tip_pose_in_camera_frame * Eigen::Vector3d(0, 0, 0) ;
+//    Eigen::Vector3d tip = tip_pose_in_camera_frame * Eigen::Vector3d(0, 0, 0) ;
 //    cv::Point2d p = cm.project3dToPixel(cv::Point3d(tip.x(), tip.y(), tip.z())); ;
+//    int x, y ; //640 ,480
 //    x = p.x ;
 //    y = p.y ;
 
@@ -1452,11 +1450,7 @@ bool Unfold::drawPoint(cv::Mat  &rgb, int r, int g , int b, int x , int y){
 //    rgb.at<cv::Vec3b>(y,x-1)[1] = 1;
 //    rgb.at<cv::Vec3b>(y,x-1)[2] = 250;
 
-//    rgbFileName = "/tmp/rgb_cap_confirm.png" ;
-//    depthFileName = "/tmp/depth_cap_confirm.png" ;
-
-//    cv::imwrite(rgbFileName, rgb) ;
-//    cv::imwrite(depthFileName, depth) ;
+//    cv::imwrite( "/tmp/rgb_cap_confirm.png" , rgb) ;
 
 //    return true ;
 

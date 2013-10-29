@@ -262,8 +262,8 @@ int main(int argc, char **argv) {
 
     mkdir("/tmp/results/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) ;
     mkdir("/tmp/data/", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) ;
-    graspACorner("r1") ;
-    graspACorner("r2", true) ;
+    graspACorner("r2") ;
+    graspACorner("r1", true) ;
     setServoPowerOff(true) ;
     return 0 ;
 }
