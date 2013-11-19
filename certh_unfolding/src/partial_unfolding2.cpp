@@ -113,7 +113,7 @@ public:
         cv::Mat imc = data.clr[idx];
         cv::Mat imd = data.depth[idx];
         index = idx ;
-        cout<< "GRASP CANDIDATE = " <<grasp_candidate[0] << endl;
+        cout<< "GRASP CANDIDATE!! = " <<grasp_candidate[0] << endl;
         // find the coordinates of the point in 3D in the correct frame
 
         ushort z ;

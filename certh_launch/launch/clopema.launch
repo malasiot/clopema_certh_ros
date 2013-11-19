@@ -3,7 +3,7 @@
 <launch>
     <!-- Machines describes the addresses and names of the used ROS machines. -->
     <machine name="clopema1" address="127.0.0.1" user="$(optenv USER ros)" default="true" env-loader="/home/ros/env.sh"/>
-	<machine name="clopema2" address="clopema2" user="clopema" default="false" env-loader="/home/clopema/env.sh"/>
+    <machine name="clopema2" address="clopema2" user="clopema" default="false" env-loader="/home/clopema/env_fuerte.sh"/>
     <machine name="kinect1" address="127.0.0.1" user="$(optenv USER ros)" default="true" env-loader="/home/ros/env.sh"/>
 
 

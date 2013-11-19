@@ -65,7 +65,7 @@ bool folds::fold_detector(Mat bgrImage, Mat depthMap, int th, vector<double>& gr
 		if (expr==true && current_corner.at(i_stop).at(k_stop)==true && depthD.at(i_stop).at(k_stop)>300 && radius.at(i_stop).at(k_stop)>2 && location.at(i_stop).at(k_stop).x>limitL){//<---
 
         //if (i_stop!=-1 && location.at(i_stop).at(k_stop).x<cx && current_corner.at(i_stop).at(k_stop)==true && depthD.at(i_stop).at(k_stop)>3000){
-            cout<<endl<<" i_stop"<<endl;
+            cout<<endl<<" i_stop= "<<i_stop<<endl;
             ret=true;
 			grasp_candidate.at(0)=i_stop;
 //			grasp_candidate.at(1)=location.at(i_stop).at(k_stop).x;
