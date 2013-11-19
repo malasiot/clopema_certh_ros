@@ -41,10 +41,10 @@ bool do_unfolding(certh_unfolding::unfold::Request &req, certh_unfolding::unfold
     //cout << "Sleep ended" << endl;
 
    // graspFromFloor("r2");
-
+    camera_helpers::openni::connect("xtion3");
     Unfold rb("r2" );
 
-    camera_helpers::openni::connect("xtion3") ;
+
     ros::Duration(1).sleep() ;
 //    ofstream ftxt("himg.txt");
 //    ofstream frgb("rgb.txt");
@@ -667,7 +667,6 @@ bool do_unfolding(certh_unfolding::unfold::Request &req, certh_unfolding::unfold
     cout << endl << "----------------------" << endl << "unfolding time:  " << difftime(end, start) << "sec" << endl;
     cout << "Recognition rotations: " << recogn_rotations << endl;
     cout << "----------------------" << endl;
-    camera_helpers::openni::disconnect("xtion3") ;
 
     setServoPowerOff(true) ;
        // system("/home/akargakos/ROS/clopema_certh_ros/certh_scripts/./killXtion3.sh");

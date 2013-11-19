@@ -998,7 +998,7 @@ bool Unfold::graspPoint(const  pcl::PointCloud<pcl::PointXYZ> &pc,  int x, int y
     y= oy;
     Eigen::Matrix4d calib = getTranformationMatrix("xtion3_rgb_optical_frame");
 
-    publishLowestPointMarker(marker_pub,p ,n );
+   // publishLowestPointMarker(marker_pub,p ,n );
 
     Eigen::Vector4d tar(p.x(), p.y(), p.z(), 1);
     targetP = calib * tar;
