@@ -43,9 +43,10 @@ true_pix true_pixels(vector<vector<int> > ,vector<vector<int> > ,vector<vector<i
 colors show_colors(int);
 
 
-ret_all folds :: call_main( Mat bgrImage, Mat depthMap )
+ret_all folds :: call_main( Mat bgrImage, Mat depthMap1 )
 {
-		
+		Mat depthMap;
+		depthMap1.copyTo(depthMap);
 		//change the orientation of the images
 		
 
