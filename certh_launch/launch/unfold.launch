@@ -1,12 +1,5 @@
 <?xml version="1.0"?>
-<!--
-This launch file will start necessary components to run the robot. Optionally it
-will start other robot peripheries.
 
-PARAMETER
-
-Libor Wagner and Vladimir Petrík on February  8, 2013
--->
 
 <launch>
 

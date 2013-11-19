@@ -278,7 +278,7 @@ bool PickUp::isGraspingSucceeded(float threshold){
     cout << meanDepthDiff << endl;
     if (meanDepthDiff > threshold)
         return true ;
-    openG2() ;
+
     setGripperState(armName, true);
     return false ;
 
@@ -288,7 +288,6 @@ bool PickUp::graspTargetCandidate( vector<RidgeDetector::GraspCandidate> &gsp, c
 
     vector <geometry_msgs::Pose> poses;
 
-    openG2() ;
     setGripperState(armName, true);
 
     for (unsigned int i = 0 ; i < gsp.size() ; i++ ){
